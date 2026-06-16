@@ -12,9 +12,9 @@ interface DealingAnimationProps {
   onComplete: () => void;
 }
 
-const VISUAL_CARDS = 7;
-const CARD_STAGGER_MS = 65;
-const COMPLETE_EXTRA_MS = 500;
+const VISUAL_CARDS = 6;
+const CARD_STAGGER_MS = 110;
+const COMPLETE_EXTRA_MS = 900;
 
 function getPlayerStagger(playerCount: number): number {
   const totalCardTime = VISUAL_CARDS * CARD_STAGGER_MS;
