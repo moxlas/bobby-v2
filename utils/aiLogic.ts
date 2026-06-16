@@ -919,29 +919,3 @@ export function getContinueTurnMove(
   // Otherwise end turn (only when truly no options)
   return { type: 'endTurn', cards: [] };
 }
-
-/**
- * Return AI thinking delay in milliseconds for a given difficulty.
- * - easy: short delay
- * - medium: moderate delay
- * - hard: longer delay with small random jitter
- *
- * Keep delays small enough for UX but large enough to feel natural.
- */
-export function getAIDelay(difficulty: AIDifficulty): number {
-  // base delays (ms)
-  const BASE = {
-    easy: 250,
-    medium: 450, // previous "hard" behavior moved to medium
-    hard: 800
-  } as Record<AIDifficulty, number>;
-
-  const base = BASE[difficulty] ?? 400;
-
-  // Add a small random jitter so AI doesn't feel robotic
-  const jitter = Math.floor(Math.random() * 200) - 100; // -100..+99 ms
-
-  // Cap to a sensible range
-  const delay = Math.max(100, base + jitter);
-  return delay;
-}
