@@ -1,4 +1,3 @@
-```ts
 import { Card, GameState, GameOptions, AIDifficulty, Player } from '../types/game';
 import { getCardsOfSameValue, hasFourOfSameValue, sortHand } from './deckUtils';
 import { getTakeOptions, validatePlay } from './gameLogic';
@@ -867,4 +866,3 @@ export function getContinueTurnMove(
   if (best && best.length > 0) return { type: 'play', cards: best };
   return { type: 'endTurn', cards: [] };
 }
-```
