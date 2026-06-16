@@ -183,6 +183,38 @@ function returnTakeMove(takeType: 'take3' | 'takeAll') {
   return { type: 'take' as const, cards: [] as Card[], takeType };
 }
 
+// Centralized enforcement helper to avoid illegal skips
+function enforceNoSkipDecision(
+  possiblePlays: Card[][],
+  bestMove: { type: 'play' | 'take' | 'endTurn'; cards: Card[]; takeType?: 'take3' | 'takeAll' } | null,
+  pile: Card[],
+  options: GameOptions
+) {
+  // If we already have a play chosen, return it
+  if (bestMove && bestMove.type === 'play' && bestMove.cards && bestMove.cards.length > 0) {
+    return bestMove;
+  }
+
+  // If there are any possible plays (even if earlier validation removed them), try to pick a fallback legal single
+  if (possiblePlays && possiblePlays.length > 0) {
+    // choose the first valid single-card play as a safe fallback
+    for (const p of possiblePlays) {
+      if (p && p.length > 0) {
+        return { type: 'play' as const, cards: p };
+      }
+    }
+  }
+
+  // No plays available: choose a take if allowed
+  const takeOpts = getTakeOptions(pile, options);
+  if (takeOpts.canTakeAll) return { type: 'take' as const, cards: [], takeType: 'takeAll' };
+  if (takeOpts.canTake3) return { type: 'take' as const, cards: [], takeType: 'take3' };
+
+  // Last resort: endTurn (should be extremely rare)
+  console.warn('AI fallback to endTurn: no plays and no take options available.');
+  return { type: 'endTurn' as const, cards: [] };
+}
+
 // -----------------------------
 // Remaining counts & probability approx
 // -----------------------------
@@ -663,13 +695,14 @@ function getHardAIMove(state: GameState, playerId: number) {
     }
   }
 
-  // Enforce rule: taking ends turn immediately
-  if (bestMove.type === 'take') {
-    return returnTakeMove(bestMove.takeType || 'take3');
-  }
+  // Ensure we don't illegally skip: prefer play > take > endTurn
+  const possiblePlays = getPossiblePlays(player.hand, pile, options);
+  const safeDecision = enforceNoSkipDecision(possiblePlays, bestMove, pile, options);
 
-  // Return play; do not include any take after play
-  return { type: 'play', cards: bestMove.cards };
+  if (safeDecision.type === 'take') {
+    return returnTakeMove(safeDecision.takeType || 'take3');
+  }
+  return safeDecision;
 }
 
 // -----------------------------
@@ -765,9 +798,10 @@ function getMediumAIMove(state: GameState, playerId: number) {
     else bestMove = { type: 'endTurn', cards: [] };
   }
 
-  // Enforce taking ends turn
-  if (bestMove.type === 'take') return returnTakeMove(bestMove.takeType || 'take3');
-  return bestMove;
+  // Ensure we don't illegally skip: prefer play > take > endTurn
+  const safeDecision = enforceNoSkipDecision(possiblePlays, bestMove, pile, options);
+  if (safeDecision.type === 'take') return returnTakeMove(safeDecision.takeType || 'take3');
+  return safeDecision;
 }
 
 // -----------------------------
@@ -808,7 +842,21 @@ export function getAIMove(state: GameState, playerId: number): {
 
   if (difficulty === 'easy') return getEasyAIMove(player.hand, state.pile, options);
   if (difficulty === 'medium') return getMediumAIMove(state, playerId); // previous hard behavior
-  return getHardAIMove(state, playerId); // new hard
+
+  const move = getHardAIMove(state, playerId); // new hard
+
+  // Defensive enforcement: do not allow illegal skip
+  // If AI returned endTurn while plays or take options exist, override with safe fallback.
+  if (move.type === 'endTurn') {
+    const possiblePlays = getPossiblePlays(player.hand, state.pile, state.options);
+    const takeOpts = getTakeOptions(state.pile, state.options);
+    if (possiblePlays && possiblePlays.length > 0) {
+      return { type: 'play', cards: possiblePlays[0] };
+    }
+    if (takeOpts.canTakeAll) return returnTakeMove('takeAll');
+    if (takeOpts.canTake3) return returnTakeMove('take3');
+  }
+  return move;
 }
 
 // -----------------------------
@@ -864,32 +912,10 @@ export function getContinueTurnMove(
     }
   }
   if (best && best.length > 0) return { type: 'play', cards: best };
+
+  // If no validated plays but possiblePlays exist, return the first possible play (safe fallback)
+  if (possiblePlays.length > 0) return { type: 'play', cards: possiblePlays[0] };
+
+  // Otherwise end turn (only when truly no options)
   return { type: 'endTurn', cards: [] };
 }
-
-/**
- * Return AI thinking delay in milliseconds for a given difficulty.
- * - easy: short delay
- * - medium: moderate delay
- * - hard: longer delay with small random jitter
- *
- * Keep delays small enough for UX but large enough to feel natural.
- */
-export function getAIDelay(difficulty: AIDifficulty): number {
-  // base delays (ms)
-  const BASE = {
-    easy: 250,
-    medium: 450, // previous "hard" behavior moved to medium
-    hard: 800
-  } as Record<AIDifficulty, number>;
-
-  const base = BASE[difficulty] ?? 400;
-
-  // Add a small random jitter so AI doesn't feel robotic
-  const jitter = Math.floor(Math.random() * 200) - 100; // -100..+99 ms
-
-  // Cap to a sensible range
-  const delay = Math.max(100, base + jitter);
-  return delay;
-}
-
