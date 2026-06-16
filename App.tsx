@@ -348,10 +348,11 @@ function App() {
   }
 
   if (appPhase === 'dealing') {
+    const openingPlayerId = gameState.moveHistory[0]?.playerId;
     const playerInfos = gameState.players.map(p => ({
       name: p.name,
       isAI: p.isAI,
-      cardCount: p.hand.length,
+      cardCount: p.hand.length + (p.id === openingPlayerId ? 1 : 0),
     }));
     return <DealingAnimation players={playerInfos} onComplete={handleDealingComplete} />;
   }

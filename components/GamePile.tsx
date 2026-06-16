@@ -32,11 +32,11 @@ export function GamePile({ pile }: GamePileProps) {
 
   return (
     <div className="relative flex flex-col items-center">
-      <div className="my-4 bg-emerald-700 px-3 py-1.5 rounded-full text-emerald-200 text-base whitespace-nowrap">
+      <div className="mt-0 mb-3 bg-emerald-700 px-3 py-1.5 rounded-full text-emerald-200 text-base whitespace-nowrap">
         {pile.length} card{pile.length !== 1 ? 's' : ''}
       </div>
 
-      <div className="relative h-40 flex items-center justify-center">
+      <div className="relative h-36 sm:h-40 flex items-center justify-center -translate-x-12 translate-y-1">
         {visibleCards.map((card, index) => {
           const totalWidth = (visibleCount - 1) * 16;
           const offsetX = index * 16 - totalWidth / 2;
@@ -54,7 +54,7 @@ export function GamePile({ pile }: GamePileProps) {
         })}
       </div>
 
-      <div className="my-4 text-center">
+      <div className="mt-3 mb-2 text-center">
         <span className="text-emerald-300 text-xs">Top: </span>
         <span className="text-amber-300 font-bold text-sm">
           {getValueDisplay(topCard.value)} of {topCard.suit}

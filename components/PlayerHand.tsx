@@ -7,9 +7,10 @@ interface PlayerHandProps {
   selectedCards: CardType[];
   onCardSelect: (card: CardType) => void;
   disabled?: boolean;
+  faceUp?: boolean;
 }
 
-export function PlayerHand({ hand, selectedCards, onCardSelect, disabled }: PlayerHandProps) {
+export function PlayerHand({ hand, selectedCards, onCardSelect, disabled, faceUp = true }: PlayerHandProps) {
   const sortedHand = sortHand(hand);
 
   return (
@@ -17,10 +18,10 @@ export function PlayerHand({ hand, selectedCards, onCardSelect, disabled }: Play
       {sortedHand.map((card) => (
         <Card
           key={card.id}
-          card={{ ...card, faceUp: true }}
+          card={{ ...card, faceUp }}
           onClick={() => onCardSelect(card)}
-          isSelected={selectedCards.some(c => c.id === card.id)}
-          disabled={disabled}
+          isSelected={faceUp && selectedCards.some(c => c.id === card.id)}
+          disabled={disabled || !faceUp}
           size="md"
         />
       ))}

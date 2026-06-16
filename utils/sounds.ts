@@ -141,10 +141,10 @@ export function playComboSound() {
     // Three ascending notes — G4, B4, D5
     const notes = [392, 494, 587];
     notes.forEach((freq, i) => {
-      playTone(freq, 'square', now + i * 0.1, 0.15, 0.12, 0.08, 0.3);
+      playTone(freq, 'square', now + i * 0.1, 0.15, 0.055, 0.08, 0.3);
     });
     // Sparkle on top
-    playTone(1174, 'sine', now + 0.28, 0.2, 0.06, 0.05, 0.5);
+    playTone(1174, 'sine', now + 0.28, 0.2, 0.025, 0.05, 0.5);
   } catch { /* unavailable */ }
 }
 
