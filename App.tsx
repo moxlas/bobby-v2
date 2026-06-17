@@ -582,8 +582,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const theme = gameState?.options.theme || 'summer';
-    document.documentElement.dataset.theme = theme;
+    if (gameState?.options.theme) {
+      document.documentElement.dataset.theme = gameState.options.theme;
+    }
   }, [gameState?.options.theme]);
 
   if (appPhase === 'setup' || !gameState) {
