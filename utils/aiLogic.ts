@@ -836,7 +836,7 @@ export function getAIMove(state: GameState, playerId: number): {
   takeType?: 'take3' | 'takeAll';
 } {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return { type: 'endTurn', cards: [] }; // fallback
+  if (!player) return { type: 'play', cards: [playerHand![0]] }; // fallback to the lowest card
 
   const options = state.options;
   const difficulty = options.aiDifficulty;
