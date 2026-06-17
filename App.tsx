@@ -89,6 +89,7 @@ function createGameState(players: PlayerSetup[], options: GameOptions): { gameSt
     deck: [],
     direction: 'clockwise',
     loser: null,
+    aiOnlyStartTurn: null,
   };
 
   return { gameState, initialPlayers: players };
@@ -214,6 +215,42 @@ function App() {
         p.isCurrentTurn = i === nextPlayerIndex;
       });
 
+      // AI-only loop detection
+      const remainingActive = newPlayers.filter(p => !p.hasFinished);
+      const allAI = remainingActive.length > 0 && remainingActive.every(p => p.isAI);
+      let newAiOnlyStartTurn = prev.aiOnlyStartTurn;
+      if (allAI && newAiOnlyStartTurn === null) {
+        newAiOnlyStartTurn = newTurnNumber;
+      }
+
+      if (allAI && newAiOnlyStartTurn !== null && newTurnNumber - newAiOnlyStartTurn > 200) {
+        const finalPlayers = newPlayers.map(p => {
+          if (p.hasFinished) return p;
+          const pos = newFinishOrder.length + 1;
+          newFinishOrder.push({ ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime });
+          return { ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime };
+        });
+        return {
+          ...prev,
+          players: finalPlayers,
+          pile: newPile,
+          phase: 'finished',
+          moveHistory: [...prev.moveHistory, {
+            id: Date.now().toString(),
+            type: 'play',
+            playerId,
+            playerName: player.name,
+            cards,
+            timestamp: Date.now(),
+            turnNumber: prev.turnNumber,
+          }],
+          finishOrder: newFinishOrder,
+          loser: finalPlayers[finalPlayers.length - 1],
+          canContinueTurn: false,
+          aiOnlyStartTurn: newAiOnlyStartTurn,
+        };
+      }
+
       return {
         ...prev,
         players: newPlayers,
@@ -231,6 +268,7 @@ function App() {
         }],
         finishOrder: newFinishOrder,
         canContinueTurn: continueTurn && newHand.length > 0,
+        aiOnlyStartTurn: newAiOnlyStartTurn,
       };
     });
   }, []);
@@ -264,6 +302,46 @@ function App() {
         p.isCurrentTurn = i === nextPlayerIndex;
       });
 
+      // AI-only loop detection
+      const remainingActive = newPlayers.filter(p => !p.hasFinished);
+      const allAI = remainingActive.length > 0 && remainingActive.every(p => p.isAI);
+      let newAiOnlyStartTurn = prev.aiOnlyStartTurn;
+      if (allAI && newAiOnlyStartTurn === null) {
+        newAiOnlyStartTurn = prev.turnNumber + 1;
+      }
+
+      if (allAI && newAiOnlyStartTurn !== null && prev.turnNumber + 1 - newAiOnlyStartTurn > 200) {
+        const elapsedTime = prev.gameStartTime
+          ? (Date.now() - prev.gameStartTime) / 1000 - prev.totalPausedTime
+          : 0;
+        const finishOrder = [...prev.finishOrder];
+        const finalPlayers = newPlayers.map(p => {
+          if (p.hasFinished) return p;
+          const pos = finishOrder.length + 1;
+          finishOrder.push({ ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime });
+          return { ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime };
+        });
+        return {
+          ...prev,
+          players: finalPlayers,
+          pile: newPile,
+          phase: 'finished',
+          moveHistory: [...prev.moveHistory, {
+            id: Date.now().toString(),
+            type: 'take',
+            playerId,
+            playerName: player.name,
+            cards: cardsToTake,
+            timestamp: Date.now(),
+            turnNumber: prev.turnNumber,
+          }],
+          finishOrder,
+          loser: finalPlayers[finalPlayers.length - 1],
+          canContinueTurn: false,
+          aiOnlyStartTurn: newAiOnlyStartTurn,
+        };
+      }
+
       return {
         ...prev,
         players: newPlayers,
@@ -280,6 +358,7 @@ function App() {
           turnNumber: prev.turnNumber,
         }],
         canContinueTurn: false,
+        aiOnlyStartTurn: newAiOnlyStartTurn,
       };
     });
   }, []);
@@ -298,12 +377,43 @@ function App() {
         p.isCurrentTurn = i === nextPlayerIndex;
       });
 
+      // AI-only loop detection
+      const remainingActive = newPlayers.filter(p => !p.hasFinished);
+      const allAI = remainingActive.length > 0 && remainingActive.every(p => p.isAI);
+      let newAiOnlyStartTurn = prev.aiOnlyStartTurn;
+      if (allAI && newAiOnlyStartTurn === null) {
+        newAiOnlyStartTurn = prev.turnNumber + 1;
+      }
+
+      if (allAI && newAiOnlyStartTurn !== null && prev.turnNumber + 1 - newAiOnlyStartTurn > 200) {
+        const elapsedTime = prev.gameStartTime
+          ? (Date.now() - prev.gameStartTime) / 1000 - prev.totalPausedTime
+          : 0;
+        const finishOrder = [...prev.finishOrder];
+        const finalPlayers = newPlayers.map(p => {
+          if (p.hasFinished) return p;
+          const pos = finishOrder.length + 1;
+          finishOrder.push({ ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime });
+          return { ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime };
+        });
+        return {
+          ...prev,
+          players: finalPlayers,
+          phase: 'finished',
+          finishOrder,
+          loser: finalPlayers[finalPlayers.length - 1],
+          canContinueTurn: false,
+          aiOnlyStartTurn: newAiOnlyStartTurn,
+        };
+      }
+
       return {
         ...prev,
         players: newPlayers,
         currentPlayerIndex: nextPlayerIndex,
         turnNumber: prev.turnNumber + 1,
         canContinueTurn: false,
+        aiOnlyStartTurn: newAiOnlyStartTurn,
       };
     });
   }, []);
