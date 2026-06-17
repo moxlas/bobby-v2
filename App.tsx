@@ -581,6 +581,11 @@ function App() {
     setAppPhase('setup');
   }, []);
 
+  useEffect(() => {
+    const theme = gameState?.options.theme || 'summer';
+    document.documentElement.dataset.theme = theme;
+  }, [gameState?.options.theme]);
+
   if (appPhase === 'setup' || !gameState) {
     return <SetupScreen onStartGame={handleStartGame} />;
   }
