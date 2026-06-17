@@ -849,10 +849,7 @@ export function getAIMove(state: GameState, playerId: number): {
   // Check for the specific scenario with only 9♦ on pile
   if (
     move.type === 'endTurn' &&
-    state.pile.length === 1 &&
-    state.pile[0].value === 9 &&
-    state.pile[0].suit === 'diamonds' &&
-    player.hand.length > 0
+    state.pile.length === 1
   ) {
     // Always play lowest card instead of ending turn
     const sortedHand = [...player.hand].sort((a, b) => a.value - b.value);
