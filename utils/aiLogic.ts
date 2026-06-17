@@ -845,25 +845,32 @@ export function getAIMove(state: GameState, playerId: number): {
 
   // Enforce no endTurn choice:
   if (move.type === 'endTurn') {
-    const possiblePlays = getPossiblePlays(player.hand, state.pile, state.options);
-    const takeOpts = getTakeOptions(state.pile, state.options);
-
-    // If pile has only 9♦, force a play
-    if (state.pile.length === 1 && player.hand.length > 0) {
-      const fallback = enforceNoSkipDecision(possiblePlays, null, state.pile, state.options, player.hand);
+    // Check if pile only contains 9♦
+    if (state.pile.length === 1 && state.pile[0].value === 9 && state.pile[0].suit === 'diamonds') {
+      // Force a play instead
+      const possiblePlays = getPossiblePlays(player.hand, state.pile, options);
+      const fallback = enforceNoSkipDecision(
+        possiblePlays,
+        null,
+        state.pile,
+        options,
+        player.hand
+      );
       if (fallback.type === 'take') return returnTakeMove(fallback.takeType || 'take3');
       return fallback;
     }
 
+    // Otherwise, standard logic
+    const possiblePlays = getPossiblePlays(player.hand, state.pile, options);
     if (possiblePlays && possiblePlays.length > 0) {
       return { type: 'play', cards: possiblePlays[0] };
-    } else if (takeOpts.canTakeAll) {
-      return returnTakeMove('takeAll');
-    } else if (takeOpts.canTake3) {
+    } else {
+      const takeOpts = getTakeOptions(state.pile, options);
+      if (takeOpts.canTakeAll) return returnTakeMove('takeAll');
+      if (takeOpts.canTake3) return returnTakeMove('take3');
+      // fallback
       return returnTakeMove('take3');
     }
-    // fallback: if no other move, try to force a take
-    return returnTakeMove('take3');
   } else {
     return move;
   }
