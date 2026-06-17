@@ -123,7 +123,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
 
                 {/* Animated card backs */}
                 <div className="flex gap-1 flex-1">
-                  {Array.from({ length: VISUAL_CARDS }).map((_, ci) => {
+                  {Array.from({ length: Math.min(player.cardCount, VISUAL_CARDS) }).map((_, ci) => {
                     const cardDelay = rowDelay + ci * CARD_STAGGER_MS;
                     return (
                       <div
