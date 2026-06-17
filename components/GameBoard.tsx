@@ -569,7 +569,7 @@ export function GameBoard({
       </div>
 
       {/* Main game area */}
-      <div className="flex-none lg:flex-1 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
+      <div className="flex-1 lg:flex-1 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
         {/* Left sidebar - Players (Desktop) */}
         <div className="hidden lg:flex lg:w-44 flex-col gap-2 overflow-y-auto flex-shrink-0">
           <div className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-1 px-1">Players</div>
@@ -615,8 +615,8 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 grid grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
-          <div className="text-center self-end">
+        <div className="flex-1 grid grid-rows-[auto_auto_1fr] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
+          <div className="text-center">
             <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
               <span className="text-emerald-300 text-xs sm:text-sm">Current Turn:</span>
               <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
@@ -808,9 +808,9 @@ export function GameBoard({
       </div>
 
       {/* Mobile: Bottom Section */}
-      <div className="lg:hidden bg-emerald-800 border-t border-emerald-600 flex-shrink-0">
+      <div className="lg:hidden bg-emerald-800 border-t border-emerald-600 flex flex-col">
         {shouldShowHand && (
-          <div className="border-b border-emerald-600 px-2 pt-1 pb-2 sm:p-3">
+          <div className="border-b border-emerald-600 px-2 pt-1 pb-2 sm:p-3 flex-shrink-0">
             <div className="text-center mb-1">
               <span className="text-emerald-300 text-xs sm:text-sm">{isHumanTurn ? 'Your' : `${currentPlayer.name}'s`} Hand ({currentPlayer.hand.length} cards)</span>
             </div>
@@ -856,28 +856,32 @@ export function GameBoard({
           </div>
         )}
 
-        {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
-          <div className="p-4 sm:p-3 border-b border-emerald-600">
-            <div className="flex gap-4 sm:gap-3 justify-center mb-4 sm:mb-3">
-              <button
-                onClick={handlePlayClick}
-                disabled={selectedCards.length === 0}
-                className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold px-5 py-3 text-sm rounded-lg flex-1 max-w-32 transition-colors disabled:opacity-50"
-              >
-                Play ({selectedCards.length})
-              </button>
-
-              {canTakeCards && (
+        <div className="mt-auto">
+          {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
+            <div className="p-4 sm:p-3 border-b border-emerald-600">
+              <div className="flex gap-4 sm:gap-3 justify-center mb-4 sm:mb-3">
                 <button
-                  onClick={handleTakeClick}
-                  className="bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 px-5 py-3 text-sm rounded-lg flex-1 max-w-32 transition-colors"
+                  onClick={handlePlayClick}
+                  disabled={selectedCards.length === 0}
+                  className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold px-5 py-3 text-sm rounded-lg flex-1 max-w-32 transition-colors disabled:opacity-50"
                 >
-                  Take
+                  Play ({selectedCards.length})
                 </button>
-              )}
-            </div>
 
-            <div className="flex justify-center lg:hidden">
+                {canTakeCards && (
+                  <button
+                    onClick={handleTakeClick}
+                    className="bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 px-5 py-3 text-sm rounded-lg flex-1 max-w-32 transition-colors"
+                  >
+                    Take
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {gameState.phase === 'playing' && (
+            <div className="flex justify-center p-3 sm:p-2 border-b border-emerald-600 lg:hidden">
               <button
                 onClick={onPauseGame}
                 className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 py-2 px-4 text-xs font-medium rounded-lg flex items-center gap-2 transition-colors"
@@ -886,33 +890,32 @@ export function GameBoard({
                 Pause
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="p-2 sm:p-3 border-b border-emerald-600">
-          <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-1 sm:mb-2">Players</div>
-          <div className="flex flex-wrap gap-1 sm:gap-2">
-            {gameState.players.map((player: any) => {
-              const isCurrent = player.id === currentPlayer?.id;
-              return (
-                <div
-                  key={player.id}
-                  className={`px-2 py-1 rounded text-[10px] sm:text-xs border ${
-                    isCurrent
-                      ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                      : 'border-emerald-600 bg-emerald-700/50 text-emerald-200'
-                  } ${player.hasFinished ? 'opacity-60' : ''}`}
-                >
-                  <span className="font-medium">{player.name}</span>
-                  {player.isAI && <span className="text-emerald-400 ml-0.5">AI</span>}
-                  <span className="text-emerald-400 ml-1">
-                    {player.hasFinished ? `#${player.finishPosition}` : `(${player.hand.length})`}
-                  </span>
-                </div>
-              );
-            })}
+          <div className="p-2 sm:p-3 border-b border-emerald-600">
+            <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-1 sm:mb-2">Players</div>
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              {gameState.players.map((player: any) => {
+                const isCurrent = player.id === currentPlayer?.id;
+                return (
+                  <div
+                    key={player.id}
+                    className={`px-2 py-1 rounded text-[10px] sm:text-xs border ${
+                      isCurrent
+                        ? 'border-amber-400 bg-amber-500/20 text-amber-300'
+                        : 'border-emerald-600 bg-emerald-700/50 text-emerald-200'
+                    } ${player.hasFinished ? 'opacity-60' : ''}`}
+                  >
+                    <span className="font-medium">{player.name}</span>
+                    {player.isAI && <span className="text-emerald-400 ml-0.5">AI</span>}
+                    <span className="text-emerald-400 ml-1">
+                      {player.hasFinished ? `#${player.finishPosition}` : `(${player.hand.length})`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
         <div className="p-2 sm:p-3">
           <button
@@ -969,6 +972,7 @@ export function GameBoard({
               )}
             </div>
           )}
+        </div>
         </div>
       </div>
 
