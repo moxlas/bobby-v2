@@ -57,6 +57,7 @@ export interface GameState {
   turnNumber: number;
   options: GameOptions;
   canContinueTurn: boolean;
+  aiOnlyStartTurn: number | null;
 }
 
 export const DEFAULT_OPTIONS: GameOptions = {
