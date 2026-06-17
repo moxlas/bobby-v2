@@ -222,8 +222,23 @@ export function GameBoard({
 
       const aiMove = getAIMove(state, player.id);
 
+      const tryPlayLowestCard = (playerId: number, hand: CardType[]) => {
+        const sorted = [...hand].sort((a, b) => a.value - b.value);
+        if (sorted.length > 0) {
+          onPlayCardsRef.current(playerId, [sorted[0]], false);
+        } else {
+          onPlayCardsRef.current(playerId, [], false);
+        }
+      };
+
       if (aiMove.type === 'endTurn') {
-        onEndTurnRef.current();
+        const pile = state.pile;
+        // Never end turn when pile has only the 9 of diamonds — play lowest card instead
+        if (pile.length === 1 && pile[0].value === 9 && pile[0].suit === 'diamonds') {
+          tryPlayLowestCard(player.id, player.hand);
+        } else {
+          onEndTurnRef.current();
+        }
       } else if (aiMove.type === 'play' && aiMove.cards.length > 0) {
         const pile = state.pile;
         const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
@@ -232,12 +247,13 @@ export function GameBoard({
         if (validation.valid) {
           onPlayCardsRef.current(player.id, aiMove.cards, validation.continueTurn || false);
         } else {
+          // AI's play was invalid — try taking if possible, otherwise play lowest card
           const takeOpts = getTakeOptions(pile, state.options);
           const count = takeOpts.canTake3 ? takeOpts.take3Count : takeOpts.takeAllCount;
           if (count > 0) {
             onTakeCardsRef.current(player.id, count);
           } else {
-            onPlayCardsRef.current(player.id, [], false);
+            tryPlayLowestCard(player.id, player.hand);
           }
         }
       } else if (aiMove.type === 'take') {
@@ -249,16 +265,16 @@ export function GameBoard({
         if (count > 0) {
           onTakeCardsRef.current(player.id, count);
         } else {
-          onPlayCardsRef.current(player.id, [], false);
+          tryPlayLowestCard(player.id, player.hand);
         }
       } else {
-        onPlayCardsRef.current(player.id, [], false);
+        tryPlayLowestCard(player.id, player.hand);
       }
 
       setIsAIThinking(false);
     };
 
-    const delay = getAIDelay();
+    const delay = getAIDelay(gameState.options?.aiDifficulty || 'medium');
     const timeout = setTimeout(executeAITurn, delay);
 
     return () => {
@@ -659,7 +675,7 @@ export function GameBoard({
           {showTakeOptions && (
             <div className="bg-emerald-700 rounded-lg p-4 sm:p-4 border border-emerald-500 shadow-lg w-full">
               <p className="text-emerald-100 mb-4 sm:mb-3 text-center font-medium text-sm sm:text-base">How many cards to take?</p>
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-3">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-3 items-center justify-center">
                 <button
                   onClick={handleTake3}
                   className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors"
