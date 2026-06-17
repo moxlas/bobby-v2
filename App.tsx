@@ -6,6 +6,15 @@ import { Card, Player, GameState, GameOptions } from './types/game';
 import { createDeck, shuffleDeck, cutDeck, dealCards } from './utils/deckUtils';
 import { saveGameResults } from './utils/leaderboard';
 
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 interface PlayerSetup {
   name: string;
   isAI: boolean;
@@ -117,9 +126,10 @@ function App() {
   }, [gameState?.phase]);
 
   const handleStartGame = useCallback((players: PlayerSetup[], options: GameOptions) => {
+    const playersToUse = options.randomSeating ? shuffleArray(players) : players;
     gameOptionsRef.current = options;
     leaderboardSavedRef.current = false;
-    const { gameState: newState, initialPlayers: ip } = createGameState(players, options);
+    const { gameState: newState, initialPlayers: ip } = createGameState(playersToUse, options);
     setInitialPlayers(ip);
     setGameState(newState);
     setAppPhase('dealing');
@@ -546,10 +556,23 @@ function App() {
   const handleRestartGame = useCallback(() => {
     if (initialPlayers.length === 0 || !gameOptionsRef.current) return;
     leaderboardSavedRef.current = false;
-    const { gameState: newState } = createGameState(initialPlayers, gameOptionsRef.current);
+
+    let playersToUse = initialPlayers;
+
+    if (gameOptionsRef.current.rankedSeating && gameState?.finishOrder && gameState.finishOrder.length > 0) {
+      playersToUse = gameState.finishOrder
+        .filter(p => !p.isAI || true)
+        .map(fp => {
+          const match = initialPlayers.find(ip => ip.name === fp.name);
+          return match || { name: fp.name, isAI: fp.isAI };
+        });
+      setInitialPlayers(playersToUse);
+    }
+
+    const { gameState: newState } = createGameState(playersToUse, gameOptionsRef.current);
     setGameState(newState);
     setAppPhase('dealing');
-  }, [initialPlayers]);
+  }, [initialPlayers, gameState]);
 
   const handleNewGame = useCallback(() => {
     setGameState(null);
