@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GameOptions, DEFAULT_OPTIONS, AIDifficulty } from '../types/game';
 import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Trophy } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
+import { loadSettings, saveSettings } from '../utils/settings';
 
 interface PlayerSetup {
   name: string;
@@ -20,8 +21,8 @@ export const GAME_RULES = [
   { title: "4 of a Kind Continuation", text: "After playing 4 cards of the same value, you may optionally play another valid card or another 4 of a kind on top before ending your turn. This can chain multiple times." },
   { title: "Taking Cards", text: "If you cannot play a valid card, you must take 3 cards from the top of the pile (or take ALL cards if the Take All rule is enabled and you choose that option). The 9 of Diamonds is never taken. If fewer than 3 cards are above it, you take whatever is there (1 or 2). Your turn then ends." },
   { title: "Special 9's Rule", text: "If the 9 of Diamonds is the only card on the table at the start of your turn and you hold other 9s in hand, you may play up to 3 additional 9s on top. After that, you may optionally play another valid card or 4 of a kind on top, then end your turn." },
-  { title: "Winning", text: "The first player to discard all cards from their hand wins. The game will continue to determine 2nd, 3rd, and last place." },
-  { title: "Strategy Tips", text: "Conserve high cards (Aces, Kings) for when you need them. Force opponents to pick up by playing cards that limit their options. Sometimes taking all cards gives you more options than taking 3." },
+  { title: "Winning", text: "The first player to discard all cards from their hand wins. The game can continue to determine 2nd, 3rd, and last place." },
+  { title: "Strategy Tips", text: "Conserve high cards (Aces, Kings) for when you need them. Force opponents to pick up by playing cards that limit their options. Save 4-of-a-kind sets for when the pile is large. Sometimes taking all cards gives you more options than taking 3." },
 ];
 
 const AI_DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; description: string }[] = [
@@ -53,20 +54,23 @@ function Toggle({ enabled, onToggle }: ToggleProps) {
 }
 
 export function SetupScreen({ onStartGame }: SetupScreenProps) {
-  const [playerCount, setPlayerCount] = useState(2);
-  const [players, setPlayers] = useState<PlayerSetup[]>([
-    { name: 'Player 1', isAI: false },
-    { name: 'Player 2', isAI: true },
-  ]);
+  const saved = loadSettings();
+  const [playerCount, setPlayerCount] = useState(saved?.players.length || 2);
+  const [players, setPlayers] = useState<PlayerSetup[]>(
+    saved?.players || [
+      { name: 'Player 1', isAI: false },
+      { name: 'Player 2', isAI: true },
+    ]
+  );
   const [showRules, setShowRules] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [specialNinesRule, setSpecialNinesRule] = useState(DEFAULT_OPTIONS.specialNinesRule);
-  const [allowTakeAllCards, setAllowTakeAllCards] = useState(DEFAULT_OPTIONS.allowTakeAllCards);
-  const [fourOfAKindRule, setFourOfAKindRule] = useState(DEFAULT_OPTIONS.fourOfAKindRule);
-  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(DEFAULT_OPTIONS.aiDifficulty);
+  const [specialNinesRule, setSpecialNinesRule] = useState(saved?.options.specialNinesRule ?? DEFAULT_OPTIONS.specialNinesRule);
+  const [allowTakeAllCards, setAllowTakeAllCards] = useState(saved?.options.allowTakeAllCards ?? DEFAULT_OPTIONS.allowTakeAllCards);
+  const [fourOfAKindRule, setFourOfAKindRule] = useState(saved?.options.fourOfAKindRule ?? DEFAULT_OPTIONS.fourOfAKindRule);
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(saved?.options.aiDifficulty ?? DEFAULT_OPTIONS.aiDifficulty);
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count);
@@ -114,6 +118,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
       aiDifficulty,
     };
 
+    saveSettings(players, options);
     onStartGame(players, options);
   };
 
@@ -226,7 +231,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                         <span className="text-white font-medium text-sm">Special 9's Rule</span>
                       </div>
                       <p className="text-emerald-400 text-xs">
-                        When enabled, if only the 9 of Diamonds is on the table and you have other 9s in hand, you may play three 9s on top, then optionally play another valid card or 4 of a kind before ending your turn.
+                        When enabled, if only the 9 of Diamonds is on the table and you have other 9s in hand, you may play up to 3 additional 9s on top, then optionally play another valid card or 4 of a kind before ending your turn.
                       </p>
                     </div>
                     <Toggle enabled={specialNinesRule} onToggle={() => setSpecialNinesRule(v => !v)} />
