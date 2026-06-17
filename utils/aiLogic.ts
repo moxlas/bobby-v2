@@ -183,10 +183,10 @@ function enforceNoSkipDecision(
   pile: Card[],
   options: GameOptions,
   playerHand?: Card[]
-) {
+): { type: 'play' | 'take'; cards: Card[]; takeType?: 'take3' | 'takeAll' } {
   // If bestMove is a valid play, return it
   if (bestMove && bestMove.type === 'play' && bestMove.cards && bestMove.cards.length > 0) {
-    return bestMove;
+    return { type: 'play' as const, cards: bestMove.cards, takeType: bestMove.takeType };
   }
 
   // If any possible plays exist, return the first one
@@ -404,7 +404,7 @@ function getPossiblePlays(hand: Card[], pile: Card[], options: GameOptions): Car
     const nines = cardsByValue.get(9) || [];
     if (nines.length >= 1) plays.push([nines[0]]);
     if (nines.length >= 3) plays.push(nines.slice(0, 3));
-    if (nines.length === 4 && options.allowFourNinesStart) plays.push(nines);
+    if (nines.length === 4 && options.specialNinesRule) plays.push(nines);
     // also allow any single card >= 9 on first move
     for (const [value, cards] of cardsByValue) {
       if (value >= 9) plays.push([cards[0]]);
@@ -450,7 +450,7 @@ function generateCandidates(state: GameState, playerId: number) {
     byVal.get(c.value)!.push(c);
   }
   for (const [val, cards] of byVal) {
-    if (cards.length === 4 && val >= topCard.value && options.allowFourOfKind) candidates.push({ type: 'play', cards: cards.slice() });
+    if (cards.length === 4 && val >= topCard.value && options.fourOfAKindRule) candidates.push({ type: 'play', cards: cards.slice() });
     if (cards.length >= 2 && val >= topCard.value) candidates.push({ type: 'play', cards: cards.slice(0, Math.min(3, cards.length)) });
   }
 
@@ -656,7 +656,7 @@ function isHighImpactCandidate(candidate: any, handSize: number) {
   return false;
 }
 
-function getHardAIMove(state: GameState, playerId: number) {
+function getHardAIMove(state: GameState, playerId: number): { type: 'play' | 'take'; cards: Card[]; takeType?: 'take3' | 'takeAll' } {
   const player = state.players.find(p => p.id === playerId)!;
   const hand = player.hand;
   const pile = state.pile;
@@ -718,7 +718,7 @@ return safeDecision;
 // -----------------------------
 // Medium AI (previous hard logic moved here)
 // -----------------------------
-function getMediumAIMove(state: GameState, playerId: number) {
+function getMediumAIMove(state: GameState, playerId: number): { type: 'play' | 'take'; cards: Card[]; takeType?: 'take3' | 'takeAll' } {
   const player = state.players.find(p => p.id === playerId)!;
   const hand = player.hand;
   const pile = state.pile;
@@ -799,7 +799,8 @@ function getMediumAIMove(state: GameState, playerId: number) {
 
   if (!bestMove) {
     if (takeOpts.canTake3) bestMove = { type: 'take', cards: [], takeType: 'take3' };
-    bestMove = { type: 'play', cards: [playerHand![0]] }; // makind default move the lowest card
+    const sorted = [...hand].sort((a, b) => a.value - b.value);
+    if (sorted.length > 0) bestMove = { type: 'play', cards: [sorted[0]] };
   }
 
   const safeDecision = enforceNoSkipDecision(possiblePlays, bestMove, pile, options, hand);
@@ -836,48 +837,42 @@ export function getAIMove(state: GameState, playerId: number): {
   takeType?: 'take3' | 'takeAll';
 } {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return { type: 'play', cards: [playerHand![0]] }; // fallback to the lowest card
+  if (!player) return { type: 'play', cards: [] };
 
   const options = state.options;
   const difficulty = options.aiDifficulty;
 
-  if (difficulty === 'easy') return getEasyAIMove(player.hand, state.pile, options);
-  if (difficulty === 'medium') return getMediumAIMove(state, playerId);
+  // Safety: if pile has only the 9 of diamonds, AI must never skip — force a play
+  const isOnlyNineOfDiamonds = state.pile.length === 1 && state.pile[0].value === 9 && state.pile[0].suit === 'diamonds';
 
-  const move = getHardAIMove(state, playerId);
-
-  // Check for the specific scenario with only 9♦ on pile
-  if (
-    move.type === 'endTurn' &&
-    state.pile.length === 1
-  ) {
-    // Always play lowest card instead of ending turn
-    const sortedHand = [...player.hand].sort((a, b) => a.value - b.value);
-    return { type: 'play', cards: [sortedHand[0]] };
+  // During a continuation turn (after a combo), AI must only play or end turn — never take
+  if (state.canContinueTurn) {
+    const contMove = getContinueTurnMove(player.hand, state.pile, difficulty, options, state, playerId);
+    if (isOnlyNineOfDiamonds && (contMove.type === 'endTurn' || contMove.cards.length === 0)) {
+      const sorted = [...player.hand].sort((a, b) => a.value - b.value);
+      return { type: 'play', cards: sorted.length > 0 ? [sorted[0]] : [] };
+    }
+    return contMove;
   }
 
-  // Otherwise, follow the normal move
-  if (move.type === 'endTurn') {
-    // Already handled above, but just a fallback
-    const possiblePlays = getPossiblePlays(player.hand, state.pile, options);
-    const fallback = enforceNoSkipDecision(
-      possiblePlays,
-      null,
-      state.pile,
-      options,
-      player.hand
-    );
-    if (fallback.type === 'take') return returnTakeMove(fallback.takeType || 'take3');
-    return fallback;
-  } else {
-    return move;
+  let move: { type: 'play' | 'take'; cards: Card[]; takeType?: 'take3' | 'takeAll' };
+
+  if (difficulty === 'easy') move = getEasyAIMove(player.hand, state.pile, options);
+  else if (difficulty === 'medium') move = getMediumAIMove(state, playerId);
+  else move = getHardAIMove(state, playerId);
+
+  if (isOnlyNineOfDiamonds && move.cards.length === 0) {
+    const sorted = [...player.hand].sort((a, b) => a.value - b.value);
+    return { type: 'play', cards: sorted.length > 0 ? [sorted[0]] : [] };
   }
+
+  return move;
 }
 
 // -----------------------------
 // Easy AI
 // -----------------------------
-function getEasyAIMove(hand: Card[], pile: Card[], options: GameOptions) {
+function getEasyAIMove(hand: Card[], pile: Card[], options: GameOptions): { type: 'play' | 'take'; cards: Card[]; takeType?: 'take3' | 'takeAll' } {
   const topCard = pile[pile.length - 1];
   const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
   if (isFirstMove) {
@@ -970,7 +965,7 @@ if (best && best.length > 0) return { type: 'play', cards: best };
   }
 
   // Otherwise end turn (only when truly no options)
-  return { type: 'play', cards: [sorted[0]] }; // should be the lowest card
+  return { type: 'endTurn', cards: [] };
 
 }
 
