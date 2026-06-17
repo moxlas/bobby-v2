@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { GameOptions, DEFAULT_OPTIONS, AIDifficulty } from '../types/game';
+import { useState, useEffect } from 'react';
+import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName } from '../types/game';
 import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Trophy } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
@@ -74,6 +74,11 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(saved?.options.aiDifficulty ?? DEFAULT_OPTIONS.aiDifficulty);
   const [rankedSeating, setRankedSeating] = useState(saved?.options.rankedSeating ?? DEFAULT_OPTIONS.rankedSeating);
   const [randomSeating, setRandomSeating] = useState(saved?.options.randomSeating ?? DEFAULT_OPTIONS.randomSeating);
+  const [theme, setTheme] = useState<ThemeName>(saved?.options.theme ?? DEFAULT_OPTIONS.theme);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count);
@@ -125,6 +130,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
       aiDifficulty,
       rankedSeating,
       randomSeating,
+      theme,
     };
 
     saveSettings(players, options);
@@ -306,6 +312,33 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                       </p>
                     </div>
                     <Toggle enabled={randomSeating} onToggle={() => setRandomSeating(v => !v)} />
+                  </div>
+
+                  {/* Theme */}
+                  <div className="pt-2 border-t border-emerald-600/50">
+                    <label className="text-sm font-medium text-emerald-300 mb-2 block">Theme</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { value: 'summer' as ThemeName, label: 'Summer', desc: 'Emerald & amber' },
+                        { value: 'midnight' as ThemeName, label: 'Midnight', desc: 'Slate & cyan' },
+                        { value: 'autumn' as ThemeName, label: 'Autumn', desc: 'Stone & orange' },
+                      ]).map((t) => (
+                        <button
+                          key={t.value}
+                          onClick={() => setTheme(t.value)}
+                          className={`p-2.5 rounded-lg text-left transition-all border ${
+                            theme === t.value
+                              ? 'bg-amber-500 border-amber-400 text-emerald-900'
+                              : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
+                          }`}
+                        >
+                          <div className="font-semibold text-sm">{t.label}</div>
+                          <div className={`text-xs mt-0.5 leading-tight ${theme === t.value ? 'text-amber-800' : 'text-emerald-400'}`}>
+                            {t.desc}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* AI Difficulty */}
