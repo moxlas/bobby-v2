@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
+import { GAME_RULES } from './SetupScreen';
 import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
 import { validatePlay, getTakeOptions, getValidMoves } from '../utils/gameLogic';
@@ -10,7 +11,7 @@ import {
   playCardSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
-import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX } from 'lucide-react';
+import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, BookOpen } from 'lucide-react';
 
 interface GameBoardProps {
   gameState: any;
@@ -53,6 +54,7 @@ export function GameBoard({
   const [showTakeOptions, setShowTakeOptions] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showHistory, setShowHistory] = useState(true);
+  const [showPauseRules, setShowPauseRules] = useState(false);
   const [mutedState, setMutedState] = useState(false);
   const historyContainerRef = useRef<HTMLDivElement>(null);
   const prevPlayerIndexRef = useRef<number | null>(null);
@@ -471,6 +473,26 @@ export function GameBoard({
               <Play className="w-4 h-4 sm:w-5 sm:h-5" />
               Resume Game
             </button>
+
+            <button
+              onClick={() => setShowPauseRules(!showPauseRules)}
+              className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <BookOpen className="w-4 h-4" />
+              Game Rules
+              {showPauseRules ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showPauseRules && (
+              <div className="bg-emerald-700/40 rounded-lg p-4 space-y-2.5 border border-emerald-600 text-left max-h-64 overflow-y-auto">
+                {GAME_RULES.map((rule, index) => (
+                  <div key={index} className="text-sm">
+                    <span className="text-amber-400 font-medium">{rule.title}: </span>
+                    <span className="text-emerald-200">{rule.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <button
               onClick={onRestartGame}
