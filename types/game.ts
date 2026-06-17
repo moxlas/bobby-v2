@@ -33,6 +33,7 @@ export interface PlayerMove {
 export type GamePhase = 'setup' | 'playing' | 'paused' | 'finished';
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
+export type ThemeName = 'summer' | 'midnight' | 'autumn';
 
 export interface GameOptions {
   specialNinesRule: boolean;
@@ -41,6 +42,7 @@ export interface GameOptions {
   aiDifficulty: AIDifficulty;
   rankedSeating: boolean;
   randomSeating: boolean;
+  theme: ThemeName;
 }
 
 export interface GameState {
@@ -69,4 +71,5 @@ export const DEFAULT_OPTIONS: GameOptions = {
   aiDifficulty: 'medium',
   rankedSeating: false,
   randomSeating: false,
+  theme: 'summer',
 };
