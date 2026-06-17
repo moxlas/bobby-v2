@@ -802,7 +802,7 @@ export function getAIMove(state: GameState, playerId: number): {
   takeType?: 'take3' | 'takeAll';
 } {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return { type: 'endTurn', cards: [] };
+  if (!player) return { type: 'endTurn', cards: [] }; // fallback, should not occur
   const options = state.options;
   const difficulty = options.aiDifficulty;
 
@@ -811,25 +811,30 @@ export function getAIMove(state: GameState, playerId: number): {
 
   const move = getHardAIMove(state, playerId);
 
-  // Final defensive enforcement: AI must not return endTurn if any action exists.
+  // Enforce no endTurn choice:
   if (move.type === 'endTurn') {
-  const possiblePlays = getPossiblePlays(player.hand, state.pile, state.options);
-  const takeOpts = getTakeOptions(state.pile, state.options);
+    const possiblePlays = getPossiblePlays(player.hand, state.pile, state.options);
+    const takeOpts = getTakeOptions(state.pile, state.options);
 
-  // If pile has only 9♦, taking is impossible — force a play from hand
-  if (state.pile.length === 1 && player.hand.length > 0) {
-    const fallback = enforceNoSkipDecision(possiblePlays, null, state.pile, state.options, player.hand);
-    if (fallback.type === 'take') return returnTakeMove(fallback.takeType || 'take3');
-    return fallback;
+    // If pile has only 9♦, force a play
+    if (state.pile.length === 1 && player.hand.length > 0) {
+      const fallback = enforceNoSkipDecision(possiblePlays, null, state.pile, state.options, player.hand);
+      if (fallback.type === 'take') return returnTakeMove(fallback.takeType || 'take3');
+      return fallback;
+    }
+
+    if (possiblePlays && possiblePlays.length > 0) {
+      return { type: 'play', cards: possiblePlays[0] };
+    } else if (takeOpts.canTakeAll) {
+      return returnTakeMove('takeAll');
+    } else if (takeOpts.canTake3) {
+      return returnTakeMove('take3');
+    }
+    // fallback: if no other move, try to force a take
+    return returnTakeMove('take3');
+  } else {
+    return move;
   }
-
-  if (possiblePlays && possiblePlays.length > 0) return { type: 'play', cards: possiblePlays[0] };
-  if (takeOpts.canTakeAll) return returnTakeMove('takeAll');
-  if (takeOpts.canTake3) return returnTakeMove('take3');
-}
-
-
-  return move;
 }
 
 // -----------------------------
@@ -853,8 +858,22 @@ function getEasyAIMove(hand: Card[], pile: Card[], options: GameOptions) {
     validCards.sort((a, b) => a.value - b.value);
     return { type: 'play', cards: [validCards[0]] };
   }
-  const takeOpts = getTakeOptions(pile, options);
+    const takeOpts = getTakeOptions(pile, options);
+
+  // If pile is only 9♦ and hand exists, force a play (cannot take)
+  if (pile.length === 1 && hand.length > 0) {
+    // prefer 3 nines + ace, then 4-of-kind, then lowest single
+    const nines = hand.filter(c => c.value === 9);
+    const aces = hand.filter(c => c.value === 14);
+    if (nines.length >= 3 && aces.length >= 1) return { type: 'play', cards: [...nines.slice(0, 3), aces[0]] };
+    const fourVal = hasFourOfSameValue(hand);
+    if (fourVal !== null) return { type: 'play', cards: getCardsOfSameValue(hand, fourVal) };
+    const sorted = [...hand].sort((a, b) => a.value - b.value);
+    return { type: 'play', cards: [sorted[0]] };
+  }
+
   return { type: 'take', cards: [], takeType: takeOpts.canTakeAll ? 'takeAll' : 'take3' };
+
 }
 
 // -----------------------------
@@ -899,22 +918,23 @@ export function getContinueTurnMove(
   // after scoring and before returning endTurn in getContinueTurnMove
 if (best && best.length > 0) return { type: 'play', cards: best };
 
-// If validation removed all plays but possiblePlays exist, pick first possible
-if (possiblePlays && possiblePlays.length > 0) return { type: 'play', cards: possiblePlays[0] };
+  // If no validated plays but possiblePlays exist, return the first possible play (safe fallback)
+  if (possiblePlays.length > 0) return { type: 'play', cards: possiblePlays[0] };
 
-// If pile is only 9♦ and hand exists, force a play from hand (cannot take)
-if (pile.length === 1 && hand.length > 0) {
-  // prefer 3 nines + ace, then 4-of-kind, then lowest single
-  const nines = hand.filter(c => c.value === 9);
-  const aces = hand.filter(c => c.value === 14);
-  if (nines.length >= 3 && aces.length >= 1) return { type: 'play', cards: [...nines.slice(0,3), aces[0]] };
-  const fourVal = hasFourOfSameValue(hand);
-  if (fourVal !== null) return { type: 'play', cards: getCardsOfSameValue(hand, fourVal) };
-  const sorted = [...hand].sort((a,b) => a.value - b.value);
-  return { type: 'play', cards: [sorted[0]] };
-}
+  // If pile is only 9♦ and hand exists, force a play from hand (cannot take)
+  if (pile.length === 1 && hand.length > 0) {
+    const nines = hand.filter(c => c.value === 9);
+    const aces = hand.filter(c => c.value === 14);
+    if (nines.length >= 3 && aces.length >= 1) return { type: 'play', cards: [...nines.slice(0, 3), aces[0]] };
+    const fourVal = hasFourOfSameValue(hand);
+    if (fourVal !== null) return { type: 'play', cards: getCardsOfSameValue(hand, fourVal) };
+    const sorted = [...hand].sort((a, b) => a.value - b.value);
+    return { type: 'play', cards: [sorted[0]] };
+  }
 
-return { type: 'endTurn', cards: [] };
+  // Otherwise end turn (only when truly no options)
+  return { type: 'endTurn', cards: [] };
+
 }
 
 
