@@ -973,7 +973,7 @@ if (best && best.length > 0) return { type: 'play', cards: best };
   }
 
   // Otherwise end turn (only when truly no options)
-  return { type: 'endTurn', cards: [] };
+  return { type: 'play', cards: [sorted[0]] }; // should be the lowest card
 
 }
 
