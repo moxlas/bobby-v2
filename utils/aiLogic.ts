@@ -213,14 +213,16 @@ function enforceNoSkipDecision(
     const sorted = [...playerHand].sort((a, b) => a.value - b.value);
     return { type: 'play', cards: [sorted[0]] };
     // If bestMove is 'endTurn', replace with a play move
+    // Inside the block
     if (bestMove && bestMove.type === 'endTurn') {
       if (possiblePlays && possiblePlays.length > 0) {
         return { type: 'play', cards: possiblePlays[0] };
       }
-      // Play lowest card from hand
-      const handCards = playerHand.slice().sort((a, b) => a.value - b.value);
-      if (handCards.length > 0) {
-        return { type: 'play', cards: [handCards[0]] };
+      // This fallback is for scenario where no moves available
+      // Always play the lowest card in hand
+      const sortedHand = [...playerHand].sort((a, b) => a.value - b.value);
+      if (sortedHand.length > 0) {
+        return { type: 'play', cards: [sortedHand[0]] };
       }
     }
   }
