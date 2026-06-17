@@ -220,7 +220,7 @@ function enforceNoSkipDecision(
   if (takeOpts.canTake3) return { type: 'take' as const, cards: [], takeType: 'take3' };
 
   // Only if literally no legal action exists
-  return { type: 'endTurn' as const, cards: [] };
+  return { type: 'play', cards: [sorted[0]] };
 }
 
 // -----------------------------
