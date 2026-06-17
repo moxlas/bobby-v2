@@ -39,6 +39,8 @@ export interface GameOptions {
   allowTakeAllCards: boolean;
   fourOfAKindRule: boolean;
   aiDifficulty: AIDifficulty;
+  rankedSeating: boolean;
+  randomSeating: boolean;
 }
 
 export interface GameState {
@@ -65,4 +67,6 @@ export const DEFAULT_OPTIONS: GameOptions = {
   allowTakeAllCards: true,
   fourOfAKindRule: true,
   aiDifficulty: 'medium',
+  rankedSeating: false,
+  randomSeating: false,
 };
