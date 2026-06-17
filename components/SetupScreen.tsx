@@ -66,6 +66,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   const [showOptions, setShowOptions] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameWarningIndex, setNameWarningIndex] = useState<number | null>(null);
 
   const [specialNinesRule, setSpecialNinesRule] = useState(saved?.options.specialNinesRule ?? DEFAULT_OPTIONS.specialNinesRule);
   const [allowTakeAllCards, setAllowTakeAllCards] = useState(saved?.options.allowTakeAllCards ?? DEFAULT_OPTIONS.allowTakeAllCards);
@@ -86,8 +87,12 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   };
 
   const handlePlayerNameChange = (index: number, name: string) => {
+    if (name.length > 16) {
+      setNameWarningIndex(index);
+      setTimeout(() => setNameWarningIndex(null), 2000);
+    }
     const newPlayers = [...players];
-    newPlayers[index] = { ...newPlayers[index], name };
+    newPlayers[index] = { ...newPlayers[index], name: name.slice(0, 16) };
     setPlayers(newPlayers);
     setError(null);
   };
@@ -171,13 +176,21 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
               <label className="text-sm font-medium text-emerald-300">Players</label>
               {players.map((player, index) => (
                 <div key={index} className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={player.name}
-                    onChange={(e) => handlePlayerNameChange(index, e.target.value)}
-                    placeholder={`Player ${index + 1}`}
-                    className="flex-1 px-4 py-2 rounded-lg bg-emerald-700 border border-emerald-500 text-white placeholder-emerald-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
-                  />
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={player.name}
+                      onChange={(e) => handlePlayerNameChange(index, e.target.value)}
+                      placeholder={`Player ${index + 1}`}
+                      className="w-full px-4 py-2 rounded-lg bg-emerald-700 border border-emerald-500 text-white placeholder-emerald-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                    />
+                    {nameWarningIndex === index && (
+                      <div className="absolute -top-8 left-0 bg-red-600 text-white text-xs px-2 py-1 rounded shadow whitespace-nowrap">
+                        Max 16 characters
+                        <div className="absolute left-3 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-red-600" />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex rounded-lg overflow-hidden border border-emerald-500">
                     <button
                       onClick={() => handlePlayerTypeChange(index, false)}
