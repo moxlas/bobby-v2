@@ -799,7 +799,7 @@ function getMediumAIMove(state: GameState, playerId: number) {
 
   if (!bestMove) {
     if (takeOpts.canTake3) bestMove = { type: 'take', cards: [], takeType: 'take3' };
-    else bestMove = { type: 'endTurn', cards: [] };
+    bestMove = { type: 'play', cards: [playerHand![0]] }; // makind default move the lowest card
   }
 
   const safeDecision = enforceNoSkipDecision(possiblePlays, bestMove, pile, options, hand);
