@@ -59,6 +59,7 @@ export function initializeGame(playerSetups: PlayerSetup[], options: GameOptions
     turnNumber: 1,
     options,
     canContinueTurn: false,
+    aiOnlyStartTurn: null,
   };
 }
 
