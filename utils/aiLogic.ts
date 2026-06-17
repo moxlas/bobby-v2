@@ -212,15 +212,47 @@ function enforceNoSkipDecision(
     // 3) play lowest single (always legal because top is 9)
     const sorted = [...playerHand].sort((a, b) => a.value - b.value);
     return { type: 'play', cards: [sorted[0]] };
+    // If bestMove is 'endTurn', replace with a play move
+    if (bestMove && bestMove.type === 'endTurn') {
+      if (possiblePlays && possiblePlays.length > 0) {
+        return { type: 'play', cards: possiblePlays[0] };
+      }
+      // Play lowest card from hand
+      const handCards = playerHand.slice().sort((a, b) => a.value - b.value);
+      if (handCards.length > 0) {
+        return { type: 'play', cards: [handCards[0]] };
+      }
+    }
   }
-
+  
+  // Prevent ending turn if only 9♦ on pile and no prior combo
+  if (
+    pile.length === 1 &&
+    pile[0].value === 9 &&
+    pile[0].suit === 'diamonds' &&
+    bestMove?.type === 'endTurn'
+  ) {
+    // Force a play instead
+    if (possiblePlays && possiblePlays.length > 0) {
+      return { type: 'play', cards: possiblePlays[0] };
+    }
+    // fallback: play lowest card
+    if (playerHand && playerHand.length > 0) {
+      const sortedHand = [...playerHand].sort((a, b) => a.value - b.value);
+      return { type: 'play', cards: [sortedHand[0]] };
+    }
+  }
+  
   // Otherwise choose a take if allowed
   const takeOpts = getTakeOptions(pile, options);
   if (takeOpts.canTakeAll) return { type: 'take' as const, cards: [], takeType: 'takeAll' };
   if (takeOpts.canTake3) return { type: 'take' as const, cards: [], takeType: 'take3' };
 
-  // Only if literally no legal action exists
-  return { type: 'play', cards: [sorted[0]] };
+  // fallback: if no other move, try to force a take
+  if (playerHand && playerHand.length > 0) {
+    return { type: 'play', cards: [playerHand[0]] };
+  }
+  return { type: 'play', cards: [] }; // default fallback
 }
 
 // -----------------------------
