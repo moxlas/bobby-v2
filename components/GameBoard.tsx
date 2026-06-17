@@ -20,6 +20,8 @@ interface GameBoardProps {
   onEndTurn: () => void;
   onPauseGame: () => void;
   onResumeGame: () => void;
+  onForfeitPlayer: (playerId: number) => void;
+  onFinishGame: () => void;
   onRestartGame: () => void;
   onNewGame: () => void;
 }
@@ -43,11 +45,14 @@ export function GameBoard({
   onEndTurn,
   onPauseGame,
   onResumeGame,
+  onForfeitPlayer,
+  onFinishGame,
   onRestartGame,
   onNewGame
 }: GameBoardProps) {
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAIThinking, setIsAIThinking] = useState(false);
@@ -452,6 +457,9 @@ export function GameBoard({
   }
 
   if (gameState.phase === 'paused') {
+    const activeHumans = gameState.players.filter((p: any) => !p.isAI && !p.hasFinished);
+    const hasActiveHumans = activeHumans.length > 0;
+
     return (
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
         <div className="bg-emerald-800 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border border-emerald-600">
@@ -492,6 +500,41 @@ export function GameBoard({
                   </div>
                 ))}
               </div>
+            )}
+
+            {hasActiveHumans ? (
+              <button
+                onClick={() => setShowForfeitConfirm(true)}
+                className="w-full bg-red-600 border border-red-400 text-white hover:bg-red-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <Skull className="w-4 h-4" />
+                Forfeit
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowForfeitConfirm(true)}
+                className="w-full bg-red-600 border border-red-400 text-white hover:bg-red-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <Skull className="w-4 h-4" />
+                Finish The Game
+              </button>
+            )}
+
+            {showForfeitConfirm && (
+              <ConfirmPopup
+                message={hasActiveHumans
+                  ? "Are you sure you want to forfeit? You will be marked as finished."
+                  : "Are you sure you want to finish the game? All remaining AI players will forfeit."}
+                onConfirm={() => {
+                  setShowForfeitConfirm(false);
+                  if (hasActiveHumans) {
+                    onForfeitPlayer(activeHumans[0].id);
+                  } else {
+                    onFinishGame();
+                  }
+                }}
+                onCancel={() => setShowForfeitConfirm(false)}
+              />
             )}
 
             <button
