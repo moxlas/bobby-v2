@@ -836,7 +836,8 @@ export function getAIMove(state: GameState, playerId: number): {
   takeType?: 'take3' | 'takeAll';
 } {
   const player = state.players.find(p => p.id === playerId);
-  if (!player) return { type: 'endTurn', cards: [] }; // fallback, should not occur
+  if (!player) return { type: 'endTurn', cards: [] }; // fallback
+
   const options = state.options;
   const difficulty = options.aiDifficulty;
 
@@ -845,34 +846,32 @@ export function getAIMove(state: GameState, playerId: number): {
 
   const move = getHardAIMove(state, playerId);
 
-  // Enforce no endTurn choice:
-  if (move.type === 'endTurn') {
-    // Check if pile only contains 9♦
-    if (state.pile.length === 1 && state.pile[0].value === 9 && state.pile[0].suit === 'diamonds') {
-      // Force a play instead
-      const possiblePlays = getPossiblePlays(player.hand, state.pile, options);
-      const fallback = enforceNoSkipDecision(
-        possiblePlays,
-        null,
-        state.pile,
-        options,
-        player.hand
-      );
-      if (fallback.type === 'take') return returnTakeMove(fallback.takeType || 'take3');
-      return fallback;
-    }
+  // Check for the specific scenario with only 9♦ on pile
+  if (
+    move.type === 'endTurn' &&
+    state.pile.length === 1 &&
+    state.pile[0].value === 9 &&
+    state.pile[0].suit === 'diamonds' &&
+    player.hand.length > 0
+  ) {
+    // Always play lowest card instead of ending turn
+    const sortedHand = [...player.hand].sort((a, b) => a.value - b.value);
+    return { type: 'play', cards: [sortedHand[0]] };
+  }
 
-    // Otherwise, standard logic
+  // Otherwise, follow the normal move
+  if (move.type === 'endTurn') {
+    // Already handled above, but just a fallback
     const possiblePlays = getPossiblePlays(player.hand, state.pile, options);
-    if (possiblePlays && possiblePlays.length > 0) {
-      return { type: 'play', cards: possiblePlays[0] };
-    } else {
-      const takeOpts = getTakeOptions(state.pile, options);
-      if (takeOpts.canTakeAll) return returnTakeMove('takeAll');
-      if (takeOpts.canTake3) return returnTakeMove('take3');
-      // fallback
-      return returnTakeMove('take3');
-    }
+    const fallback = enforceNoSkipDecision(
+      possiblePlays,
+      null,
+      state.pile,
+      options,
+      player.hand
+    );
+    if (fallback.type === 'take') return returnTakeMove(fallback.takeType || 'take3');
+    return fallback;
   } else {
     return move;
   }
