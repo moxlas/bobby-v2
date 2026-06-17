@@ -72,6 +72,8 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   const [allowTakeAllCards, setAllowTakeAllCards] = useState(saved?.options.allowTakeAllCards ?? DEFAULT_OPTIONS.allowTakeAllCards);
   const [fourOfAKindRule, setFourOfAKindRule] = useState(saved?.options.fourOfAKindRule ?? DEFAULT_OPTIONS.fourOfAKindRule);
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(saved?.options.aiDifficulty ?? DEFAULT_OPTIONS.aiDifficulty);
+  const [rankedSeating, setRankedSeating] = useState(saved?.options.rankedSeating ?? DEFAULT_OPTIONS.rankedSeating);
+  const [randomSeating, setRandomSeating] = useState(saved?.options.randomSeating ?? DEFAULT_OPTIONS.randomSeating);
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count);
@@ -121,6 +123,8 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
       allowTakeAllCards,
       fourOfAKindRule,
       aiDifficulty,
+      rankedSeating,
+      randomSeating,
     };
 
     saveSettings(players, options);
@@ -276,6 +280,32 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                       </p>
                     </div>
                     <Toggle enabled={fourOfAKindRule} onToggle={() => setFourOfAKindRule(v => !v)} />
+                  </div>
+
+                  {/* Ranked Seating */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-white font-medium text-sm">Ranked Seating</span>
+                      </div>
+                      <p className="text-emerald-400 text-xs">
+                        When enabled, pressing Play Again arranges players by finish order — first place in seat 1, going clockwise by finish position.
+                      </p>
+                    </div>
+                    <Toggle enabled={rankedSeating} onToggle={() => setRankedSeating(v => !v)} />
+                  </div>
+
+                  {/* Random Seating */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-white font-medium text-sm">Random Seating</span>
+                      </div>
+                      <p className="text-emerald-400 text-xs">
+                        When enabled, player positions are randomised for the first game. Subsequent Play Again rounds keep the same order.
+                      </p>
+                    </div>
+                    <Toggle enabled={randomSeating} onToggle={() => setRandomSeating(v => !v)} />
                   </div>
 
                   {/* AI Difficulty */}
