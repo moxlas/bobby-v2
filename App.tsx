@@ -438,6 +438,111 @@ function App() {
     });
   }, []);
 
+  const handleForfeitPlayer = useCallback((playerId: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const playerIndex = prev.players.findIndex(p => p.id === playerId);
+      if (playerIndex === -1) return prev;
+      if (prev.players[playerIndex].hasFinished) return prev;
+
+      const newPlayers = prev.players.map(p => ({ ...p }));
+      const finishOrder = [...prev.finishOrder];
+      const pos = finishOrder.length + 1;
+      const elapsedTime = prev.gameStartTime
+        ? (Date.now() - prev.gameStartTime) / 1000 - prev.totalPausedTime
+        : 0;
+      newPlayers[playerIndex] = {
+        ...newPlayers[playerIndex],
+        hasFinished: true,
+        finishPosition: pos,
+        finishTime: elapsedTime,
+      };
+      finishOrder.push({ ...newPlayers[playerIndex] });
+
+      const activePlayers = newPlayers.filter(p => !p.hasFinished);
+      if (activePlayers.length === 0) {
+        return {
+          ...prev,
+          players: newPlayers,
+          phase: 'finished',
+          finishOrder,
+          loser: newPlayers[playerIndex],
+          canContinueTurn: false,
+        };
+      }
+      if (activePlayers.length === 1) {
+        const loserIdx = newPlayers.findIndex(p => p.id === activePlayers[0].id);
+        const loserPos = finishOrder.length + 1;
+        finishOrder.push({ ...activePlayers[0], finishPosition: loserPos, finishTime: elapsedTime });
+        newPlayers[loserIdx] = {
+          ...newPlayers[loserIdx],
+          hasFinished: true,
+          finishPosition: loserPos,
+          finishTime: elapsedTime,
+        };
+        return {
+          ...prev,
+          players: newPlayers,
+          phase: 'finished',
+          finishOrder,
+          loser: newPlayers[loserIdx],
+          canContinueTurn: false,
+        };
+      }
+      // If the forfeited player was the current player, advance turn
+      if (prev.currentPlayerIndex === playerIndex) {
+        let next = playerIndex;
+        do {
+          next = (next + 1) % newPlayers.length;
+        } while (newPlayers[next].hasFinished);
+        newPlayers.forEach((p, i) => { p.isCurrentTurn = i === next; });
+        return {
+          ...prev,
+          players: newPlayers,
+          currentPlayerIndex: next,
+          finishOrder,
+          canContinueTurn: false,
+        };
+      }
+      return {
+        ...prev,
+        players: newPlayers,
+        finishOrder,
+      };
+    });
+  }, []);
+
+  const handleFinishGame = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const newPlayers = prev.players.map(p => ({ ...p }));
+      const finishOrder = [...prev.finishOrder];
+      const elapsedTime = prev.gameStartTime
+        ? (Date.now() - prev.gameStartTime) / 1000 - prev.totalPausedTime
+        : 0;
+      const activePlayers = newPlayers.filter(p => !p.hasFinished);
+      activePlayers.forEach(p => {
+        const idx = newPlayers.findIndex(np => np.id === p.id);
+        const pos = finishOrder.length + 1;
+        finishOrder.push({ ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime });
+        newPlayers[idx] = {
+          ...newPlayers[idx],
+          hasFinished: true,
+          finishPosition: pos,
+          finishTime: elapsedTime,
+        };
+      });
+      return {
+        ...prev,
+        players: newPlayers,
+        phase: 'finished',
+        finishOrder,
+        loser: finishOrder[finishOrder.length - 1],
+        canContinueTurn: false,
+      };
+    });
+  }, []);
+
   const handleRestartGame = useCallback(() => {
     if (initialPlayers.length === 0 || !gameOptionsRef.current) return;
     leaderboardSavedRef.current = false;
@@ -475,6 +580,8 @@ function App() {
       onEndTurn={handleEndTurn}
       onPauseGame={handlePauseGame}
       onResumeGame={handleResumeGame}
+      onForfeitPlayer={handleForfeitPlayer}
+      onFinishGame={handleFinishGame}
       onRestartGame={handleRestartGame}
       onNewGame={handleNewGame}
     />
