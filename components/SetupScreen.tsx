@@ -12,13 +12,16 @@ interface SetupScreenProps {
   onStartGame: (players: PlayerSetup[], options: GameOptions) => void;
 }
 
-const GAME_RULES = [
-  { title: "Overview", text: "Get rid of all your cards to win. The last player with cards loses!" },
-  { title: "Starting", text: "9 of diamonds starts the game. The player holding it plays it automatically." },
-  { title: "Playing Cards", text: "Cards must be equal or higher value than the top card of the pile." },
-  { title: "Taking Cards", text: "If you can't (or don't want to) play, take 3 cards from the pile." },
-  { title: "Four of a Kind", text: "Play all 4 cards of the same value as one move, then play another card!" },
-  { title: "Special 9's", text: "When only 9♦ is on the table, you can play 3 or all 4 nines together for a bonus turn." },
+export const GAME_RULES = [
+  { title: "Overview", text: "A shedding-type card game for 2-8 players. The goal is to be the first to discard all cards from your hand. The last player with cards loses!" },
+  { title: "Deck & Deal", text: "Uses 24 cards (9 through Ace). All cards are shuffled, cut, and dealt face-down one at a time. Every card is dealt — no draw pile remains." },
+  { title: "Starting the Game", text: "The 9 of Diamonds always starts. Whoever holds it places it face-up in the center. The 9 of Diamonds never leaves the pile — it stays at the bottom as the foundation for the entire game." },
+  { title: "Playing Cards", text: "On your turn, play a card equal to or higher in value than the top card on the pile (e.g., if the top card is Queen, you may play Queen, King, or Ace). If you have 4 cards of the same value, you may play them all as a single move (if the 4 of a Kind rule is enabled)." },
+  { title: "4 of a Kind Continuation", text: "After playing 4 cards of the same value, you may optionally play another valid card or another 4 of a kind on top before ending your turn. This can chain multiple times." },
+  { title: "Taking Cards", text: "If you cannot play a valid card, you must take 3 cards from the top of the pile (or take ALL cards if the Take All rule is enabled and you choose that option). The 9 of Diamonds is never taken. If fewer than 3 cards are above it, you take whatever is there (1 or 2). Your turn then ends." },
+  { title: "Special 9's Rule", text: "If the 9 of Diamonds is the only card on the table at the start of your turn and you hold other 9s in hand, you may play up to 3 additional 9s on top. After that, you may optionally play another valid card or 4 of a kind on top, then end your turn." },
+  { title: "Winning", text: "The first player to discard all cards from their hand wins. The game will continue to determine 2nd, 3rd, and last place." },
+  { title: "Strategy Tips", text: "Conserve high cards (Aces, Kings) for when you need them. Force opponents to pick up by playing cards that limit their options. Sometimes taking all cards gives you more options than taking 3." },
 ];
 
 const AI_DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; description: string }[] = [
@@ -223,7 +226,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                         <span className="text-white font-medium text-sm">Special 9's Rule</span>
                       </div>
                       <p className="text-emerald-400 text-xs">
-                        When enabled, players can play 4 nines at the beginning of the game if they choose to do so.
+                        When enabled, if only the 9 of Diamonds is on the table and you have other 9s in hand, you may play three 9s on top, then optionally play another valid card or 4 of a kind before ending your turn.
                       </p>
                     </div>
                     <Toggle enabled={specialNinesRule} onToggle={() => setSpecialNinesRule(v => !v)} />
@@ -237,7 +240,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                         <span className="text-white font-medium text-sm">Take All Cards</span>
                       </div>
                       <p className="text-emerald-400 text-xs">
-                        When enabled, players can take all available cards from the pile instead of just 3.
+                        When enabled, if you must take cards from the pile you may choose to take ALL cards (instead of just 3). The 9 of Diamonds is never taken. If fewer than 3 cards are available, you take whatever is above the 9 of Diamonds.
                       </p>
                     </div>
                     <Toggle enabled={allowTakeAllCards} onToggle={() => setAllowTakeAllCards(v => !v)} />
@@ -251,7 +254,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                         <span className="text-white font-medium text-sm">4 of a Kind Rule</span>
                       </div>
                       <p className="text-emerald-400 text-xs">
-                        When enabled, playing all 4 cards of the same value lets you play another card immediately.
+                        When enabled, you may play all 4 cards of the same value as a single move. After playing 4 of a kind, you may play another valid card (or another 4 of a kind) on top before ending your turn.
                       </p>
                     </div>
                     <Toggle enabled={fourOfAKindRule} onToggle={() => setFourOfAKindRule(v => !v)} />
