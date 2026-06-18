@@ -563,7 +563,7 @@ export function GameBoard({
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
   const playerCount = gameState.players.length;
-  const estimatedPlayerListHeight = playerCount * 42 + Math.max(0, playerCount - 1) * 4;
+  const estimatedPlayerListHeight = Math.max(playerCount * 42 + Math.max(0, playerCount - 1) * 4, 180);
 
   return (
     <div className="min-h-screen bg-emerald-900 flex flex-col">
@@ -661,7 +661,7 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 grid grid-rows-[auto_auto_1fr] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
+        <div className="flex-1 grid grid-rows-[auto_auto_min-content] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
           <div className="text-center">
             <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
               <span className="text-emerald-300 text-xs sm:text-sm">Current Turn:</span>
@@ -902,7 +902,7 @@ export function GameBoard({
           </div>
         )}
 
-        <div className="mt-auto">
+        <div>
           {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
             <div className="p-4 sm:p-3 border-b border-emerald-600">
               <div className="flex gap-4 sm:gap-3 justify-center mb-4 sm:mb-3">
