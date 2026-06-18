@@ -386,8 +386,7 @@ export function GameBoard({
       ).join(', ');
       return t('game.confirm.playCards', { cards: cardNames });
     } else if (pendingAction === 'take3') {
-      const s = takeOptions.take3Count !== 1 ? 's' : '';
-      return t('game.confirm.takeCards', { count: takeOptions.take3Count, s });
+      return t(takeOptions.take3Count === 1 ? 'game.confirm.takeCards_one' : 'game.confirm.takeCards_other', { count: takeOptions.take3Count });
     } else if (pendingAction === 'takeAll') {
       return t('game.confirm.takeAll', { count: takeOptions.takeAllCount });
     } else if (pendingAction === 'endTurn') {
