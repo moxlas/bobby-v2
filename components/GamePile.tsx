@@ -4,13 +4,15 @@ import { useTranslation } from '../lib/i18n';
 
 interface GamePileProps {
   pile: CardType[];
+  onTakeClick?: () => void;
 }
 
-export function GamePile({ pile }: GamePileProps) {
+export function GamePile({ pile, onTakeClick }: GamePileProps) {
   const { t } = useTranslation();
   const visibleCount = Math.min(3, pile.length);
   const visibleCards = pile.slice(-visibleCount);
   const topCard = pile[pile.length - 1];
+  const clickable = pile.length > 1 && onTakeClick;
 
   if (pile.length === 0) {
     return (
@@ -23,8 +25,11 @@ export function GamePile({ pile }: GamePileProps) {
   }
 
   return (
-    <div className="relative flex flex-col items-center">
-      <div className="mt-0 mb-3 bg-emerald-700 px-3 py-1.5 rounded-full text-emerald-200 text-base whitespace-nowrap">
+    <div
+      className={`relative flex flex-col items-center ${clickable ? 'cursor-pointer' : ''}`}
+      onClick={clickable ? onTakeClick : undefined}
+    >
+      <div className={`mt-0 mb-3 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
@@ -37,7 +42,7 @@ export function GamePile({ pile }: GamePileProps) {
           return (
             <div
               key={card.id}
-              className="absolute transition-all duration-200"
+              className={`absolute transition-all duration-200 ${clickable ? 'hover:-translate-y-2' : ''}`}
               style={{ left: `${offsetX}px`, top: `${offsetY}px`, zIndex: index + 1 }}
             >
               <Card card={{ ...card, faceUp: true }} size="lg" />
