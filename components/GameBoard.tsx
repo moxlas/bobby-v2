@@ -673,7 +673,7 @@ export function GameBoard({
           </div>
 
           <div className="row-start-2 flex items-center justify-center">
-            <GamePile pile={pile} />
+            <GamePile pile={pile} onTakeClick={isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && canTakeCards ? handleTakeClick : undefined} />
           </div>
 
           <div className="row-start-3 self-start flex w-full max-w-sm flex-col items-center gap-4 sm:gap-4">
