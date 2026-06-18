@@ -186,7 +186,7 @@
     "clearRecords": "Išvalyti visus įrašus"
   },
   "dealing": {
-    "title": "Dalijamos kortos...",
+    "title": "Dalinamos kortos...",
     "subtitle": "{players} žaidėjai · {cards} kortos kiekvienam",
     "ai": "DI",
     "you": "Tu",
