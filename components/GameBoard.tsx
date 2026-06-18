@@ -58,6 +58,8 @@ export function GameBoard({
   const [error, setError] = useState<string | null>(null);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showTakeOptions, setShowTakeOptions] = useState(false);
+  const [showNewGameConfirm, setShowNewGameConfirm] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showHistory, setShowHistory] = useState(true);
   const [showPauseRules, setShowPauseRules] = useState(false);
@@ -539,22 +541,26 @@ export function GameBoard({
             )}
 
             <button
-              onClick={onRestartGame}
+              onClick={() => setShowRestartConfirm(true)}
               className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               {t('game.paused.restartGame')}
             </button>
-
-            <button
-              onClick={onNewGame}
-              className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              {t('game.paused.newGame')}
-            </button>
           </div>
         </div>
+
+        {showRestartConfirm && (
+          <ConfirmPopup
+            titleKey="confirmPopup.areYouSure"
+            message={t('game.restartGame.confirm')}
+            onConfirm={() => {
+              setShowRestartConfirm(false);
+              onRestartGame();
+            }}
+            onCancel={() => setShowRestartConfirm(false)}
+          />
+        )}
       </div>
     );
   }
@@ -605,7 +611,7 @@ export function GameBoard({
             </button>
 
             <button
-              onClick={onNewGame}
+              onClick={() => setShowNewGameConfirm(true)}
               className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 flex items-center gap-1 px-3 py-2.5 sm:py-2 rounded-lg text-sm transition-colors"
             >
               <Home className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -688,25 +694,25 @@ export function GameBoard({
 
           {/* Continue turn banner - 4 Nines Start */}
           {gameState.canContinueTurn && isHumanTurn && isFourNinesStart && (
-            <div className="bg-purple-600 rounded-lg p-4 sm:p-4 border-2 border-purple-400 shadow-lg w-full">
+            <div className="bg-purple-600 rounded-lg p-3 sm:p-4 border-2 border-purple-400 shadow-lg w-full">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🃏</span>
                 <span className="text-white font-bold text-base sm:text-lg">{t('game.ninesStart.title')}</span>
               </div>
-              <p className="text-purple-100 text-xs sm:text-sm mb-4 sm:mb-3">
+              <p className="text-purple-100 text-xs sm:text-sm mb-3 sm:mb-3">
                 {t('game.ninesStart.text')}
               </p>
-              <div className="flex gap-4 sm:gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
                 <button
                   onClick={handlePlayClick}
                   disabled={selectedCards.length === 0}
-                  className="bg-white hover:bg-gray-100 text-purple-700 font-bold text-xs sm:text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors disabled:opacity-50"
+                  className="bg-white hover:bg-gray-100 text-purple-700 font-bold text-xs sm:text-sm px-3 py-2.5 sm:py-2 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {t('game.ninesStart.playSelected', { count: selectedCards.length })}
                 </button>
                 <button
                   onClick={handleEndTurnClick}
-                  className="bg-purple-700 border border-purple-500 text-white hover:bg-purple-600 text-xs sm:text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors"
+                  className="bg-purple-700 border border-purple-500 text-white hover:bg-purple-600 text-xs sm:text-sm px-3 py-2.5 sm:py-2 rounded-lg transition-colors"
                 >
                   {t('game.ninesStart.saveForLater')}
                 </button>
@@ -716,25 +722,25 @@ export function GameBoard({
 
           {/* Continue turn banner - Regular 4 of a kind */}
           {gameState.canContinueTurn && isHumanTurn && !isFourNinesStart && (
-            <div className="bg-amber-600 rounded-lg p-4 sm:p-4 border-2 border-amber-400 shadow-lg w-full">
+            <div className="bg-amber-600 rounded-lg p-3 sm:p-4 border-2 border-amber-400 shadow-lg w-full">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-900" />
                 <span className="text-emerald-900 font-bold text-base sm:text-lg">{t('game.combo.title')}</span>
               </div>
-              <p className="text-emerald-900 text-xs sm:text-sm mb-4 sm:mb-3">
+              <p className="text-emerald-900 text-xs sm:text-sm mb-3 sm:mb-3">
                 {t('game.combo.text')}
               </p>
-              <div className="flex gap-4 sm:gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
                 <button
                   onClick={handlePlayClick}
                   disabled={selectedCards.length === 0}
-                  className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors disabled:opacity-50"
+                  className="bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-3 py-2.5 sm:py-2 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {t('game.combo.playSelected', { count: selectedCards.length })}
                 </button>
                 <button
                   onClick={handleEndTurnClick}
-                  className="bg-emerald-800 border border-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors"
+                  className="bg-emerald-800 border border-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm px-3 py-2.5 sm:py-2 rounded-lg transition-colors"
                 >
                   {t('game.combo.endTurn')}
                 </button>
@@ -966,6 +972,18 @@ export function GameBoard({
           message={getConfirmMessage()}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
+        />
+      )}
+
+      {showNewGameConfirm && (
+        <ConfirmPopup
+          titleKey="confirmPopup.areYouSure"
+          message={t('game.newGame.confirm')}
+          onConfirm={() => {
+            setShowNewGameConfirm(false);
+            onNewGame();
+          }}
+          onCancel={() => setShowNewGameConfirm(false)}
         />
       )}
     </div>
