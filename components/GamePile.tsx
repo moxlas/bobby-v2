@@ -25,7 +25,7 @@ export function GamePile({ pile }: GamePileProps) {
   return (
     <div className="relative flex flex-col items-center">
       <div className="mt-0 mb-3 bg-emerald-700 px-3 py-1.5 rounded-full text-emerald-200 text-base whitespace-nowrap">
-        {t('pile.count', { count: pile.length, s: pile.length !== 1 ? 's' : '' })}
+        {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
       <div className="relative h-36 sm:h-40 flex items-center justify-center -translate-x-12 translate-y-1">
