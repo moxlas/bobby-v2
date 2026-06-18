@@ -1,0 +1,195 @@
+{
+  "setup": {
+    "title": "🃏 Bòbis",
+    "subtitle": "Kelių žaidėjų kortų žaidimas",
+    "leaderboard": "Lentelė",
+    "numberOfPlayers": "Žaidėjų skaičius",
+    "players": "Žaidėjai",
+    "playerPlaceholder": "Žaidėjas {index}",
+    "maxCharacters": "Maksimaliai 16 simbolių",
+    "human": "Žmogus",
+    "ai": "DI",
+    "gameOptions": "Žaidimo nustatymai",
+    "gameRules": "Žaidimo taisyklės",
+    "startGame": "Pradėti žaidimą",
+    "errorNoHuman": "Reikalingas bent vienas žmogus žaidėjas!",
+    "errorEmptyName": "Visi žaidėjai turi turėti vardą!",
+    "option": {
+      "specialNines": {
+        "title": "Speciali 9-ukų taisyklė",
+        "desc": "Kai įjungta, jei ant stalo likęs tik 9 Būgnų ir turite kitų 9-ukų rankoje, galite žaisti iki 3 papildomų 9-ukų, tada pasirinktinai žaisti kitą galimą kortą arba 4 vienodas kortas prieš baigiant ėjimą."
+      },
+      "takeAll": {
+        "title": "Paimti visas kortas",
+        "desc": "Kai įjungta, jei turite paimti kortų iš krūvos, galite pasirinkti paimti VISAS kortas (vietoj 3). 9 Būgnų niekada nėra paimamas. Jei yra mažiau nei 3 kortos, paimate tai, kas yra virš 9 Būgnų."
+      },
+      "fourOfAKind": {
+        "title": "4 vienodų taisyklė",
+        "desc": "Kai įjungta, galite žaisti visas 4 vienodos vertės kortas kaip vieną ėjimą. Po 4 vienodų galite žaisti kitą galimą kortą (arba dar 4 vienodas) prieš baigiant ėjimą."
+      },
+      "rankedSeating": {
+        "title": "Rikiuota tvarka",
+        "desc": "Kai įjungta, paspaudus Žaisti dar kartą, žaidėjai išrikiuojami pagal finišo tvarką — pirmoji vieta pirmoje pozicijoje, pagal laikrodžio rodyklę."
+      },
+      "randomSeating": {
+        "title": "Atsitiktinė tvarka",
+        "desc": "Kai įjungta, žaidėjų pozicijos yra atsitiktinai sugeneruojamos pirmam žaidimui. Vėlesni Žaisti dar kartą ratai išlaiko tą pačią tvarką."
+      }
+    },
+    "theme": {
+      "title": "Tema",
+      "summer": { "label": "Vasara", "desc": "Smaragdas & gintaras" },
+      "midnight": { "label": "Vidurnaktis", "desc": "Molis & cianas" },
+      "autumn": { "label": "Ruduo", "desc": "Akmuo & oranžinis" }
+    },
+    "aiDifficulty": {
+      "title": "DI sudėtingumas",
+      "easy": { "label": "Lengvas", "desc": "Žaidžia paprastus ėjimus, baigia ėjimą po kiekvieno žaidimo" },
+      "medium": { "label": "Vidutinis", "desc": "Naudoja kombinacijas ir kelių 9-ukų ėjimus strategiškai" },
+      "hard": { "label": "Sunkus", "desc": "Apskaičiuoja optimalius ėjimus, siekia kombinacijų, blokuoja priešininkus" }
+    },
+    "rules": [
+      { "title": "Apžvalga", "text": "Kortų žaidimas 2-8 žaidėjams. Tikslas yra pirmam išmesti visas kortas iš rankos. Paskutinis žaidėjas su kortomis pralaimi!" },
+      { "title": "Kalonė ir dalinimas", "text": "Naudojamos 24 kortos (nuo 9 iki Tūzo). Visos kortos yra sumaišomos, perkerpamos ir dalinamos užverstos po vieną. Kiekviena korta išdalinama — traukimo kalonės nelieka." },
+      { "title": "Žaidimo pradžia", "text": "9 Būgnų visada pradeda. Kas jį turi, padeda jį atverstą centre. 9 Būgnų niekada nepalieka krūvos — jis lieka apačioje kaip pamatas visam žaidimui." },
+      { "title": "Kortų žaidimas", "text": "Savo ėjimo metu žaiskite kortą, lygią arba aukštesnę už viršutinę krūvos kortą (pvz., jei viršuje yra Valdovė, galite žaisti Valdovę, Karalių arba Tūzą). Jei turite 4 vienodos vertės kortas, galite jas visas žaisti vienu ėjimu (jei 4 vienodų taisyklė įjungta)." },
+      { "title": "4 vienodų tęsinys", "text": "Po 4 vienodos vertės kortų sužaidimo galite pasirinktinai žaisti kitą galimą kortą arba dar 4 vienodas prieš baigiant ėjimą. Tai gali būti grandinėle kartojama kelis kartus." },
+      { "title": "Kortų paėmimas", "text": "Jei negalite žaisti galimos kortos, turite paimti 3 kortas iš krūvos viršaus (arba paimti VISAS kortas, jei Paimti visas taisyklė įjungta). 9 Būgnų niekada nėra paimamas. Jei virš jo yra mažiau nei 3 kortos, paimate tai, kas ten yra (1 arba 2). Jūsų ėjimas tada baigiasi." },
+      { "title": "Speciali 9-ukų taisyklė", "text": "Jei 9 Būgnų yra vienintelė korta ant stalo jūsų ėjimo pradžioje ir turite kitų 9-ukų rankoje, galite žaisti iki 3 papildomų 9-ukų. Po to galite pasirinktinai žaisti kitą galimą kortą arba 4 vienodas, tada baigti ėjimą." },
+      { "title": "Laimėjimas", "text": "Pirmas žaidėjas, išmetęs visas kortas iš rankos, laimi. Žaidimas gali tęstis nustatant 2-ą, 3-ią ir paskutinę vietą." },
+      { "title": "Strategijos patarimai", "text": "Taupykite aukštas kortas (Tūzus, Karalius) kai jų prireiks. Verskite priešininkus imti kortas, žaisdami kortas, kurios riboja jų pasirinkimus. Taupykite 4 vienodų rinkinius, kai krūva yra didelė. Kartais paimti visas kortas suteikia daugiau galimybių nei paimti 3." }
+    ],
+    "language": {
+      "title": "Kalba"
+    }
+  },
+  "game": {
+    "topBar": {
+      "title": "🃏 Bòbis",
+      "turn": "Ėjimas {turn}",
+      "pause": "Pristabdyti",
+      "unmute": "Įjungti garsą",
+      "mute": "Išjungti garsą",
+      "newGame": "Naujas žaidimas"
+    },
+    "sidebar": {
+      "players": "Žaidėjai",
+      "ai": "DI",
+      "cards": "kortos"
+    },
+    "center": {
+      "currentTurn": "Dabartinis ėjimas:",
+      "thinking": "Galvoja..."
+    },
+    "ninesStart": {
+      "title": "Laimingas startas!",
+      "text": "Turite visus 4 9-ukus! Žaiskite juos dabar arba pasilikite vėliau.",
+      "playSelected": "Žaisti pasirinktas ({count})",
+      "saveForLater": "Pasilikti vėliau"
+    },
+    "combo": {
+      "title": "Kombinacija!",
+      "text": "Sužaidėte 4 vienodas! Žaiskite kitą kortą arba baikite ėjimą.",
+      "playSelected": "Žaisti pasirinktas ({count})",
+      "endTurn": "Baigti ėjimą"
+    },
+    "takeOptions": {
+      "title": "Kiek kortų paimti?",
+      "take3": "Paimti 3 kortas",
+      "takeAll": "Paimti visas ({count})",
+      "cancel": "Atšaukti"
+    },
+    "actions": {
+      "play": "Žaisti ({count})",
+      "takeCards": "Paimti kortas"
+    },
+    "history": {
+      "title": "Istorija",
+      "noMoves": "Dar nėra ėjimų",
+      "took": "Paėmė {count}"
+    },
+    "hand": {
+      "your": "Tavo",
+      "their": "{name}",
+      "hand": "Rankoje ({count} kortos)"
+    },
+    "mobile": {
+      "play": "Žaisti ({count})",
+      "take": "Paimti",
+      "pause": "Pristabdyti"
+    },
+    "error": {
+      "selectCards": "Pasirinkite kortas žaidimui",
+      "invalidMove": "Negalimas ėjimas"
+    },
+    "confirm": {
+      "playCards": "Žaisti {cards}?",
+      "takeCards": "Paimti {count} kort{us} iš krūvos?",
+      "takeAll": "Paimti visas {count} kortas iš krūvos?",
+      "endTurn": "Baigti ėjimą?"
+    },
+    "forfeit": {
+      "title": "Pasiduoti",
+      "confirm": "Ar tikrai norite pasiduoti? Būsite pažymėtas kaip baigęs."
+    },
+    "finishGame": {
+      "title": "Baigti žaidimą",
+      "confirm": "Ar tikrai norite baigti žaidimą? Visi likę DI žaidėjai pasiduos."
+    },
+    "finished": {
+      "title": "Žaidimas baigtas!",
+      "totalTime": "Bendras laikas: {time}",
+      "rankings": "Galutiniai rezultatai:",
+      "winner": "LAIMĖTOJAS",
+      "loser": "PRALAIŠĖJAS",
+      "playAgain": "Žaisti dar kartą",
+      "newGame": "Naujas žaidimas"
+    },
+    "paused": {
+      "title": "Žaidimas pristabdytas",
+      "resume": "Tęsti žaidimą",
+      "gameRules": "Žaidimo taisyklės",
+      "forfeit": "Pasiduoti",
+      "finishGame": "Baigti žaidimą",
+      "restartGame": "Pradėti iš naujo",
+      "newGame": "Naujas žaidimas"
+    }
+  },
+  "confirmPopup": {
+    "title": "Patvirtinti ėjimą",
+    "confirm": "Patvirtinti",
+    "cancel": "Atšaukti"
+  },
+  "leaderboard": {
+    "title": "Lentelė",
+    "noGames": "Dar nėra įrašytų žaidimų.",
+    "finishGame": "Baigkite žaidimą, kad pamatytumėte savo statistiką!",
+    "player": "Žaidėjas",
+    "wins": "Pergalės",
+    "losses": "Pralaimėjimai",
+    "winPercent": "Pergalės %",
+    "gameCount": "{count} žaidim{s}",
+    "avgPosition": "vid. #{pos}",
+    "lastUpdated": "Paskutinį kartą atnaujinta {date}",
+    "clearConfirm": "Išvalyti visus įrašus?",
+    "clearYes": "Taip, išvalyti",
+    "clearCancel": "Atšaukti",
+    "clearRecords": "Išvalyti visus įrašus"
+  },
+  "dealing": {
+    "title": "Dalijamos kortos...",
+    "subtitle": "{players} žaidėjai · {cards} kortos kiekvienam",
+    "ai": "DI",
+    "you": "Tu",
+    "gameStarting": "Žaidimas prasideda..."
+  },
+  "pile": {
+    "empty": "Tuščia",
+    "count": "{count} kort{s}",
+    "top": "Viršus: "
+  },
+  "notFound": {
+    "title": "404 Puslapis nerastas",
+    "text": "Ar pamiršote pridėti puslapį į maršrutizatorių?"
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "setup": {
+    "title": "🃏 The Bobby",
+    "subtitle": "A multiplayer card game",
+    "leaderboard": "Leaderboard",
+    "numberOfPlayers": "Number of Players",
+    "players": "Players",
+    "playerPlaceholder": "Player {index}",
+    "maxCharacters": "Max 16 characters",
+    "human": "Human",
+    "ai": "AI",
+    "gameOptions": "Game Options",
+    "gameRules": "Game Rules",
+    "startGame": "Start Game",
+    "errorNoHuman": "At least one human player is required!",
+    "errorEmptyName": "All players must have a name!",
+    "option": {
+      "specialNines": {
+        "title": "Special 9's Rule",
+        "desc": "When enabled, if only the 9 of Diamonds is on the table and you have other 9s in hand, you may play up to 3 additional 9s on top, then optionally play another valid card or 4 of a kind before ending your turn."
+      },
+      "takeAll": {
+        "title": "Take All Cards",
+        "desc": "When enabled, if you must take cards from the pile you may choose to take ALL cards (instead of just 3). The 9 of Diamonds is never taken. If fewer than 3 cards are available, you take whatever is above the 9 of Diamonds."
+      },
+      "fourOfAKind": {
+        "title": "4 of a Kind Rule",
+        "desc": "When enabled, you may play all 4 cards of the same value as a single move. After playing 4 of a kind, you may play another valid card (or another 4 of a kind) on top before ending your turn."
+      },
+      "rankedSeating": {
+        "title": "Ranked Seating",
+        "desc": "When enabled, pressing Play Again arranges players by finish order — first place in seat 1, going clockwise by finish position."
+      },
+      "randomSeating": {
+        "title": "Random Seating",
+        "desc": "When enabled, player positions are randomised for the first game. Subsequent Play Again rounds keep the same order."
+      }
+    },
+    "theme": {
+      "title": "Theme",
+      "summer": { "label": "Summer", "desc": "Emerald & amber" },
+      "midnight": { "label": "Midnight", "desc": "Slate & cyan" },
+      "autumn": { "label": "Autumn", "desc": "Stone & orange" }
+    },
+    "aiDifficulty": {
+      "title": "AI Difficulty",
+      "easy": { "label": "Easy", "desc": "Plays simple moves, ends turn after each play" },
+      "medium": { "label": "Medium", "desc": "Uses combos and multi-9 moves strategically" },
+      "hard": { "label": "Hard", "desc": "Calculates optimal moves, seeks combos, blocks opponents" }
+    },
+    "rules": [
+      { "title": "Overview", "text": "A shedding-type card game for 2-8 players. The goal is to be the first to discard all cards from your hand. The last player with cards loses!" },
+      { "title": "Deck & Deal", "text": "Uses 24 cards (9 through Ace). All cards are shuffled, cut, and dealt face-down one at a time. Every card is dealt — no draw pile remains." },
+      { "title": "Starting the Game", "text": "The 9 of Diamonds always starts. Whoever holds it places it face-up in the center. The 9 of Diamonds never leaves the pile — it stays at the bottom as the foundation for the entire game." },
+      { "title": "Playing Cards", "text": "On your turn, play a card equal to or higher in value than the top card on the pile (e.g., if the top card is Queen, you may play Queen, King, or Ace). If you have 4 cards of the same value, you may play them all as a single move (if the 4 of a Kind rule is enabled)." },
+      { "title": "4 of a Kind Continuation", "text": "After playing 4 cards of the same value, you may optionally play another valid card or another 4 of a kind on top before ending your turn. This can chain multiple times." },
+      { "title": "Taking Cards", "text": "If you cannot play a valid card, you must take 3 cards from the top of the pile (or take ALL cards if the Take All rule is enabled and you choose that option). The 9 of Diamonds is never taken. If fewer than 3 cards are above it, you take whatever is there (1 or 2). Your turn then ends." },
+      { "title": "Special 9's Rule", "text": "If the 9 of Diamonds is the only card on the table at the start of your turn and you hold other 9s in hand, you may play up to 3 additional 9s on top. After that, you may optionally play another valid card or 4 of a kind on top, then end your turn." },
+      { "title": "Winning", "text": "The first player to discard all cards from their hand wins. The game can continue to determine 2nd, 3rd, and last place." },
+      { "title": "Strategy Tips", "text": "Conserve high cards (Aces, Kings) for when you need them. Force opponents to pick up by playing cards that limit their options. Save 4-of-a-kind sets for when the pile is large. Sometimes taking all cards gives you more options than taking 3." }
+    ],
+    "language": {
+      "title": "Language"
+    }
+  },
+  "game": {
+    "topBar": {
+      "title": "🃏 The Bobby",
+      "turn": "Turn {turn}",
+      "pause": "Pause",
+      "unmute": "Unmute",
+      "mute": "Mute",
+      "newGame": "New Game"
+    },
+    "sidebar": {
+      "players": "Players",
+      "ai": "AI",
+      "cards": "cards"
+    },
+    "center": {
+      "currentTurn": "Current Turn:",
+      "thinking": "Thinking..."
+    },
+    "ninesStart": {
+      "title": "Lucky Start!",
+      "text": "You have all 4 nines! Play them now or save them for later.",
+      "playSelected": "Play Selected ({count})",
+      "saveForLater": "Save for Later"
+    },
+    "combo": {
+      "title": "Combo!",
+      "text": "You played 4 of a kind! Play another card or end your turn.",
+      "playSelected": "Play Selected ({count})",
+      "endTurn": "End Turn"
+    },
+    "takeOptions": {
+      "title": "How many cards to take?",
+      "take3": "Take 3 Cards",
+      "takeAll": "Take All ({count})",
+      "cancel": "Cancel"
+    },
+    "actions": {
+      "play": "Play ({count})",
+      "takeCards": "Take Cards"
+    },
+    "history": {
+      "title": "History",
+      "noMoves": "No moves yet",
+      "took": "Took {count}"
+    },
+    "hand": {
+      "your": "Your",
+      "their": "{name}'s",
+      "hand": "Hand ({count} cards)"
+    },
+    "mobile": {
+      "play": "Play ({count})",
+      "take": "Take",
+      "pause": "Pause"
+    },
+    "error": {
+      "selectCards": "Select cards to play",
+      "invalidMove": "Invalid move"
+    },
+    "confirm": {
+      "playCards": "Play {cards}?",
+      "takeCards": "Take {count} card{s} from pile?",
+      "takeAll": "Take all {count} cards from pile?",
+      "endTurn": "End your turn?"
+    },
+    "forfeit": {
+      "title": "Forfeit",
+      "confirm": "Are you sure you want to forfeit? You will be marked as finished."
+    },
+    "finishGame": {
+      "title": "Finish The Game",
+      "confirm": "Are you sure you want to finish the game? All remaining AI players will forfeit."
+    },
+    "finished": {
+      "title": "Game Over!",
+      "totalTime": "Total Time: {time}",
+      "rankings": "Final Rankings:",
+      "winner": "WINNER",
+      "loser": "LOSER",
+      "playAgain": "Play Again",
+      "newGame": "New Game"
+    },
+    "paused": {
+      "title": "Game Paused",
+      "resume": "Resume Game",
+      "gameRules": "Game Rules",
+      "forfeit": "Forfeit",
+      "finishGame": "Finish The Game",
+      "restartGame": "Restart Game",
+      "newGame": "New Game"
+    }
+  },
+  "confirmPopup": {
+    "title": "Confirm Move",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "noGames": "No games recorded yet.",
+    "finishGame": "Finish a game to see your stats here!",
+    "player": "Player",
+    "wins": "Wins",
+    "losses": "Losses",
+    "winPercent": "Win %",
+    "gameCount": "{count} game{s}",
+    "avgPosition": "avg #{pos}",
+    "lastUpdated": "Last updated {date}",
+    "clearConfirm": "Clear all records?",
+    "clearYes": "Yes, clear",
+    "clearCancel": "Cancel",
+    "clearRecords": "Clear all records"
+  },
+  "dealing": {
+    "title": "Dealing Cards...",
+    "subtitle": "{players} players · {cards} cards each",
+    "ai": "AI",
+    "you": "You",
+    "gameStarting": "Game starting..."
+  },
+  "pile": {
+    "empty": "Empty",
+    "count": "{count} card{s}",
+    "top": "Top: "
+  },
+  "notFound": {
+    "title": "404 Page Not Found",
+    "text": "Did you forget to add the page to the router?"
+  }
+}
