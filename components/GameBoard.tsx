@@ -618,7 +618,7 @@ export function GameBoard({
       {/* Main game area */}
       <div className="flex-1 flex flex-row items-start gap-1 sm:gap-4 px-1 sm:px-4 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
         {/* Left sidebar - Players (all screens) */}
-        <div className="flex w-[104px] sm:w-28 lg:w-44 flex-col gap-1 sm:gap-2 overflow-y-auto flex-shrink-0">
+        <div className="flex w-32 lg:w-44 flex-col gap-1 sm:gap-2 overflow-y-auto flex-shrink-0">
           <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-0.5 sm:mb-1 px-0.5 sm:px-1 hidden sm:block">{t('game.sidebar.players')}</div>
           {gameState.players.map((player: any) => {
             const isCurrent = player.id === currentPlayer?.id;
@@ -664,11 +664,13 @@ export function GameBoard({
         {/* Center - Pile and actions */}
         <div className="flex-1 grid grid-rows-[auto_auto_min-content] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
           <div className="text-center">
-            <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
-              <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
-              <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
-              {currentPlayer?.isAI && <span className="text-[10px] sm:text-xs text-emerald-400">({t('game.sidebar.ai')})</span>}
-              {isAIThinking && <span className="text-amber-400 text-xs sm:text-sm animate-pulse">{t('game.center.thinking')}</span>}
+            <div className="mb-1 sm:mb-2">
+              <div className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</div>
+              <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+                <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
+                {currentPlayer?.isAI && <span className="text-[10px] sm:text-xs text-emerald-400">({t('game.sidebar.ai')})</span>}
+                {isAIThinking && <span className="text-amber-400 text-xs sm:text-sm animate-pulse">{t('game.center.thinking')}</span>}
+              </div>
             </div>
           </div>
 
@@ -792,35 +794,35 @@ export function GameBoard({
         </div>
 
         {/* Right sidebar - Move History (all screens) */}
-        <div className="flex w-[104px] sm:w-28 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0">
+        <div className="flex w-32 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0">
           <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: `${estimatedPlayerListHeight}px` }}>
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center justify-between p-1 sm:p-3 border-b border-emerald-600 flex-shrink-0"
+              className="flex items-center justify-between p-2 sm:p-3 border-b border-emerald-600 flex-shrink-0"
             >
-              <div className="flex items-center gap-0.5 sm:gap-2">
-                <History className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-amber-400" />
-                <span className="text-white font-medium text-xs sm:text-sm truncate">{t('game.history.title')}</span>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-white font-medium text-sm truncate">{t('game.history.title')}</span>
               </div>
-              <div className="flex items-center gap-0.5 sm:gap-2">
-                <span className="text-emerald-400 text-[10px] sm:text-xs">{gameState.moveHistory.length}</span>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span className="text-emerald-400 text-xs">{gameState.moveHistory.length}</span>
                 {showHistory ? (
-                  <ChevronUp className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-emerald-400" />
+                  <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                 ) : (
-                  <ChevronDown className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-emerald-400" />
+                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
                 )}
               </div>
             </button>
 
             {showHistory && (
-              <div ref={historyContainerRef} className="flex-1 overflow-y-auto p-1 sm:p-2 space-y-0.5 sm:space-y-1 min-h-0">
+              <div ref={historyContainerRef} className="flex-1 overflow-y-auto p-1.5 sm:p-2 space-y-1 min-h-0">
                 {gameState.moveHistory.length === 0 ? (
-                  <p className="text-emerald-400 text-[10px] sm:text-xs italic text-center py-1 sm:py-4">{t('game.history.noMoves')}</p>
+                  <p className="text-emerald-400 text-xs italic text-center py-2 sm:py-4">{t('game.history.noMoves')}</p>
                 ) : (
                   gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
                     <div
                       key={move.id}
-                      className={`text-[10px] sm:text-xs p-0.5 sm:p-2 rounded ${
+                      className={`text-xs p-1.5 sm:p-2 rounded ${
                         move.type === 'play'
                           ? 'bg-emerald-700/50'
                           : 'bg-amber-900/30'
@@ -830,16 +832,16 @@ export function GameBoard({
                         <span className={`font-medium truncate max-w-[60%] ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
                           {move.playerName}
                         </span>
-                        <span className="text-emerald-500 text-[8px] sm:text-[10px] flex-shrink-0">T{move.turnNumber}</span>
+                        <span className="text-emerald-500 text-[10px] flex-shrink-0">T{move.turnNumber}</span>
                       </div>
                       <div className="text-emerald-200 truncate">
                         {move.type === 'play' ? (
-                          <span className="flex items-center gap-0.5 sm:gap-1">
+                          <span className="flex items-center gap-1">
                             <span className="text-emerald-400 flex-shrink-0">→</span>
                             <span className="truncate">{move.cards.map(c => getCardDisplayName(c)).join(' ')}</span>
                           </span>
                         ) : (
-                          <span className="flex items-center gap-0.5 sm:gap-1">
+                          <span className="flex items-center gap-1">
                             <span className="text-amber-400 flex-shrink-0">↑</span>
                             {t('game.history.took', { count: move.cards.length })}
                           </span>
