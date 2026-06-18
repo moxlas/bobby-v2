@@ -647,7 +647,7 @@ export function GameBoard({
                       <span className={`text-xs sm:text-sm font-medium truncate ${isCurrent ? 'text-amber-300' : 'text-white'}`}>
                         {player.name}
                       </span>
-                      {player.isAI && <span className="text-[8px] sm:text-[10px] text-emerald-400 hidden sm:inline">{t('game.sidebar.ai')}</span>}
+                      {player.isAI && <span className="text-[8px] sm:text-[10px] text-emerald-400">{t('game.sidebar.ai')}</span>}
                     </div>
                     <div className="text-[10px] sm:text-xs text-emerald-400">
                       {player.hasFinished ? (
@@ -657,7 +657,7 @@ export function GameBoard({
                           #{player.finishPosition}
                         </span>
                       ) : (
-                        <span><span className="hidden sm:inline">{t('game.sidebar.cards')} </span>({player.hand.length})</span>
+                        <span>{t('game.sidebar.cards')} ({player.hand.length})</span>
                       )}
                     </div>
                   </div>
@@ -800,7 +800,7 @@ export function GameBoard({
         </div>
 
         {/* Right sidebar - Move History (all screens) */}
-        <div className="flex w-32 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0">
+        <div className="flex w-36 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0">
           <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: `${estimatedPlayerListHeight}px` }}>
             <button
               onClick={() => setShowHistory(!showHistory)}
