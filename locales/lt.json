@@ -2,7 +2,7 @@
   "setup": {
     "title": "🃏 Debesėlis",
     "subtitle": "Išskirtinis kortų žaidimas",
-    "leaderboard": "Lentelė",
+    "leaderboard": "Lyderių lentelė",
     "numberOfPlayers": "Žaidėjų skaičius",
     "players": "Žaidėjai",
     "playerPlaceholder": "Žaidėjas {index}",
