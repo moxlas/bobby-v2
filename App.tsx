@@ -5,6 +5,7 @@ import { DealingAnimation } from './components/DealingAnimation';
 import { Card, Player, GameState, GameOptions } from './types/game';
 import { createDeck, shuffleDeck, cutDeck, dealCards } from './utils/deckUtils';
 import { saveGameResults } from './utils/leaderboard';
+import { I18nProvider } from './lib/i18n';
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -587,33 +588,35 @@ function App() {
     }
   }, [gameState?.options.theme]);
 
-  if (appPhase === 'setup' || !gameState) {
-    return <SetupScreen onStartGame={handleStartGame} />;
-  }
-
-  if (appPhase === 'dealing') {
-    const openingPlayerId = gameState.moveHistory[0]?.playerId;
-    const playerInfos = gameState.players.map(p => ({
-      name: p.name,
-      isAI: p.isAI,
-      cardCount: p.hand.length + (p.id === openingPlayerId ? 1 : 0),
-    }));
-    return <DealingAnimation players={playerInfos} onComplete={handleDealingComplete} />;
-  }
-
   return (
-    <GameBoard
-      gameState={gameState}
-      onPlayCards={handlePlayCards}
-      onTakeCards={handleTakeCards}
-      onEndTurn={handleEndTurn}
-      onPauseGame={handlePauseGame}
-      onResumeGame={handleResumeGame}
-      onForfeitPlayer={handleForfeitPlayer}
-      onFinishGame={handleFinishGame}
-      onRestartGame={handleRestartGame}
-      onNewGame={handleNewGame}
-    />
+    <I18nProvider>
+      {appPhase === 'setup' || !gameState ? (
+        <SetupScreen onStartGame={handleStartGame} />
+      ) : appPhase === 'dealing' ? (
+        (() => {
+          const openingPlayerId = gameState.moveHistory[0]?.playerId;
+          const playerInfos = gameState.players.map(p => ({
+            name: p.name,
+            isAI: p.isAI,
+            cardCount: p.hand.length + (p.id === openingPlayerId ? 1 : 0),
+          }));
+          return <DealingAnimation players={playerInfos} onComplete={handleDealingComplete} />;
+        })()
+      ) : (
+        <GameBoard
+          gameState={gameState}
+          onPlayCards={handlePlayCards}
+          onTakeCards={handleTakeCards}
+          onEndTurn={handleEndTurn}
+          onPauseGame={handlePauseGame}
+          onResumeGame={handleResumeGame}
+          onForfeitPlayer={handleForfeitPlayer}
+          onFinishGame={handleFinishGame}
+          onRestartGame={handleRestartGame}
+          onNewGame={handleNewGame}
+        />
+      )}
+    </I18nProvider>
   );
 }
 
