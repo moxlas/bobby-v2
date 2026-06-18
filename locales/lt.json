@@ -203,7 +203,7 @@
   "pile": {
     "empty": "Tuščia",
     "count": "{count} kort{s}",
-    "top": "Viršus: "
+    "top": "Viršutinė korta: "
   },
   "notFound": {
     "title": "404 Puslapis nerastas",
