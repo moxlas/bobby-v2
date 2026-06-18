@@ -50,7 +50,7 @@
     },
     "rules": [
       { "title": "Apžvalga", "text": "Kortų žaidimas 2-8 žaidėjams. Tikslas yra pirmam išmesti visas kortas iš rankos. Paskutinis žaidėjas su kortomis pralaimi!" },
-      { "title": "Kalonė ir dalinimas", "text": "Naudojamos 24 kortos (nuo 9 iki Tūzo). Visos kortos yra sumaišomos, perkeliamos ir dalinamos užverstos po vieną. Kiekviena korta išdalinama — kortų kaladėje nelieka." },
+      { "title": "Kaladė ir dalinimas", "text": "Naudojamos 24 kortos (nuo 9 iki Tūzo). Visos kortos yra sumaišomos, perkeliamos ir dalinamos užverstos po vieną. Kiekviena korta išdalinama — kortų kaladėje nelieka." },
       { "title": "Žaidimo pradžia", "text": "Būgnų 9♦ visada pradeda. Kas jį turi, padeda jį atverstą centre. Būgnų 9♦ niekada nepalieka krūvos — jis lieka apačioje kaip pamatas visam žaidimui." },
       { "title": "Kortų žaidimas", "text": "Savo ėjimo metu meskite kortą, lygią arba aukštesnę už viršutinę krūvos kortą (pvz., jei viršuje yra Dama, galite žaisti Damą, Karalių arba Tūzą). Jei turite 4 vienodos vertės kortas, galite jas visas žaisti vienu ėjimu (jei 4 vienodų taisyklė įjungta)." },
       { "title": "4 vienodų tęsinys", "text": "Po 4 vienodos vertės kortų sužaidimo galite pasirinktinai žaisti kitą galimą kortą arba dar 4 vienodas prieš baigiant ėjimą. Ši kombinacija gali būti kartojama kelis kartus." },
