@@ -30,9 +30,9 @@ export function translateArray(lang: Language, key: string): any[] {
   return Array.isArray(value) ? value : [];
 }
 
-export const LANGUAGES: { code: Language; name: string; flag: string }[] = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'lt', name: 'Lietuvių', flag: '🇱🇹' },
+export const LANGUAGES: { code: Language; name: string; badge: string }[] = [
+  { code: 'en', name: 'English', badge: 'GB' },
+  { code: 'lt', name: 'Lietuvių', badge: 'LT' },
 ];
 
 const LANGUAGE_STORAGE_KEY = 'bobby-language';
