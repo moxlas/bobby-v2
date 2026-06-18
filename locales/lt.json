@@ -6,7 +6,7 @@
     "numberOfPlayers": "Žaidėjų skaičius",
     "players": "Žaidėjai",
     "playerPlaceholder": "Žaidėjas {index}",
-    "maxCharacters": "Maksimalus vardo ilgis yra 16 simbolių",
+    "maxCharacters": "Maksimalus vardo ilgis yra 12 simbolių",
     "human": "Žmogus",
     "ai": "DI",
     "gameOptions": "Žaidimo nustatymai",
