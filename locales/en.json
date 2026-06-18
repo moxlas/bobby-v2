@@ -146,6 +146,12 @@
       "playAgain": "Play Again",
       "newGame": "New Game"
     },
+    "newGame": {
+      "confirm": "Start a new game? Your current progress will be lost."
+    },
+    "restartGame": {
+      "confirm": "Restart the game? All current progress will be lost."
+    },
     "paused": {
       "title": "Game Paused",
       "resume": "Resume Game",
@@ -159,7 +165,8 @@
   "confirmPopup": {
     "title": "Confirm Move",
     "confirm": "Confirm",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "areYouSure": "Are you sure?"
   },
   "leaderboard": {
     "title": "Leaderboard",
