@@ -124,7 +124,8 @@
     },
     "confirm": {
       "playCards": "Play {cards}?",
-      "takeCards": "Take {count} card{s} from pile?",
+      "takeCards_one": "Take {count} card from pile?",
+      "takeCards_other": "Take {count} cards from pile?",
       "takeAll": "Take all {count} cards from pile?",
       "endTurn": "End your turn?"
     },
@@ -168,7 +169,8 @@
     "wins": "Wins",
     "losses": "Losses",
     "winPercent": "Win %",
-    "gameCount": "{count} game{s}",
+    "gameCount_one": "{count} game",
+    "gameCount_other": "{count} games",
     "avgPosition": "avg #{pos}",
     "lastUpdated": "Last updated {date}",
     "clearConfirm": "Clear all records?",
@@ -202,7 +204,8 @@
   },
   "pile": {
     "empty": "Empty",
-    "count": "{count} card{s}",
+    "count_one": "{count} card",
+    "count_other": "{count} cards",
     "top": "Top: "
   },
   "notFound": {
