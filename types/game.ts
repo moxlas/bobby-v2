@@ -34,6 +34,7 @@ export type GamePhase = 'setup' | 'playing' | 'paused' | 'finished';
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
 export type ThemeName = 'summer' | 'midnight' | 'autumn';
+export type Language = 'en' | 'lt';
 
 export interface GameOptions {
   specialNinesRule: boolean;
@@ -43,6 +44,7 @@ export interface GameOptions {
   rankedSeating: boolean;
   randomSeating: boolean;
   theme: ThemeName;
+  language: Language;
 }
 
 export interface GameState {
@@ -72,4 +74,5 @@ export const DEFAULT_OPTIONS: GameOptions = {
   rankedSeating: false,
   randomSeating: false,
   theme: 'summer',
+  language: 'en',
 };
