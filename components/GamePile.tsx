@@ -52,10 +52,10 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       </div>
 
       <div className="mt-3 mb-2 text-center">
-        <span className="text-emerald-300 text-xs">{t('pile.top')}</span>
-        <span className="text-amber-300 font-bold text-sm">
+        <div className="text-emerald-300 text-xs">{t('pile.top')}</div>
+        <div className="text-amber-300 font-bold text-sm">
           {t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) })}
-        </span>
+        </div>
       </div>
     </div>
   );
