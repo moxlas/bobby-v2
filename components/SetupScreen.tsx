@@ -51,6 +51,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   const [showRules, setShowRules] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameWarningIndex, setNameWarningIndex] = useState<number | null>(null);
 
@@ -129,8 +130,40 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-emerald-800 rounded-xl shadow-2xl overflow-hidden border border-emerald-600">
           <div className="bg-amber-500 p-6 text-center relative">
+            {/* Language selector */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+              <button
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 150)}
+                className="flex items-center gap-1.5 bg-emerald-900/20 hover:bg-emerald-900/30 text-emerald-900 font-medium text-sm px-3 py-2 rounded-lg transition-colors"
+              >
+                <span className="text-[10px] font-bold leading-none bg-emerald-900/30 text-emerald-800 rounded px-1 py-0.5">{LANGUAGES.find(l => l.code === language)?.badge}</span>
+                <span className="hidden sm:inline text-sm">{LANGUAGES.find(l => l.code === language)?.name}</span>
+              </button>
+              {showLanguageDropdown && (
+                <div className="absolute top-full left-0 mt-1 bg-emerald-800 border border-emerald-600 rounded-lg shadow-xl z-50 min-w-[140px]">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { setLanguage(lang.code); setShowLanguageDropdown(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                        language === lang.code
+                          ? 'bg-amber-500/20 text-amber-300'
+                          : 'text-emerald-200 hover:bg-emerald-700'
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold leading-none bg-emerald-700 text-emerald-300 rounded px-1 py-0.5">{lang.badge}</span>
+                      <span className="text-sm">{lang.name}</span>
+                      {language === lang.code && <span className="ml-auto text-xs text-amber-400">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <h1 className="text-3xl font-bold text-emerald-900 mb-1">{t('setup.title')}</h1>
             <p className="text-amber-700 text-sm">{t('setup.subtitle')}</p>
+
             <button
               onClick={() => setShowLeaderboard(true)}
               className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-emerald-900/20 hover:bg-emerald-900/30 text-emerald-900 font-medium text-sm px-3 py-2 rounded-lg transition-colors"
@@ -299,27 +332,6 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                       </p>
                     </div>
                     <Toggle enabled={randomSeating} onToggle={() => setRandomSeating(v => !v)} />
-                  </div>
-
-                  {/* Language */}
-                  <div className="pt-2 border-t border-emerald-600/50">
-                    <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.language.title')}</label>
-                    <div className="flex gap-2">
-                      {LANGUAGES.map((lang) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => setLanguage(lang.code)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all border flex-1 ${
-                            language === lang.code
-                              ? 'bg-amber-500 border-amber-400 text-emerald-900'
-                              : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
-                          }`}
-                        >
-                          <span className="text-lg">{lang.flag}</span>
-                          <span className="font-medium text-sm">{lang.name}</span>
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Theme */}
