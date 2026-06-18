@@ -382,7 +382,7 @@ export function GameBoard({
   const getConfirmMessage = () => {
     if (pendingAction === 'play') {
       const cardNames = selectedCards.map(c =>
-        `${c.value === 11 ? 'J' : c.value === 12 ? 'Q' : c.value === 13 ? 'K' : c.value === 14 ? 'A' : c.value} of ${c.suit}`
+        t('card.format', { value: t(`card.value.${c.value}`), suit: t(`card.suit.${c.suit}`) })
       ).join(', ');
       return t('game.confirm.playCards', { cards: cardNames });
     } else if (pendingAction === 'take3') {
