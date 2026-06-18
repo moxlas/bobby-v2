@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Trash2, X, Crown, Skull, TrendingUp } from 'lucide-react';
 import { loadLeaderboard, clearLeaderboard, getWinRate, getAvgPosition, PlayerRecord } from '../utils/leaderboard';
+import { useTranslation } from '../lib/i18n';
 
 interface LeaderboardProps {
   onClose: () => void;
 }
 
 export function Leaderboard({ onClose }: LeaderboardProps) {
+  const { t } = useTranslation();
   const [records, setRecords] = useState<PlayerRecord[]>([]);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -37,7 +39,7 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
         <div className="flex items-center justify-between p-5 border-b border-emerald-600 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" />
-            <h2 className="text-xl font-bold text-amber-300">Leaderboard</h2>
+            <h2 className="text-xl font-bold text-amber-300">{t('leaderboard.title')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -51,16 +53,16 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
           {records.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
-              <p className="text-emerald-400 text-base">No games recorded yet.</p>
-              <p className="text-emerald-500 text-sm mt-1">Finish a game to see your stats here!</p>
+              <p className="text-emerald-400 text-base">{t('leaderboard.noGames')}</p>
+              <p className="text-emerald-500 text-sm mt-1">{t('leaderboard.finishGame')}</p>
             </div>
           ) : (
             <div className="space-y-2">
               <div className="grid grid-cols-5 gap-2 px-3 pb-1 text-xs font-medium text-emerald-400 uppercase tracking-wide">
-                <span className="col-span-2">Player</span>
-                <span className="text-center">Wins</span>
-                <span className="text-center">Losses</span>
-                <span className="text-center">Win %</span>
+                <span className="col-span-2">{t('leaderboard.player')}</span>
+                <span className="text-center">{t('leaderboard.wins')}</span>
+                <span className="text-center">{t('leaderboard.losses')}</span>
+                <span className="text-center">{t('leaderboard.winPercent')}</span>
               </div>
 
               {records.map((record, index) => {
@@ -93,7 +95,9 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
                               {record.name}
                             </span>
                           </div>
-                          <span className="text-emerald-400 text-xs">{record.totalGames} game{record.totalGames !== 1 ? 's' : ''} · avg #{avgPos}</span>
+                          <span className="text-emerald-400 text-xs">
+                            {t('leaderboard.gameCount', { count: record.totalGames, s: record.totalGames !== 1 ? 's' : '' })} · {t('leaderboard.avgPosition', { pos: avgPos })}
+                          </span>
                         </div>
                       </div>
 
@@ -132,24 +136,24 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
         <div className="p-4 border-t border-emerald-600 flex-shrink-0">
           {lastUpdated && records.length > 0 && (
             <p className="text-emerald-500 text-xs mb-3 text-center">
-              Last updated {new Date(lastUpdated).toLocaleDateString()}
+              {t('leaderboard.lastUpdated', { date: new Date(lastUpdated).toLocaleDateString() })}
             </p>
           )}
 
           {showClearConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="text-emerald-300 text-sm flex-1">Clear all records?</span>
+              <span className="text-emerald-300 text-sm flex-1">{t('leaderboard.clearConfirm')}</span>
               <button
                 onClick={handleClear}
                 className="bg-red-500 hover:bg-red-600 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors"
               >
-                Yes, clear
+                {t('leaderboard.clearYes')}
               </button>
               <button
                 onClick={() => setShowClearConfirm(false)}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-4 py-2 rounded-lg transition-colors"
               >
-                Cancel
+                {t('leaderboard.clearCancel')}
               </button>
             </div>
           ) : (
@@ -159,7 +163,7 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
                 className="w-full flex items-center justify-center gap-2 text-emerald-400 hover:text-red-300 text-sm py-2 rounded-lg hover:bg-emerald-700/50 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                Clear all records
+                {t('leaderboard.clearRecords')}
               </button>
             )
           )}
