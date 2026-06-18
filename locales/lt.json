@@ -142,7 +142,7 @@
       "totalTime": "Bendras laikas: {time}",
       "rankings": "Galutiniai rezultatai:",
       "winner": "LAIMĖTOJAS",
-      "loser": "PRALOŠĖJAS",
+      "loser": "PRALAIMĖTOJAS",
       "playAgain": "Žaisti dar kartą",
       "newGame": "Naujas žaidimas"
     },
