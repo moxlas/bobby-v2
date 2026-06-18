@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Trophy, Trash2, X, Crown, Skull, TrendingUp } from 'lucide-react';
 import { loadLeaderboard, clearLeaderboard, getWinRate, getAvgPosition, PlayerRecord } from '../utils/leaderboard';
 import { useTranslation } from '../lib/i18n';
@@ -57,65 +57,72 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
               <p className="text-emerald-500 text-sm mt-1">{t('leaderboard.finishGame')}</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-5 gap-2 px-3 pb-1 text-xs font-medium text-emerald-400 uppercase tracking-wide">
-                <span className="col-span-2">{t('leaderboard.player')}</span>
-                <span className="text-center">{t('leaderboard.wins')}</span>
-                <span className="text-center">{t('leaderboard.losses')}</span>
-                <span className="text-center">{t('leaderboard.winPercent')}</span>
-              </div>
+            <div className="overflow-x-auto px-3">
+              <div className="grid grid-cols-[1fr_min-content_min-content_min-content] gap-y-1 min-w-0">
+                {/* Header row */}
+                <div className="text-xs font-medium text-emerald-400 uppercase tracking-wide pb-1 pr-2">
+                  {t('leaderboard.player')}
+                </div>
+                <div className="text-xs font-medium text-emerald-400 uppercase tracking-wide text-center pb-1 whitespace-nowrap px-2">
+                  {t('leaderboard.wins')}
+                </div>
+                <div className="text-xs font-medium text-emerald-400 uppercase tracking-wide text-center pb-1 whitespace-nowrap px-2">
+                  {t('leaderboard.losses')}
+                </div>
+                <div className="text-xs font-medium text-emerald-400 uppercase tracking-wide text-center pb-1 whitespace-nowrap px-2">
+                  {t('leaderboard.winPercent')}
+                </div>
 
-              {records.map((record, index) => {
-                const winRate = getWinRate(record);
-                const avgPos = getAvgPosition(record);
-                const isBest = index === 0;
+                {/* Data rows */}
+                {records.map((record, index) => {
+                  const winRate = getWinRate(record);
+                  const avgPos = getAvgPosition(record);
+                  const isBest = index === 0;
+                  const bg = isBest
+                    ? 'bg-amber-500/15 border-amber-500/40'
+                    : 'bg-emerald-700/40 border-emerald-600/60';
 
-                return (
-                  <div
-                    key={record.name}
-                    className={`rounded-xl p-3 border transition-all ${
-                      isBest
-                        ? 'bg-amber-500/15 border-amber-500/40'
-                        : 'bg-emerald-700/40 border-emerald-600/60'
-                    }`}
-                  >
-                    <div className="grid grid-cols-5 gap-2 items-center">
-                      <div className="col-span-2 flex items-center gap-2 min-w-0">
-                        <span className={`text-sm font-bold flex-shrink-0 ${
-                          isBest ? 'text-amber-400' : 'text-emerald-400'
-                        }`}>
-                          #{index + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1">
-                            {isBest && <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
-                            <span className={`font-semibold truncate text-sm ${
-                              isBest ? 'text-amber-200' : 'text-white'
-                            }`}>
-                              {record.name}
+                  const rowKey = `row-${record.name}`;
+                  return (
+                    <Fragment key={rowKey}>
+                      <div className={`${bg} rounded-l-xl border border-r-0 py-2.5 pl-3 pr-2 min-w-0`}>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`text-sm font-bold flex-shrink-0 ${
+                            isBest ? 'text-amber-400' : 'text-emerald-400'
+                          }`}>
+                            #{index + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1">
+                              {isBest && <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                              <span className={`font-semibold truncate text-sm ${
+                                isBest ? 'text-amber-200' : 'text-white'
+                              }`}>
+                                {record.name}
+                              </span>
+                            </div>
+                            <span className="text-emerald-400 text-xs">
+                              {t(record.totalGames === 1 ? 'leaderboard.gameCount_one' : 'leaderboard.gameCount_other', { count: record.totalGames })} · {t('leaderboard.avgPosition', { pos: avgPos })}
                             </span>
                           </div>
-                          <span className="text-emerald-400 text-xs">
-                            {t(record.totalGames === 1 ? 'leaderboard.gameCount_one' : 'leaderboard.gameCount_other', { count: record.totalGames })} · {t('leaderboard.avgPosition', { pos: avgPos })}
-                          </span>
                         </div>
                       </div>
 
-                      <div className="text-center">
+                      <div className={`${bg} border border-x-0 py-2.5 px-2 text-center whitespace-nowrap`}>
                         <div className="flex items-center justify-center gap-1">
                           <Crown className="w-3 h-3 text-amber-400" />
                           <span className="font-bold text-amber-300">{record.wins}</span>
                         </div>
                       </div>
 
-                      <div className="text-center">
+                      <div className={`${bg} border border-x-0 py-2.5 px-2 text-center whitespace-nowrap`}>
                         <div className="flex items-center justify-center gap-1">
                           <Skull className="w-3 h-3 text-red-400" />
                           <span className="font-bold text-red-300">{record.losses}</span>
                         </div>
                       </div>
 
-                      <div className="text-center">
+                      <div className={`${bg} rounded-r-xl border border-l-0 py-2.5 pl-1 pr-3 text-center whitespace-nowrap`}>
                         <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                           winRate >= 50
                             ? 'bg-emerald-500/30 text-emerald-300'
@@ -125,10 +132,10 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
                           {winRate}%
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    </Fragment>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
