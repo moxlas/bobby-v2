@@ -81,12 +81,12 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   };
 
   const handlePlayerNameChange = (index: number, name: string) => {
-    if (name.length > 16) {
+    if (name.length > 12) {
       setNameWarningIndex(index);
       setTimeout(() => setNameWarningIndex(null), 2000);
     }
     const newPlayers = [...players];
-    newPlayers[index] = { ...newPlayers[index], name: name.slice(0, 16) };
+    newPlayers[index] = { ...newPlayers[index], name: name.slice(0, 12) };
     setPlayers(newPlayers);
     setError(null);
   };
