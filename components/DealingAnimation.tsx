@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { playCardSound } from '../utils/sounds';
+import { useTranslation } from '../lib/i18n';
 
 interface PlayerInfo {
   name: string;
@@ -25,6 +26,7 @@ function getPlayerStagger(playerCount: number): number {
 }
 
 export function DealingAnimation({ players, onComplete }: DealingAnimationProps) {
+  const { t } = useTranslation();
   const calledRef = useRef(false);
 
   const playerStagger = getPlayerStagger(players.length);
@@ -34,7 +36,6 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
     COMPLETE_EXTRA_MS;
 
   useEffect(() => {
-    // Play card sounds staggered across the deal
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     players.forEach((_, pi) => {
@@ -90,10 +91,10 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
             🃏
           </div>
           <h2 className="text-2xl font-bold text-amber-300 tracking-wide">
-            Dealing Cards...
+            {t('dealing.title')}
           </h2>
           <p className="text-emerald-400 text-sm mt-1">
-            {players.length} players · {players[0]?.cardCount ?? 0} cards each
+            {t('dealing.subtitle', { players: players.length, cards: players[0]?.cardCount ?? 0 })}
           </p>
         </div>
 
@@ -117,7 +118,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
                     {player.name}
                   </div>
                   <div className="text-xs text-emerald-400">
-                    {player.isAI ? 'AI' : 'You'} · {player.cardCount} cards
+                    {player.isAI ? t('dealing.ai') : t('dealing.you')} · {player.cardCount} {t('game.sidebar.cards')}
                   </div>
                 </div>
 
@@ -189,7 +190,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
             opacity: 0,
           }}
         >
-          Game starting...
+          {t('dealing.gameStarting')}
         </div>
       </div>
     </div>
