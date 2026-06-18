@@ -12,16 +12,6 @@ export function GamePile({ pile }: GamePileProps) {
   const visibleCards = pile.slice(-visibleCount);
   const topCard = pile[pile.length - 1];
 
-  const getValueDisplay = (value: number): string => {
-    switch (value) {
-      case 11: return 'J';
-      case 12: return 'Q';
-      case 13: return 'K';
-      case 14: return 'A';
-      default: return String(value);
-    }
-  };
-
   if (pile.length === 0) {
     return (
       <div className="relative flex flex-col items-center">
@@ -59,7 +49,7 @@ export function GamePile({ pile }: GamePileProps) {
       <div className="mt-3 mb-2 text-center">
         <span className="text-emerald-300 text-xs">{t('pile.top')}</span>
         <span className="text-amber-300 font-bold text-sm">
-          {getValueDisplay(topCard.value)} of {topCard.suit}
+          {t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) })}
         </span>
       </div>
     </div>
