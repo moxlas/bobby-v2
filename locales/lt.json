@@ -16,8 +16,8 @@
     "errorEmptyName": "Visi žaidėjai turi turėti vardą!",
     "option": {
       "specialNines": {
-        "title": "Speciali 9-etų taisyklė",
-        "desc": "Kai įjungta, jei ant stalo yra tik 9♦ ir turite kitus 9-etus rankoje, galite žaisti visus tris 9-etus iškart, tada pasirinktinai žaisti kitą galimą kortą arba 4 vienodas kortas prieš baigiant ėjimą."
+        "title": "Speciali 9-ukų taisyklė",
+        "desc": "Kai įjungta, jei ant stalo yra tik 9♦ ir turite kitus 9-ukus rankoje, galite žaisti visus 3 9-ukus iškart, tada pasirinktinai žaisti kitą galimą kortą arba 4 vienodas kortas prieš baigiant ėjimą."
       },
       "takeAll": {
         "title": "Paimti visas kortas (dugną)",
@@ -124,7 +124,8 @@
     },
     "confirm": {
       "playCards": "Mesti {cards}?",
-      "takeCards": "Paimti {count} kort{us} iš krūvos?",
+      "takeCards_one": "Paimti {count} kortą iš krūvos?",
+      "takeCards_other": "Paimti {count} kortas iš krūvos?",
       "takeAll": "Paimti visas {count} kortas iš krūvos?",
       "endTurn": "Baigti ėjimą?"
     },
@@ -168,7 +169,8 @@
     "wins": "Pergalės",
     "losses": "Pralaimėjimai",
     "winPercent": "Pergalės %",
-    "gameCount": "{count} žaidim{s}",
+    "gameCount_one": "{count} žaidimas",
+    "gameCount_other": "{count} žaidimai",
     "avgPosition": "vid. #{pos}",
     "lastUpdated": "Paskutinį kartą atnaujinta {date}",
     "clearConfirm": "Išvalyti visus įrašus?",
@@ -202,7 +204,8 @@
   },
   "pile": {
     "empty": "Tuščia",
-    "count": "{count} kort{s}",
+    "count_one": "{count} korta",
+    "count_other": "{count} kortos",
     "top": "Viršutinė korta: "
   },
   "notFound": {
