@@ -183,6 +183,23 @@
     "you": "You",
     "gameStarting": "Game starting..."
   },
+  "card": {
+    "suit": {
+      "hearts": "Hearts",
+      "diamonds": "Diamonds",
+      "clubs": "Clubs",
+      "spades": "Spades"
+    },
+    "value": {
+      "9": "9",
+      "10": "10",
+      "11": "Jack",
+      "12": "Queen",
+      "13": "King",
+      "14": "Ace"
+    },
+    "format": "{value} of {suit}"
+  },
   "pile": {
     "empty": "Empty",
     "count": "{count} card{s}",
