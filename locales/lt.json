@@ -1,12 +1,12 @@
 {
   "setup": {
-    "title": "🃏 Bòbis",
-    "subtitle": "Kelių žaidėjų kortų žaidimas",
+    "title": "🃏 Debesėlis",
+    "subtitle": "Išskirtinis kortų žaidimas",
     "leaderboard": "Lentelė",
     "numberOfPlayers": "Žaidėjų skaičius",
     "players": "Žaidėjai",
     "playerPlaceholder": "Žaidėjas {index}",
-    "maxCharacters": "Maksimaliai 16 simbolių",
+    "maxCharacters": "Maksimalus vardo ilgis yra 16 simbolių",
     "human": "Žmogus",
     "ai": "DI",
     "gameOptions": "Žaidimo nustatymai",
@@ -17,11 +17,11 @@
     "option": {
       "specialNines": {
         "title": "Speciali 9-ukų taisyklė",
-        "desc": "Kai įjungta, jei ant stalo likęs tik 9 Būgnų ir turite kitų 9-ukų rankoje, galite žaisti iki 3 papildomų 9-ukų, tada pasirinktinai žaisti kitą galimą kortą arba 4 vienodas kortas prieš baigiant ėjimą."
+        "desc": "Kai įjungta, jei ant stalo yra tik 9♦ ir turite kitus 9-ukus rankoje, galite žaisti visus 3 9-ukus iškart, tada pasirinktinai žaisti kitą galimą kortą arba 4 vienodas kortas prieš baigiant ėjimą."
       },
       "takeAll": {
-        "title": "Paimti visas kortas",
-        "desc": "Kai įjungta, jei turite paimti kortų iš krūvos, galite pasirinkti paimti VISAS kortas (vietoj 3). 9 Būgnų niekada nėra paimamas. Jei yra mažiau nei 3 kortos, paimate tai, kas yra virš 9 Būgnų."
+        "title": "Paimti visas kortas (dugną)",
+        "desc": "Kai įjungta, jei turite paimti kortų iš krūvos, galite pasirinkti paimti VISAS kortas (vietoj 3). Būgnų 9♦ niekada nėra paimamas. Jei yra mažiau nei 3 kortos, paimate tiek, kiek yra virš 9♦."
       },
       "fourOfAKind": {
         "title": "4 vienodų taisyklė",
@@ -29,18 +29,18 @@
       },
       "rankedSeating": {
         "title": "Rikiuota tvarka",
-        "desc": "Kai įjungta, paspaudus Žaisti dar kartą, žaidėjai išrikiuojami pagal finišo tvarką — pirmoji vieta pirmoje pozicijoje, pagal laikrodžio rodyklę."
+        "desc": "Kai įjungta, paspaudus Žaisti dar kartą, žaidėjai išrikiuojami pagal finišo tvarką — pirmoji vieta pirmoje pozicijoje, likę - pagal laikrodžio rodyklę."
       },
       "randomSeating": {
         "title": "Atsitiktinė tvarka",
-        "desc": "Kai įjungta, žaidėjų pozicijos yra atsitiktinai sugeneruojamos pirmam žaidimui. Vėlesni Žaisti dar kartą ratai išlaiko tą pačią tvarką."
+        "desc": "Kai įjungta, žaidėjų pozicijos yra atsitiktinai paskiriamos pirmam žaidimui. Vėlesni žaidimo ratai išlaiko tą pačią tvarką."
       }
     },
     "theme": {
       "title": "Tema",
-      "summer": { "label": "Vasara", "desc": "Smaragdas & gintaras" },
-      "midnight": { "label": "Vidurnaktis", "desc": "Molis & cianas" },
-      "autumn": { "label": "Ruduo", "desc": "Akmuo & oranžinis" }
+      "summer": { "label": "Vasara", "desc": "Smaragdas ir gintaras" },
+      "midnight": { "label": "Vidurnaktis", "desc": "Uola ir mėlyna" },
+      "autumn": { "label": "Ruduo", "desc": "Akmuo ir oranžinė" }
     },
     "aiDifficulty": {
       "title": "DI sudėtingumas",
@@ -50,14 +50,14 @@
     },
     "rules": [
       { "title": "Apžvalga", "text": "Kortų žaidimas 2-8 žaidėjams. Tikslas yra pirmam išmesti visas kortas iš rankos. Paskutinis žaidėjas su kortomis pralaimi!" },
-      { "title": "Kalonė ir dalinimas", "text": "Naudojamos 24 kortos (nuo 9 iki Tūzo). Visos kortos yra sumaišomos, perkerpamos ir dalinamos užverstos po vieną. Kiekviena korta išdalinama — traukimo kalonės nelieka." },
-      { "title": "Žaidimo pradžia", "text": "9 Būgnų visada pradeda. Kas jį turi, padeda jį atverstą centre. 9 Būgnų niekada nepalieka krūvos — jis lieka apačioje kaip pamatas visam žaidimui." },
-      { "title": "Kortų žaidimas", "text": "Savo ėjimo metu žaiskite kortą, lygią arba aukštesnę už viršutinę krūvos kortą (pvz., jei viršuje yra Valdovė, galite žaisti Valdovę, Karalių arba Tūzą). Jei turite 4 vienodos vertės kortas, galite jas visas žaisti vienu ėjimu (jei 4 vienodų taisyklė įjungta)." },
-      { "title": "4 vienodų tęsinys", "text": "Po 4 vienodos vertės kortų sužaidimo galite pasirinktinai žaisti kitą galimą kortą arba dar 4 vienodas prieš baigiant ėjimą. Tai gali būti grandinėle kartojama kelis kartus." },
-      { "title": "Kortų paėmimas", "text": "Jei negalite žaisti galimos kortos, turite paimti 3 kortas iš krūvos viršaus (arba paimti VISAS kortas, jei Paimti visas taisyklė įjungta). 9 Būgnų niekada nėra paimamas. Jei virš jo yra mažiau nei 3 kortos, paimate tai, kas ten yra (1 arba 2). Jūsų ėjimas tada baigiasi." },
-      { "title": "Speciali 9-ukų taisyklė", "text": "Jei 9 Būgnų yra vienintelė korta ant stalo jūsų ėjimo pradžioje ir turite kitų 9-ukų rankoje, galite žaisti iki 3 papildomų 9-ukų. Po to galite pasirinktinai žaisti kitą galimą kortą arba 4 vienodas, tada baigti ėjimą." },
-      { "title": "Laimėjimas", "text": "Pirmas žaidėjas, išmetęs visas kortas iš rankos, laimi. Žaidimas gali tęstis nustatant 2-ą, 3-ią ir paskutinę vietą." },
-      { "title": "Strategijos patarimai", "text": "Taupykite aukštas kortas (Tūzus, Karalius) kai jų prireiks. Verskite priešininkus imti kortas, žaisdami kortas, kurios riboja jų pasirinkimus. Taupykite 4 vienodų rinkinius, kai krūva yra didelė. Kartais paimti visas kortas suteikia daugiau galimybių nei paimti 3." }
+      { "title": "Kalonė ir dalinimas", "text": "Naudojamos 24 kortos (nuo 9 iki Tūzo). Visos kortos yra sumaišomos, perkeliamos ir dalinamos užverstos po vieną. Kiekviena korta išdalinama — kortų kaladėje nelieka." },
+      { "title": "Žaidimo pradžia", "text": "Būgnų 9♦ visada pradeda. Kas jį turi, padeda jį atverstą centre. Būgnų 9♦ niekada nepalieka krūvos — jis lieka apačioje kaip pamatas visam žaidimui." },
+      { "title": "Kortų žaidimas", "text": "Savo ėjimo metu meskite kortą, lygią arba aukštesnę už viršutinę krūvos kortą (pvz., jei viršuje yra Dama, galite žaisti Damą, Karalių arba Tūzą). Jei turite 4 vienodos vertės kortas, galite jas visas žaisti vienu ėjimu (jei 4 vienodų taisyklė įjungta)." },
+      { "title": "4 vienodų tęsinys", "text": "Po 4 vienodos vertės kortų sužaidimo galite pasirinktinai žaisti kitą galimą kortą arba dar 4 vienodas prieš baigiant ėjimą. Ši kombinacija gali būti kartojama kelis kartus." },
+      { "title": "Kortų paėmimas", "text": "Jei neturite reikiamos kortos, turite paimti 3 kortas iš krūvos viršaus (arba paimti VISAS kortas, jei Paimti visas taisyklė įjungta). Būgnų 9♦ niekada nėra paimamas. Jei virš jo yra mažiau nei 3 kortos, paimate tai, kas ten yra (1 arba 2). Jūsų ėjimas tada baigiasi." },
+      { "title": "Speciali 9-ukų taisyklė", "text": "Jei 9♦ yra vienintelė korta ant stalo jūsų ėjimo pradžioje ir turite kitus tris 9-ukų rankoje, galite žaisti visus vienu ėjimu. Po to galite pasirinktinai žaisti kitą galimą kortą arba 4 vienodas, tada baigti ėjimą." },
+      { "title": "Laimėjimas", "text": "Pirmas žaidėjas, nebeturintis kortų rankose, laimi. Žaidimas turi tęstis nustatant 2-ą, 3-ią ir paskutinę vietą." },
+      { "title": "Strategijos patarimai", "text": "Taupykite aukštas kortas (Tūzus, Karalius) jei manote, kad jų jums prireiks. Verskite priešininkus imti kortas, žaisdami kortas, kurios riboja jų pasirinkimus. Meskite 4 vienodų kortų rinkinius, kai atsiranda galimybė. Kartais visų kortų paimimas suteikia daugiau galimybių nei paimti 3." }
     ],
     "language": {
       "title": "Kalba"
@@ -65,7 +65,7 @@
   },
   "game": {
     "topBar": {
-      "title": "🃏 Bòbis",
+      "title": "🃏 Debesėlis",
       "turn": "Ėjimas {turn}",
       "pause": "Pristabdyti",
       "unmute": "Įjungti garsą",
@@ -83,14 +83,14 @@
     },
     "ninesStart": {
       "title": "Laimingas startas!",
-      "text": "Turite visus 4 9-ukus! Žaiskite juos dabar arba pasilikite vėliau.",
-      "playSelected": "Žaisti pasirinktas ({count})",
+      "text": "Turite visus 4 9-ukus! Meskite juos dabar arba pasilikite vėliau.",
+      "playSelected": "Mesti ({count})",
       "saveForLater": "Pasilikti vėliau"
     },
     "combo": {
       "title": "Kombinacija!",
-      "text": "Sužaidėte 4 vienodas! Žaiskite kitą kortą arba baikite ėjimą.",
-      "playSelected": "Žaisti pasirinktas ({count})",
+      "text": "Išmetėte 4 vienodas kortas! Meskite daugiau kortų arba baikite ėjimą.",
+      "playSelected": "Mesti pasirinktas ({count})",
       "endTurn": "Baigti ėjimą"
     },
     "takeOptions": {
@@ -100,7 +100,7 @@
       "cancel": "Atšaukti"
     },
     "actions": {
-      "play": "Žaisti ({count})",
+      "play": "Mesti ({count})",
       "takeCards": "Paimti kortas"
     },
     "history": {
@@ -123,7 +123,7 @@
       "invalidMove": "Negalimas ėjimas"
     },
     "confirm": {
-      "playCards": "Žaisti {cards}?",
+      "playCards": "Mesti {cards}?",
       "takeCards": "Paimti {count} kort{us} iš krūvos?",
       "takeAll": "Paimti visas {count} kortas iš krūvos?",
       "endTurn": "Baigti ėjimą?"
@@ -141,7 +141,7 @@
       "totalTime": "Bendras laikas: {time}",
       "rankings": "Galutiniai rezultatai:",
       "winner": "LAIMĖTOJAS",
-      "loser": "PRALAIŠĖJAS",
+      "loser": "PRALOŠĖJAS",
       "playAgain": "Žaisti dar kartą",
       "newGame": "Naujas žaidimas"
     },
@@ -161,7 +161,7 @@
     "cancel": "Atšaukti"
   },
   "leaderboard": {
-    "title": "Lentelė",
+    "title": "Lyderių lentelė",
     "noGames": "Dar nėra įrašytų žaidimų.",
     "finishGame": "Baigkite žaidimą, kad pamatytumėte savo statistiką!",
     "player": "Žaidėjas",
@@ -182,6 +182,23 @@
     "ai": "DI",
     "you": "Tu",
     "gameStarting": "Žaidimas prasideda..."
+  },
+  "card": {
+    "suit": {
+      "hearts": "Širdžių",
+      "diamonds": "Būgnų",
+      "clubs": "Kryžių",
+      "spades": "Pikų"
+    },
+    "value": {
+      "9": "9",
+      "10": "10",
+      "11": "Valetas",
+      "12": "Dama",
+      "13": "Karalius",
+      "14": "Tūzas"
+    },
+    "format": "{suit} {value}"
   },
   "pile": {
     "empty": "Tuščia",
