@@ -562,6 +562,9 @@ export function GameBoard({
 
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
+  const playerCount = gameState.players.length;
+  const estimatedPlayerListHeight = playerCount * 42 + Math.max(0, playerCount - 1) * 4;
+
   return (
     <div className="min-h-screen bg-emerald-900 flex flex-col">
       {/* Top bar */}
@@ -612,42 +615,42 @@ export function GameBoard({
       </div>
 
       {/* Main game area */}
-      <div className="flex-1 lg:flex-1 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
-        {/* Left sidebar - Players (Desktop) */}
-        <div className="hidden lg:flex lg:w-44 flex-col gap-2 overflow-y-auto flex-shrink-0">
-          <div className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-1 px-1">Players</div>
+      <div className="flex-1 flex flex-row items-start gap-1 sm:gap-4 px-1 sm:px-4 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
+        {/* Left sidebar - Players (all screens) */}
+        <div className="flex w-[104px] sm:w-28 lg:w-44 flex-col gap-1 sm:gap-2 overflow-y-auto flex-shrink-0">
+          <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-0.5 sm:mb-1 px-0.5 sm:px-1 hidden sm:block">Players</div>
           {gameState.players.map((player: any) => {
             const isCurrent = player.id === currentPlayer?.id;
 
             return (
               <div
                 key={player.id}
-                className={`flex-shrink-0 rounded-lg p-2 border transition-all ${
+                className={`flex-shrink-0 rounded-lg p-1 sm:p-2 border transition-all ${
                   isCurrent
                     ? 'border-amber-400 bg-amber-500/10'
                     : 'border-emerald-600 bg-emerald-800/50'
                 } ${player.hasFinished ? 'opacity-60' : ''}`}
               >
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${
                     player.hasFinished ? 'bg-gray-500' : isCurrent ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'
                   }`} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className={`text-sm font-medium truncate ${isCurrent ? 'text-amber-300' : 'text-white'}`}>
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      <span className={`text-xs sm:text-sm font-medium truncate ${isCurrent ? 'text-amber-300' : 'text-white'}`}>
                         {player.name}
                       </span>
-                      {player.isAI && <span className="text-[10px] text-emerald-400">AI</span>}
+                      {player.isAI && <span className="text-[8px] sm:text-[10px] text-emerald-400 hidden sm:inline">AI</span>}
                     </div>
-                    <div className="text-xs text-emerald-400">
+                    <div className="text-[10px] sm:text-xs text-emerald-400">
                       {player.hasFinished ? (
-                        <span className="text-amber-400 flex items-center gap-1">
-                          {player.finishPosition === 1 ? <Crown className="w-3 h-3" /> :
-                           player.finishPosition === gameState.players.length ? <Skull className="w-3 h-3" /> : null}
+                        <span className="text-amber-400 flex items-center gap-0.5 sm:gap-1">
+                          {player.finishPosition === 1 ? <Crown className="w-2 h-2 sm:w-3 sm:h-3" /> :
+                           player.finishPosition === gameState.players.length ? <Skull className="w-2 h-2 sm:w-3 sm:h-3" /> : null}
                           #{player.finishPosition}
                         </span>
                       ) : (
-                        `${player.hand.length} cards`
+                        <span><span className="hidden sm:inline">cards </span>({player.hand.length})</span>
                       )}
                     </div>
                   </div>
@@ -787,56 +790,56 @@ export function GameBoard({
           </div>
         </div>
 
-        {/* Right sidebar - Move History (Desktop) */}
-        <div className="hidden lg:flex lg:w-56 flex-col gap-3 flex-shrink-0">
-          <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: '400px' }}>
+        {/* Right sidebar - Move History (all screens) */}
+        <div className="flex w-[104px] sm:w-28 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0">
+          <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: `${estimatedPlayerListHeight}px` }}>
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center justify-between p-3 border-b border-emerald-600 flex-shrink-0"
+              className="flex items-center justify-between p-1 sm:p-3 border-b border-emerald-600 flex-shrink-0"
             >
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-amber-400" />
-                <span className="text-white font-medium text-sm">Move History</span>
+              <div className="flex items-center gap-0.5 sm:gap-2">
+                <History className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-amber-400" />
+                <span className="text-white font-medium text-xs sm:text-sm truncate">History</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-emerald-400 text-xs">{gameState.moveHistory.length}</span>
+              <div className="flex items-center gap-0.5 sm:gap-2">
+                <span className="text-emerald-400 text-[10px] sm:text-xs">{gameState.moveHistory.length}</span>
                 {showHistory ? (
-                  <ChevronUp className="w-4 h-4 text-emerald-400" />
+                  <ChevronUp className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-emerald-400" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-emerald-400" />
+                  <ChevronDown className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-emerald-400" />
                 )}
               </div>
             </button>
 
             {showHistory && (
-              <div ref={historyContainerRef} className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+              <div ref={historyContainerRef} className="flex-1 overflow-y-auto p-1 sm:p-2 space-y-0.5 sm:space-y-1 min-h-0">
                 {gameState.moveHistory.length === 0 ? (
-                  <p className="text-emerald-400 text-xs italic text-center py-4">No moves yet</p>
+                  <p className="text-emerald-400 text-[10px] sm:text-xs italic text-center py-1 sm:py-4">No moves yet</p>
                 ) : (
                   gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
                     <div
                       key={move.id}
-                      className={`text-xs p-2 rounded ${
+                      className={`text-[10px] sm:text-xs p-0.5 sm:p-2 rounded ${
                         move.type === 'play'
                           ? 'bg-emerald-700/50'
                           : 'bg-amber-900/30'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className={`font-medium ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
+                        <span className={`font-medium truncate max-w-[60%] ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
                           {move.playerName}
                         </span>
-                        <span className="text-emerald-500 text-[10px]">T{move.turnNumber}</span>
+                        <span className="text-emerald-500 text-[8px] sm:text-[10px] flex-shrink-0">T{move.turnNumber}</span>
                       </div>
                       <div className="text-emerald-200 truncate">
                         {move.type === 'play' ? (
-                          <span className="flex items-center gap-1">
-                            <span className="text-emerald-400">→</span>
-                            {move.cards.map(c => getCardDisplayName(c)).join(' ')}
+                          <span className="flex items-center gap-0.5 sm:gap-1">
+                            <span className="text-emerald-400 flex-shrink-0">→</span>
+                            <span className="truncate">{move.cards.map(c => getCardDisplayName(c)).join(' ')}</span>
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1">
-                            <span className="text-amber-400">↑</span>
+                          <span className="flex items-center gap-0.5 sm:gap-1">
+                            <span className="text-amber-400 flex-shrink-0">↑</span>
                             Took {move.cards.length}
                           </span>
                         )}
@@ -934,88 +937,6 @@ export function GameBoard({
               </button>
             </div>
           )}
-
-          <div className="p-2 sm:p-3 border-b border-emerald-600">
-            <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-1 sm:mb-2">Players</div>
-            <div className="flex flex-wrap gap-1 sm:gap-2">
-              {gameState.players.map((player: any) => {
-                const isCurrent = player.id === currentPlayer?.id;
-                return (
-                  <div
-                    key={player.id}
-                    className={`px-2 py-1 rounded text-[10px] sm:text-xs border ${
-                      isCurrent
-                        ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                        : 'border-emerald-600 bg-emerald-700/50 text-emerald-200'
-                    } ${player.hasFinished ? 'opacity-60' : ''}`}
-                  >
-                    <span className="font-medium">{player.name}</span>
-                    {player.isAI && <span className="text-emerald-400 ml-0.5">AI</span>}
-                    <span className="text-emerald-400 ml-1">
-                      {player.hasFinished ? `#${player.finishPosition}` : `(${player.hand.length})`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-        <div className="p-2 sm:p-3">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center justify-between w-full"
-          >
-            <div className="flex items-center gap-1 sm:gap-2">
-              <History className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
-              <span className="text-white font-medium text-xs sm:text-sm">Move History</span>
-              <span className="text-emerald-400 text-[10px] sm:text-xs">({gameState.moveHistory.length})</span>
-            </div>
-            {showHistory ? (
-              <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-            ) : (
-              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-            )}
-          </button>
-
-          {showHistory && (
-            <div ref={historyContainerRef} className="mt-2 sm:mt-3 space-y-1 max-h-24 sm:max-h-32 overflow-y-auto">
-              {gameState.moveHistory.length === 0 ? (
-                <p className="text-emerald-400 text-[10px] sm:text-xs italic">No moves yet</p>
-              ) : (
-                gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
-                  <div
-                    key={move.id}
-                    className={`text-[10px] sm:text-xs p-1.5 sm:p-2 rounded ${
-                      move.type === 'play'
-                        ? 'bg-emerald-700/50'
-                        : 'bg-amber-900/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className={`font-medium ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
-                        {move.playerName}
-                      </span>
-                      <span className="text-emerald-500 text-[8px] sm:text-[10px]">T{move.turnNumber}</span>
-                    </div>
-                    <div className="text-emerald-200 truncate">
-                      {move.type === 'play' ? (
-                        <span className="flex items-center gap-1">
-                          <span className="text-emerald-400">→</span>
-                          {move.cards.map(c => getCardDisplayName(c)).join(' ')}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <span className="text-amber-400">↑</span>
-                          Took {move.cards.length}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
         </div>
       </div>
 
