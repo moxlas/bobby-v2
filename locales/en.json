@@ -6,7 +6,7 @@
     "numberOfPlayers": "Number of Players",
     "players": "Players",
     "playerPlaceholder": "Player {index}",
-    "maxCharacters": "Max 16 characters",
+    "maxCharacters": "Max 12 characters",
     "human": "Human",
     "ai": "AI",
     "gameOptions": "Game Options",
