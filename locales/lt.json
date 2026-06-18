@@ -82,15 +82,15 @@
       "thinking": "Galvoja..."
     },
     "ninesStart": {
-      "title": "Laimingas startas!",
-      "text": "Turite visus 4 9-ukus! Meskite juos dabar arba pasilikite vėliau.",
+      "title": "Laiminga pradžia!",
+      "text": "Turite visus keturis 9-etus! Meskite juos dabar arba pasilikite vėliau.",
       "playSelected": "Mesti ({count})",
       "saveForLater": "Pasilikti vėliau"
     },
     "combo": {
-      "title": "Kombinacija!",
-      "text": "Išmetėte 4 vienodas kortas! Meskite daugiau kortų arba baikite ėjimą.",
-      "playSelected": "Mesti pasirinktas ({count})",
+      "title": "Keturios vienodos!",
+      "text": "Sužaistos 4 vienodos kortos! Galite tęsti savo eilę arba baigti ėjimą.",
+      "playSelected": "Mesti ({count})",
       "endTurn": "Baigti ėjimą"
     },
     "takeOptions": {
@@ -123,7 +123,7 @@
       "invalidMove": "Negalimas ėjimas"
     },
     "confirm": {
-      "playCards": "Mesti {cards}?",
+      "playCards": "Pasirinkimas: {cards}",
       "takeCards_one": "Paimti {count} kortą iš krūvos?",
       "takeCards_other": "Paimti {count} kortas iš krūvos?",
       "takeAll": "Paimti visas {count} kortas iš krūvos?",
@@ -142,7 +142,7 @@
       "totalTime": "Bendras laikas: {time}",
       "rankings": "Galutiniai rezultatai:",
       "winner": "LAIMĖTOJAS",
-      "loser": "PRALAIMĖTOJAS",
+      "loser": "PRALOŠĖJAS",
       "playAgain": "Žaisti dar kartą",
       "newGame": "Naujas žaidimas"
     },
@@ -164,9 +164,9 @@
   "leaderboard": {
     "title": "Lyderių lentelė",
     "noGames": "Dar nėra įrašytų žaidimų.",
-    "finishGame": "Baikite žaidimą, kad pamatytumėte savo statistiką!",
+    "finishGame": "Baigkite žaidimą, kad pamatytumėte savo statistiką!",
     "player": "Žaidėjas",
-    "wins": "1 vietos",
+    "wins": "Pergalės",
     "losses": "Pralaimėjimai",
     "winPercent": "Pergalės %",
     "gameCount_one": "{count} žaidimas",
@@ -179,7 +179,7 @@
     "clearRecords": "Išvalyti visus įrašus"
   },
   "dealing": {
-    "title": "Dalinamos kortos...",
+    "title": "Dalijamos kortos...",
     "subtitle": "{players} žaidėjai · {cards} kortos kiekvienam",
     "ai": "DI",
     "you": "Tu",
