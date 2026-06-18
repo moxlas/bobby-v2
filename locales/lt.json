@@ -146,6 +146,12 @@
       "playAgain": "Žaisti dar kartą",
       "newGame": "Naujas žaidimas"
     },
+    "newGame": {
+      "confirm": "Pradėti naują žaidimą? Dabartinė pažanga bus prarasta."
+    },
+    "restartGame": {
+      "confirm": "Pradėti žaidimą iš naujo? Visa dabartinė pažanga bus prarasta."
+    },
     "paused": {
       "title": "Žaidimas pristabdytas",
       "resume": "Tęsti žaidimą",
@@ -159,7 +165,8 @@
   "confirmPopup": {
     "title": "Patvirtinti ėjimą",
     "confirm": "Patvirtinti",
-    "cancel": "Atšaukti"
+    "cancel": "Atšaukti",
+    "areYouSure": "Ar tikrai?"
   },
   "leaderboard": {
     "title": "Lyderių lentelė",
