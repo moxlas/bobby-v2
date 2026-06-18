@@ -34,8 +34,8 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-emerald-800 rounded-2xl w-full max-w-lg border border-emerald-600 shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-emerald-800 rounded-2xl w-full max-w-xl border border-emerald-600 shadow-2xl flex flex-col max-h-[85vh]">
         <div className="flex items-center justify-between p-5 border-b border-emerald-600 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" />
