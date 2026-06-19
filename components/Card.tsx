@@ -26,6 +26,117 @@ const VALUE_DISPLAY: Record<number, string> = {
   9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K', 14: 'A',
 };
 
+function renderCenter(card: CardType, suitSymbol: string, suitColor: string, size: string) {
+  const v = card.value;
+  const isLg = size === 'lg';
+  const pipSize = isLg ? 'text-lg' : 'text-sm';
+  const rowW = isLg ? 'w-11' : 'w-9';
+  const symCls = `${suitColor} ${pipSize} leading-none`;
+
+  if (v === 14) {
+    return <div className={`text-4xl leading-none ${suitColor}`}>{suitSymbol}</div>;
+  }
+
+  if (v === 9) {
+    return (
+      <div className={`flex flex-col items-center gap-0 ${suitColor}`}>
+        {[[0,0],[0,0],[0],[0,0],[0,0]].map((row, ri) => (
+          <div key={ri} className={`flex ${row.length === 1 ? 'justify-center' : 'justify-between'} ${rowW}`}>
+            {row.map((_, ci) => <span key={ci} className={symCls}>{suitSymbol}</span>)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (v === 10) {
+    return (
+      <div className={`flex flex-col items-center gap-0 ${suitColor}`}>
+        {[[0,0],[0],[0,0],[0,0],[0],[0,0]].map((row, ri) => (
+          <div key={ri} className={`flex ${row.length === 1 ? 'justify-center' : 'justify-between'} ${rowW}`}>
+            {row.map((_, ci) => <span key={ci} className={symCls}>{suitSymbol}</span>)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (v === 11 || v === 12 || v === 13) {
+    const color = suitColor;
+    const suit = card.suit;
+
+    const base = (
+      <>
+        <ellipse cx="34" cy="28" rx="12" ry="16" transform="rotate(-4, 34, 28)" />
+        <polygon points="22,26 11,30 22,34" />
+        <rect x="30" y="44" width="7" height="8" rx="2" />
+      </>
+    );
+
+    const shoulder: Record<string, string> = {
+      hearts: 'M 8 56 Q 30 52 52 56 Q 54 72 30 76 Q 6 72 8 56 Z',
+      diamonds: 'M 10 56 L 48 58 L 52 72 L 30 78 L 6 74 Z',
+      clubs: 'M 4 56 Q 30 50 56 56 Q 60 74 30 78 Q 0 74 4 56 Z',
+      spades: 'M 12 56 L 50 56 L 54 74 L 30 76 L 4 72 Z',
+    };
+
+    const king: Record<string, {crown: string; band: string; beard: string; cross?: string}> = {
+      hearts: { crown: '18,18 15,6 23,12 30,4 37,12 45,6 42,18', band: 'M 18 17 h 24', beard: 'M 22 42 Q 26 56 34 50 Q 28 48 26 42 Z', cross: 'M 28 6 v 6 M 25 9 h 6' },
+      diamonds: { crown: '18,18 14,6 24,10 30,2 36,10 44,6 42,18', band: 'M 18 17 h 24', beard: 'M 22 42 L 28 54 L 32 46 Z' },
+      clubs: { crown: '18,18 14,8 20,4 26,10 30,2 34,10 40,4 46,8 42,18', band: 'M 18 17 h 24', beard: 'M 22 42 Q 26 58 34 52 Q 28 48 22 42 Z', cross: 'M 28 2 v 8' },
+      spades: { crown: '18,18 14,8 20,4 26,10 30,0 34,10 40,4 46,8 42,18', band: 'M 18 17 h 24', beard: 'M 22 42 L 28 52 L 34 44 Z' },
+    };
+
+    const queen: Record<string, {crown: string; band: string; hair: string}> = {
+      hearts: { crown: '18,18 16,8 23,13 30,6 37,13 44,8 42,18', band: 'M 18 17 h 24', hair: 'M 42 14 Q 52 18 50 34 Q 48 50 54 56 Q 50 58 46 48 Q 48 34 46 24 Z' },
+      diamonds: { crown: '18,18 14,8 22,12 30,4 38,12 46,8 42,18', band: 'M 18 17 h 24', hair: 'M 42 12 L 52 30 L 48 50 L 54 56 L 44 44 L 46 22 Z' },
+      clubs: { crown: '18,18 16,8 22,10 26,4 30,6 34,4 38,10 44,8 42,18', band: 'M 18 17 h 24', hair: 'M 42 12 Q 54 20 52 38 Q 50 54 56 58 Q 52 56 48 46 Q 50 30 46 18 Z' },
+      spades: { crown: '18,18 14,10 20,6 26,12 30,2 34,12 40,6 46,10 42,18', band: 'M 18 17 h 24', hair: 'M 40 12 L 54 28 L 50 48 L 56 56 L 46 42 L 44 20 Z' },
+    };
+
+    const jack: Record<string, {hat: string; hatTop?: string; collar: string}> = {
+      hearts: { hat: 'M 18 22 Q 30 10 44 16 L 44 20 Q 30 14 18 22 Z', hatTop: 'M 38 14 Q 48 14 50 22 L 48 24 Q 46 16 38 14 Z', collar: 'M 22 54 L 26 62 L 30 56 L 34 62 L 38 54 Z' },
+      diamonds: { hat: 'M 18 20 L 40 8 L 44 18 L 44 20 L 20 24 Z', collar: 'M 22 54 L 28 64 L 30 56 L 34 64 L 38 54 Z' },
+      clubs: { hat: 'M 16 24 Q 30 8 46 18 L 44 22 Q 30 12 18 22 Z', hatTop: 'M 36 12 Q 44 10 48 18 L 46 20 Q 42 14 36 12 Z', collar: 'M 20 54 L 26 64 L 30 56 L 34 64 L 40 54 Z' },
+      spades: { hat: 'M 20 18 L 40 6 L 46 20 L 44 22 L 38 12 L 22 20 Z', collar: 'M 24 54 L 28 62 L 30 56 L 34 62 L 36 54 Z' },
+    };
+
+    return (
+      <svg viewBox="0 0 60 80" fill="currentColor" className={`w-4/5 h-4/5 ${color}`}>
+        {base}
+        <path d={shoulder[suit]} />
+
+        {v === 13 && (
+          <>
+            <polygon points={king[suit].crown} />
+            <path d={king[suit].band} />
+            <path d={king[suit].beard} />
+            {king[suit].cross && <path d={king[suit].cross} />}
+          </>
+        )}
+
+        {v === 12 && (
+          <>
+            <polygon points={queen[suit].crown} />
+            <path d={queen[suit].band} />
+            <path d={queen[suit].hair} />
+          </>
+        )}
+
+        {v === 11 && (
+          <>
+            <path d={jack[suit].hat} />
+            {jack[suit].hatTop && <path d={jack[suit].hatTop} />}
+            <path d={jack[suit].collar} />
+          </>
+        )}
+      </svg>
+    );
+  }
+
+  return <div className={`text-lg ${suitColor}`}>{suitSymbol}</div>;
+}
+
 export function Card({ card, onClick, isSelected, disabled, size = 'md' }: CardProps) {
   const sizeClasses = {
     sm: 'w-16 h-24',
@@ -48,19 +159,27 @@ export function Card({ card, onClick, isSelected, disabled, size = 'md' }: CardP
     );
   }
 
+  const isLg = size === 'lg';
+  const cornerValCls = isLg ? 'text-base' : 'text-sm';
+  const cornerSuitCls = isLg ? 'text-sm' : 'text-xs';
+  const topCorner = isLg ? 'top-1 left-1.5' : 'top-0.5 left-1';
+  const btmCorner = isLg ? 'bottom-1 right-1.5' : 'bottom-0.5 right-1';
+
   return (
     <div
-      className={`${sizeClasses[size]} bg-white rounded-lg border-2 ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-300'} flex flex-col items-center justify-between p-1.5 cursor-pointer shadow-md hover:shadow-lg transition-shadow ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`${sizeClasses[size]} relative bg-white rounded-lg border-2 ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-300'} cursor-pointer shadow-md hover:shadow-lg transition-shadow ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={disabled ? undefined : onClick}
     >
-      <div className={`text-sm font-bold ${suitColor} self-start leading-none`}>
+      <div className={`absolute ${topCorner} z-10 ${cornerValCls} font-bold ${suitColor} leading-none`}>
         <div>{valueDisplay}</div>
-        <div className="text-xs">{suitSymbol}</div>
+        <div className={cornerSuitCls}>{suitSymbol}</div>
       </div>
-      <div className={`text-lg ${suitColor}`}>{suitSymbol}</div>
-      <div className={`text-sm font-bold ${suitColor} self-end rotate-180 leading-none`}>
+      <div className={`absolute ${btmCorner} z-10 ${cornerValCls} font-bold ${suitColor} rotate-180 leading-none`}>
         <div>{valueDisplay}</div>
-        <div className="text-xs">{suitSymbol}</div>
+        <div className={cornerSuitCls}>{suitSymbol}</div>
+      </div>
+      <div className="flex items-center justify-center w-full h-full">
+        {renderCenter(card, suitSymbol, suitColor, size)}
       </div>
     </div>
   );
