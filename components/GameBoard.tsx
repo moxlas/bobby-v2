@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
+import { Card as CardType, GameOptions, GameState, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
 import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
@@ -14,7 +14,7 @@ import {
 import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, BookOpen } from 'lucide-react';
 
 interface GameBoardProps {
-  gameState: any;
+  gameState: GameState;
   onPlayCards: (playerId: number, cards: CardType[], continueTurn: boolean) => void;
   onTakeCards: (playerId: number, count: number) => void;
   onEndTurn: () => void;
@@ -202,7 +202,7 @@ export function GameBoard({
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
-    if (!currentPlayer || !currentPlayer.isAI || currentPlayer.id === 'human') {
+    if (!currentPlayer || !currentPlayer.isAI) {
       return;
     }
 
