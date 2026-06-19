@@ -212,37 +212,6 @@ function enforceNoSkipDecision(
     // 3) play lowest single (always legal because top is 9)
     const sorted = [...playerHand].sort((a, b) => a.value - b.value);
     return { type: 'play', cards: [sorted[0]] };
-    // If bestMove is 'endTurn', replace with a play move
-    // Inside the block
-    if (bestMove && bestMove.type === 'endTurn') {
-      if (possiblePlays && possiblePlays.length > 0) {
-        return { type: 'play', cards: possiblePlays[0] };
-      }
-      // This fallback is for scenario where no moves available
-      // Always play the lowest card in hand
-      const sortedHand = [...playerHand].sort((a, b) => a.value - b.value);
-      if (sortedHand.length > 0) {
-        return { type: 'play', cards: [sortedHand[0]] };
-      }
-    }
-  }
-  
-  // Prevent ending turn if only 9♦ on pile and no prior combo
-  if (
-    pile.length === 1 &&
-    pile[0].value === 9 &&
-    pile[0].suit === 'diamonds' &&
-    bestMove?.type === 'endTurn'
-  ) {
-    // Force a play instead
-    if (possiblePlays && possiblePlays.length > 0) {
-      return { type: 'play', cards: possiblePlays[0] };
-    }
-    // fallback: play lowest card
-    if (playerHand && playerHand.length > 0) {
-      const sortedHand = [...playerHand].sort((a, b) => a.value - b.value);
-      return { type: 'play', cards: [sortedHand[0]] };
-    }
   }
   
   // Otherwise choose a take if allowed
