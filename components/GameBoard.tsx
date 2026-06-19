@@ -679,20 +679,20 @@ export function GameBoard({
           {/* Narrow: current turn (left), pile count (center), top card (right) */}
           <div className="flex sm:hidden items-start w-full px-1 pt-1">
             <div className="flex-1">
-              <div className="text-emerald-300 text-xs">{t('game.center.currentTurn')}</div>
+              <div className="text-emerald-300 text-sm font-medium">{t('game.center.currentTurn')}</div>
               <div className="flex items-center gap-1 flex-wrap">
-                <span className="text-amber-300 font-bold text-sm">{currentPlayer?.name}</span>
-                {currentPlayer?.isAI && <span className="text-[10px] text-emerald-400">({t('game.sidebar.ai')})</span>}
-                {isAIThinking && <span className="text-amber-400 text-xs animate-pulse">{t('game.center.thinking')}</span>}
+                <span className="text-amber-300 font-bold text-base">{currentPlayer?.name}</span>
+                {currentPlayer?.isAI && <span className="text-xs text-emerald-400">({t('game.sidebar.ai')})</span>}
+                {isAIThinking && <span className="text-amber-400 text-sm animate-pulse">{t('game.center.thinking')}</span>}
               </div>
             </div>
-            <div className="flex-shrink-0 px-1">
-              <div className="text-emerald-300 text-xs text-center">{t('game.sidebar.cards')}</div>
-              <div className="text-amber-300 font-bold text-sm text-center">{pile.length}</div>
+            <div className="flex-shrink-0 px-2">
+              <div className="text-emerald-300 text-sm font-medium text-center">{t('game.sidebar.cards')}</div>
+              <div className="text-amber-300 font-bold text-base text-center">{pile.length}</div>
             </div>
             <div className="flex-1 text-right">
-              <div className="text-emerald-300 text-xs">{t('pile.top')}</div>
-              <div className="text-amber-300 font-bold text-sm">
+              <div className="text-emerald-300 text-sm font-medium">{t('pile.top')}</div>
+              <div className="text-amber-300 font-bold text-base">
                 {topCard ? t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) }) : ''}
               </div>
             </div>
