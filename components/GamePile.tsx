@@ -35,8 +35,8 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
 
       <div className="relative h-44 sm:h-40 flex items-center justify-center -translate-x-12 translate-y-1">
         {visibleCards.map((card, index) => {
-          const totalWidth = (visibleCount - 1) * 16;
-          const offsetX = index * 16 - totalWidth / 2;
+          const totalWidth = (visibleCount - 1) * 28;
+          const offsetX = index * 28 - totalWidth / 2;
           const offsetY = index * -3;
 
           return (
