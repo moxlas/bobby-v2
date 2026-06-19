@@ -30,15 +30,26 @@ export function initializeGame(playerSetups: PlayerSetup[], options: GameOptions
     }
   }
 
-  players[startingPlayerIndex].isCurrentTurn = true;
-
   const nineOfDiamonds = findNineOfDiamonds(players[startingPlayerIndex].hand)!;
   players[startingPlayerIndex].hand = players[startingPlayerIndex].hand.filter(c => c.id !== nineOfDiamonds.id);
+
+  // 4-nines special rule: if starting player has all 4 nines, they continue
+  const nineCount = players[startingPlayerIndex].hand.filter(c => c.value === 9).length;
+  const canContinueWithFourNines = options.specialNinesRule && nineCount === 3;
+
+  let currentPlayerIndex = startingPlayerIndex;
+  if (!canContinueWithFourNines) {
+    currentPlayerIndex = getNextPlayerIndex(startingPlayerIndex, players);
+  }
+
+  players.forEach((p, i) => {
+    p.isCurrentTurn = i === currentPlayerIndex;
+  });
 
   return {
     phase: 'playing',
     players,
-    currentPlayerIndex: startingPlayerIndex,
+    currentPlayerIndex,
     pile: [{ ...nineOfDiamonds, faceUp: true }],
     deck: [],
     direction: 'clockwise',
@@ -58,7 +69,7 @@ export function initializeGame(playerSetups: PlayerSetup[], options: GameOptions
     totalPausedTime: 0,
     turnNumber: 1,
     options,
-    canContinueTurn: false,
+    canContinueTurn: canContinueWithFourNines,
     aiOnlyStartTurn: null,
   };
 }
@@ -153,20 +164,68 @@ export function canContinueAfterPlay(hand: Card[], pile: Card[]): boolean {
   return hasValidCard || fourOfKindValue !== null;
 }
 
+function checkAIOnlyLoop(
+  state: GameState,
+  players: Player[],
+  turnNumber: number,
+  pile: Card[],
+  moveHistory: PlayerMove[],
+  finishOrder: Player[],
+  elapsedTime: number,
+): GameState | null {
+  const remainingActive = players.filter(p => !p.hasFinished);
+  const allAI = remainingActive.length > 0 && remainingActive.every(p => p.isAI);
+  let aiOnlyStartTurn = state.aiOnlyStartTurn;
+  if (allAI && aiOnlyStartTurn === null) {
+    aiOnlyStartTurn = turnNumber;
+  }
+
+  if (allAI && aiOnlyStartTurn !== null && turnNumber - aiOnlyStartTurn > 200) {
+    const newFinishOrder = [...finishOrder];
+    const finalPlayers = players.map(p => {
+      if (p.hasFinished) return { ...p };
+      const pos = newFinishOrder.length + 1;
+      const finished = { ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime };
+      newFinishOrder.push(finished);
+      return finished;
+    });
+    return {
+      ...state,
+      players: finalPlayers,
+      pile: [...pile],
+      phase: 'finished' as const,
+      moveHistory: [...moveHistory],
+      finishOrder: newFinishOrder,
+      loser: finalPlayers[finalPlayers.length - 1],
+      canContinueTurn: false,
+      aiOnlyStartTurn,
+    };
+  }
+
+  return null;
+}
+
 export function playCards(state: GameState, playerId: number, cards: Card[], continueTurn: boolean = false): GameState {
-  const newPlayers = [...state.players];
+  const newPlayers = state.players.map(p => ({ ...p, hand: [...p.hand] }));
   const player = newPlayers[playerId];
 
   if (cards.length === 0) {
     const nextIndex = getNextPlayerIndex(state.currentPlayerIndex, newPlayers);
-    newPlayers[state.currentPlayerIndex].isCurrentTurn = false;
-    newPlayers[nextIndex].isCurrentTurn = true;
+    newPlayers.forEach((p, i) => { p.isCurrentTurn = i === nextIndex; });
+
+    const newTurnNumber = state.turnNumber + 1;
+    const elapsedTime = state.gameStartTime
+      ? (Date.now() - state.gameStartTime) / 1000 - state.totalPausedTime
+      : 0;
+    const finishOrder = [...state.finishOrder];
+    const aiResult = checkAIOnlyLoop(state, newPlayers, newTurnNumber, state.pile, state.moveHistory, finishOrder, elapsedTime);
+    if (aiResult) return aiResult;
 
     return {
       ...state,
       players: newPlayers,
       currentPlayerIndex: nextIndex,
-      turnNumber: state.turnNumber + 1,
+      turnNumber: newTurnNumber,
       canContinueTurn: false,
     };
   }
@@ -198,17 +257,16 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
     const activePlayers = newPlayers.filter(p => !p.hasFinished);
 
     if (activePlayers.length === 1) {
-      const loser = activePlayers[0];
-      loser.hasFinished = true;
-      loser.finishPosition = newPlayers.length;
-      loser.finishTime = elapsedTime;
+      const loser = { ...activePlayers[0], hasFinished: true, finishPosition: newPlayers.length, finishTime: elapsedTime };
+      const loserIdx = newPlayers.findIndex(p => p.id === loser.id);
+      newPlayers[loserIdx] = loser;
 
       return {
         ...state,
         phase: 'finished',
         players: newPlayers,
         pile: newPile,
-        finishOrder: [...newFinishOrder, { ...loser }],
+        finishOrder: [...newFinishOrder, loser],
         loser,
         moveHistory: newMoveHistory,
         canContinueTurn: false,
@@ -216,8 +274,11 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
     }
 
     const nextIndex = getNextPlayerIndex(state.currentPlayerIndex, newPlayers);
-    newPlayers[state.currentPlayerIndex].isCurrentTurn = false;
-    newPlayers[nextIndex].isCurrentTurn = true;
+    newPlayers.forEach((p, i) => { p.isCurrentTurn = i === nextIndex; });
+    const newTurnNumber = state.turnNumber + 1;
+
+    const aiResult = checkAIOnlyLoop(state, newPlayers, newTurnNumber, newPile, newMoveHistory, newFinishOrder, elapsedTime);
+    if (aiResult) return aiResult;
 
     return {
       ...state,
@@ -226,7 +287,7 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
       finishOrder: newFinishOrder,
       currentPlayerIndex: nextIndex,
       moveHistory: newMoveHistory,
-      turnNumber: state.turnNumber + 1,
+      turnNumber: newTurnNumber,
       canContinueTurn: false,
     };
   }
@@ -242,8 +303,12 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
   }
 
   const nextIndex = getNextPlayerIndex(state.currentPlayerIndex, newPlayers);
-  newPlayers[state.currentPlayerIndex].isCurrentTurn = false;
-  newPlayers[nextIndex].isCurrentTurn = true;
+  newPlayers.forEach((p, i) => { p.isCurrentTurn = i === nextIndex; });
+  const newTurnNumber = state.turnNumber + 1;
+
+  const finishOrder = [...state.finishOrder];
+  const aiResult = checkAIOnlyLoop(state, newPlayers, newTurnNumber, newPile, newMoveHistory, finishOrder, elapsedTime);
+  if (aiResult) return aiResult;
 
   return {
     ...state,
@@ -251,28 +316,35 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
     pile: newPile,
     currentPlayerIndex: nextIndex,
     moveHistory: newMoveHistory,
-    turnNumber: state.turnNumber + 1,
+    turnNumber: newTurnNumber,
     canContinueTurn: false,
   };
 }
 
 export function endTurn(state: GameState): GameState {
-  const newPlayers = [...state.players];
+  const newPlayers = state.players.map(p => ({ ...p }));
   const nextIndex = getNextPlayerIndex(state.currentPlayerIndex, newPlayers);
-  newPlayers[state.currentPlayerIndex].isCurrentTurn = false;
-  newPlayers[nextIndex].isCurrentTurn = true;
+  newPlayers.forEach((p, i) => { p.isCurrentTurn = i === nextIndex; });
+  const newTurnNumber = state.turnNumber + 1;
+
+  const elapsedTime = state.gameStartTime
+    ? (Date.now() - state.gameStartTime) / 1000 - state.totalPausedTime
+    : 0;
+  const finishOrder = [...state.finishOrder];
+  const aiResult = checkAIOnlyLoop(state, newPlayers, newTurnNumber, state.pile, state.moveHistory, finishOrder, elapsedTime);
+  if (aiResult) return aiResult;
 
   return {
     ...state,
     players: newPlayers,
     currentPlayerIndex: nextIndex,
-    turnNumber: state.turnNumber + 1,
+    turnNumber: newTurnNumber,
     canContinueTurn: false,
   };
 }
 
 export function takeCards(state: GameState, playerId: number, count: number): GameState {
-  const newPlayers = [...state.players];
+  const newPlayers = state.players.map(p => ({ ...p, hand: [...p.hand] }));
   const player = newPlayers[playerId];
   const newPile = [...state.pile];
 
@@ -291,8 +363,15 @@ export function takeCards(state: GameState, playerId: number, count: number): Ga
   const newMoveHistory = [...state.moveHistory, move];
 
   const nextIndex = getNextPlayerIndex(state.currentPlayerIndex, newPlayers);
-  newPlayers[state.currentPlayerIndex].isCurrentTurn = false;
-  newPlayers[nextIndex].isCurrentTurn = true;
+  newPlayers.forEach((p, i) => { p.isCurrentTurn = i === nextIndex; });
+  const newTurnNumber = state.turnNumber + 1;
+
+  const elapsedTime = state.gameStartTime
+    ? (Date.now() - state.gameStartTime) / 1000 - state.totalPausedTime
+    : 0;
+  const finishOrder = [...state.finishOrder];
+  const aiResult = checkAIOnlyLoop(state, newPlayers, newTurnNumber, newPile, newMoveHistory, finishOrder, elapsedTime);
+  if (aiResult) return aiResult;
 
   return {
     ...state,
@@ -300,7 +379,7 @@ export function takeCards(state: GameState, playerId: number, count: number): Ga
     pile: newPile,
     currentPlayerIndex: nextIndex,
     moveHistory: newMoveHistory,
-    turnNumber: state.turnNumber + 1,
+    turnNumber: newTurnNumber,
     canContinueTurn: false,
   };
 }
