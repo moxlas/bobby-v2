@@ -180,6 +180,13 @@ export function GameBoard({
   const pile = gameState.pile;
   const options: GameOptions = gameState.options;
 
+  const topCard = pile.length > 0 ? pile[pile.length - 1] : null;
+  const historySpacerHeight = (() => {
+    const count = gameState.moveHistory.length;
+    if (count === 0) return 104;
+    return Math.max(0, 3 - Math.min(count, 3)) * 48;
+  })();
+
   const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
   const takeOptions = getTakeOptions(pile, options);
   const validMoves = isPlayerTurn ? getValidMoves(currentPlayer.hand, pile) : { canPlay: false, canTake: false };
@@ -622,9 +629,9 @@ export function GameBoard({
       </div>
 
       {/* Main game area */}
-      <div className="flex-1 flex flex-row items-start gap-1 sm:gap-4 px-1 sm:px-4 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
-        {/* Left sidebar - Players (all screens) */}
-        <div className="flex w-32 lg:w-44 flex-col gap-1 sm:gap-2 overflow-y-auto flex-shrink-0">
+      <div className="flex-1 flex flex-col sm:flex-row items-start gap-1 sm:gap-4 px-1 sm:px-4 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
+        {/* Left sidebar - Players */}
+        <div className="hidden sm:flex w-full sm:w-32 lg:w-44 flex-col gap-1 sm:gap-2 overflow-y-auto flex-shrink-0">
           <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-0.5 sm:mb-1 px-0.5 sm:px-1 hidden sm:block">{t('game.sidebar.players')}</div>
           {gameState.players.map((player: any) => {
             const isCurrent = player.id === currentPlayer?.id;
@@ -668,8 +675,31 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 grid grid-rows-[auto_auto_min-content] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
-          <div className="text-center">
+        <div className="flex-1 w-full sm:w-auto order-3 sm:order-2 grid grid-rows-[auto_1fr_min-content] sm:grid-rows-[auto_auto_min-content] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
+          {/* Narrow: current turn (left), pile count (center), top card (right) */}
+          <div className="flex sm:hidden items-start w-full px-1 pt-1">
+            <div className="flex-1">
+              <div className="text-emerald-300 text-xs">{t('game.center.currentTurn')}</div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-amber-300 font-bold text-sm">{currentPlayer?.name}</span>
+                {currentPlayer?.isAI && <span className="text-[10px] text-emerald-400">({t('game.sidebar.ai')})</span>}
+                {isAIThinking && <span className="text-amber-400 text-xs animate-pulse">{t('game.center.thinking')}</span>}
+              </div>
+            </div>
+            <div className="flex-shrink-0 px-1">
+              <div className="text-emerald-300 text-xs text-center">{t('game.sidebar.cards')}</div>
+              <div className="text-amber-300 font-bold text-sm text-center">{pile.length}</div>
+            </div>
+            <div className="flex-1 text-right">
+              <div className="text-emerald-300 text-xs">{t('pile.top')}</div>
+              <div className="text-amber-300 font-bold text-sm">
+                {topCard ? t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) }) : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Current turn (medium+) */}
+          <div className="hidden sm:block text-center">
             <div className="mb-1 sm:mb-2">
               <div className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</div>
               <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
@@ -799,8 +829,8 @@ export function GameBoard({
           </div>
         </div>
 
-        {/* Right sidebar - Move History (all screens) */}
-        <div className="flex w-36 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0">
+        {/* Right sidebar - Move History */}
+        <div className="hidden sm:flex w-full sm:w-36 lg:w-56 flex-col gap-1 sm:gap-3 flex-shrink-0 order-2 sm:order-3">
           <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: `${estimatedPlayerListHeight}px` }}>
             <button
               onClick={() => setShowHistory(!showHistory)}
@@ -865,7 +895,7 @@ export function GameBoard({
       {/* Mobile: Bottom Section */}
       <div className="lg:hidden bg-emerald-800 border-t border-emerald-600 flex flex-col">
         {shouldShowHand && (
-          <div className="border-b border-emerald-600 px-2 pt-1 pb-2 sm:p-3 flex-shrink-0">
+          <div className="border-b border-emerald-600 px-2 pt-1 pb-2 sm:p-3 flex-shrink-0 max-h-[460px] sm:max-h-none overflow-y-auto">
             <div className="text-center mb-1">
               <span className="text-emerald-300 text-xs sm:text-sm">{isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}</span>
             </div>
@@ -892,7 +922,7 @@ export function GameBoard({
                     key={card.id}
                     onClick={() => handleCardSelect(card)}
                     disabled={!isHumanTurn}
-                    className={`w-14 h-20 rounded-lg border-2 flex flex-col items-center justify-center text-base font-bold transition-all shadow-sm ${
+                    className={`w-14 h-20 rounded-lg border-2 flex flex-col items-center justify-center text-lg sm:text-base font-bold transition-all shadow-sm ${
                       isSelected
                         ? 'border-amber-400 bg-amber-50 scale-105 shadow-md'
                         : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
@@ -901,7 +931,7 @@ export function GameBoard({
                     <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} leading-none`}>
                       {valueStr}
                     </span>
-                    <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-sm mt-0.5`}>
+                    <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-base sm:text-sm mt-0.5`}>
                       {suitSymbol}
                     </span>
                   </button>
@@ -913,8 +943,8 @@ export function GameBoard({
 
         <div>
           {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
-            <div className="p-4 sm:p-3 border-b border-emerald-600">
-              <div className="flex gap-4 sm:gap-3 justify-center mb-4 sm:mb-3">
+            <div className="px-3 py-2 sm:p-3 border-b border-emerald-600">
+              <div className="flex gap-4 sm:gap-3 justify-center">
                 <button
                   onClick={handlePlayClick}
                   disabled={selectedCards.length === 0}
@@ -946,6 +976,74 @@ export function GameBoard({
               </button>
             </div>
           )}
+
+          {/* Narrow only: Player list */}
+          <div className="sm:hidden border-t border-emerald-600 px-2 py-1">
+            <div className="flex flex-wrap gap-1 justify-center pb-0.5">
+              {gameState.players.map((player: any) => {
+                const isCurrent = player.id === currentPlayer?.id;
+                return (
+                  <div key={player.id} className={`flex-shrink-0 flex items-center gap-1 rounded-lg px-1.5 py-0.5 border text-[10px] ${
+                    isCurrent
+                      ? 'bg-amber-500/10 border-amber-400/40'
+                      : 'bg-emerald-700/50 border-emerald-600'
+                  } ${player.hasFinished ? 'opacity-60' : ''}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      player.hasFinished ? 'bg-gray-500' : isCurrent ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'
+                    }`} />
+                    <span className="text-white font-medium truncate max-w-[50px]">{player.name}</span>
+                    {player.isAI && <span className="text-emerald-400 text-[8px] flex-shrink-0">AI</span>}
+                    <span className="text-emerald-300 text-[9px] flex-shrink-0">{player.hasFinished ? `#${player.finishPosition}` : `(${player.hand.length})`}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Narrow only: Move history (last 3 moves visible) */}
+          <div className="sm:hidden border-t border-emerald-600">
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <div className="flex items-center gap-1">
+                <History className="w-3 h-3 text-amber-400" />
+                <span className="text-white font-medium text-xs">{t('game.history.title')}</span>
+              </div>
+              <span className="text-emerald-400 text-[10px]">{gameState.moveHistory.length}</span>
+            </div>
+            <div className="overflow-y-auto max-h-[155px] px-2 pb-2 space-y-1">
+              {gameState.moveHistory.length === 0 ? (
+                <p className="text-emerald-400 text-xs italic text-center py-2">{t('game.history.noMoves')}</p>
+              ) : (
+                gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
+                  <div key={move.id} className={`text-[11px] p-1.5 rounded ${
+                    move.type === 'play'
+                      ? 'bg-emerald-700/50'
+                      : 'bg-amber-900/30'
+                  }`}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className={`font-medium truncate max-w-[65%] ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
+                        {move.playerName}
+                      </span>
+                      <span className="text-emerald-500 text-[9px] flex-shrink-0">T{move.turnNumber}</span>
+                    </div>
+                    <div className="text-emerald-200 truncate">
+                      {move.type === 'play' ? (
+                        <span className="flex items-center gap-0.5">
+                          <span className="text-emerald-400 flex-shrink-0">→</span>
+                          <span className="truncate">{move.cards.map(c => getCardDisplayName(c)).join(' ')}</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-0.5">
+                          <span className="text-amber-400 flex-shrink-0">↑</span>
+                          {t('game.history.took', { count: move.cards.length })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ height: `${historySpacerHeight}px` }} />
+          </div>
         </div>
       </div>
 
