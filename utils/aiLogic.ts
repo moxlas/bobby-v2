@@ -1,6 +1,6 @@
 import { Card, GameState, GameOptions, AIDifficulty, Player } from '../types/game';
 import { getCardsOfSameValue, hasFourOfSameValue, sortHand } from './deckUtils';
-import { getTakeOptions, validatePlay } from './gameLogic';
+import { getNextPlayerIndex, getTakeOptions, validatePlay } from './gameLogic';
 
 type AIMove = { type: 'play' | 'take' | 'endTurn'; cards: Card[]; takeType?: 'take3' | 'takeAll' };
 
@@ -146,26 +146,93 @@ function estimateOpponentStrength(state: GameState, playerId: number) {
   };
 }
 
-function remainingCountsFromState(state: GameState, playerId: number) {
+interface OpponentCardTracker {
+  knownHands: Map<number, Card[]>;
+  unknownCounts: Map<number, number>;
+  unknownValueCeilings: Map<number, number>;
+}
+
+function buildOpponentCardTracker(state: GameState, playerId: number): OpponentCardTracker {
   const counts = new Map<number, number>();
   for (let v = 9; v <= 14; v++) counts.set(v, 4);
   for (const card of state.pile) counts.set(card.value, (counts.get(card.value) || 0) - 1);
-  // Only subtract cards the AI can actually see. Opponent hands are private.
   const ownHand = state.players.find(p => p.id === playerId)?.hand ?? [];
   for (const card of ownHand) counts.set(card.value, (counts.get(card.value) || 0) - 1);
-  return counts;
+
+  // Reconstruct cards that opponents picked up from the public pile and have
+  // not played again. Those cards are known to be in that player's hand.
+  const knownByPlayer = new Map<number, Map<string, Card>>();
+  const unknownValueCeilings = new Map<number, number>();
+  const historicalPile: Card[] = [];
+  for (const player of state.players) knownByPlayer.set(player.id, new Map());
+  for (const move of state.moveHistory) {
+    const knownHand = knownByPlayer.get(move.playerId);
+    if (!knownHand) continue;
+    if (move.type === 'take') {
+      const previousTopValue = historicalPile[historicalPile.length - 1]?.value;
+      if (move.playerId !== playerId && previousTopValue !== undefined) {
+        const oldCeiling = unknownValueCeilings.get(move.playerId);
+        unknownValueCeilings.set(move.playerId, oldCeiling === undefined ? previousTopValue : Math.min(oldCeiling, previousTopValue));
+      }
+      for (const card of move.cards) knownHand.set(card.id, card);
+      historicalPile.splice(Math.max(0, historicalPile.length - move.cards.length), move.cards.length);
+    } else {
+      for (const card of move.cards) {
+        const wasKnownFromPickup = knownHand.has(card.id);
+        const ceiling = unknownValueCeilings.get(move.playerId);
+        if (!wasKnownFromPickup && ceiling !== undefined && card.value >= ceiling) {
+          // The observed play contradicts the old failed-response deduction;
+          // the player may have picked up voluntarily, so discard that inference.
+          unknownValueCeilings.delete(move.playerId);
+        }
+        knownHand.delete(card.id);
+      }
+      historicalPile.push(...move.cards);
+    }
+  }
+
+  const knownHands = new Map<number, Card[]>();
+  for (const [opponentId, cardsById] of knownByPlayer) {
+    const knownCards = [...cardsById.values()];
+    knownHands.set(opponentId, knownCards);
+    if (opponentId === playerId) continue;
+    for (const card of knownCards) counts.set(card.value, (counts.get(card.value) || 0) - 1);
+  }
+
+  return { knownHands, unknownCounts: counts, unknownValueCeilings };
 }
 
-function approxProbOpponentHasAtLeast(counts: Map<number, number>, value: number, handSize: number) {
+function probabilityOpponentCanAnswer(tracker: OpponentCardTracker, state: GameState, opponentId: number, value: number) {
+  const opponent = state.players.find(player => player.id === opponentId);
+  if (!opponent || opponent.hasFinished) return 0;
+  const knownCards = tracker.knownHands.get(opponentId) ?? [];
+  if (knownCards.some(card => card.value >= value)) return 1;
+
+  const unknownSlots = Math.max(0, opponent.hand.length - knownCards.length);
+  const unknownCeiling = tracker.unknownValueCeilings.get(opponentId);
+  // A pickup after a failed response tells us the player's pre-existing
+  // hidden cards were below that pile top. Keep a little uncertainty because
+  // human players may sometimes choose to pick up voluntarily.
+  if (unknownCeiling !== undefined && value >= unknownCeiling) return unknownSlots > 0 ? 0.08 : 0;
+
   let total = 0, ge = 0;
   for (let v = 9; v <= 14; v++) {
-    const c = Math.max(0, counts.get(v) || 0);
+    if (unknownCeiling !== undefined && v >= unknownCeiling) continue;
+    const c = Math.max(0, tracker.unknownCounts.get(v) || 0);
     total += c;
     if (v >= value) ge += c;
   }
-  if (total <= 0) return 0;
-  const f = ge / total;
-  return 1 - Math.pow(1 - f, handSize);
+  if (total <= 0 || unknownSlots <= 0 || ge <= 0) return 0;
+  const below = total - ge;
+  if (unknownSlots > below) return 1;
+
+  // Cards are sampled without replacement. In a two-player game the unknown
+  // pool is exactly the other player's unknown hand, making this deduction exact.
+  let probabilityNoAnswer = 1;
+  for (let draw = 0; draw < unknownSlots; draw++) {
+    probabilityNoAnswer *= (below - draw) / (total - draw);
+  }
+  return 1 - probabilityNoAnswer;
 }
 
 // -----------------------------
@@ -192,6 +259,10 @@ function enforceNoSkipDecision(
   if (bestMove && bestMove.type === 'play' && bestMove.cards && bestMove.cards.length > 0) {
     return bestMove;
   }
+
+  // Preserve the AI's chosen pickup size. Previously this helper silently
+  // replaced every take-three decision with take-all whenever that option was on.
+  if (bestMove?.type === 'take') return bestMove;
 
   // If any possible plays exist, return the first one
   if (possiblePlays && possiblePlays.length > 0) {
@@ -248,8 +319,8 @@ function enforceNoSkipDecision(
   
   // Otherwise choose a take if allowed
   const takeOpts = getTakeOptions(pile, options);
-  if (takeOpts.canTakeAll) return { type: 'take' as const, cards: [], takeType: 'takeAll' };
   if (takeOpts.canTake3) return { type: 'take' as const, cards: [], takeType: 'take3' };
+  if (takeOpts.canTakeAll) return { type: 'take' as const, cards: [], takeType: 'takeAll' };
 
   // fallback: if no other move, try to force a take
   if (playerHand && playerHand.length > 0) {
@@ -437,12 +508,7 @@ function generateCandidates(state: GameState, playerId: number) {
 
   const candidates: any[] = [];
   const legalSingles = hand.filter(c => c.value >= topCard.value);
-  if (legalSingles.length > 0) {
-    legalSingles.sort((a, b) => a.value - b.value);
-    candidates.push({ type: 'play', cards: [legalSingles[0]] });
-    candidates.push({ type: 'play', cards: [legalSingles[legalSingles.length - 1]] });
-    if (legalSingles.length > 2) candidates.push({ type: 'play', cards: [legalSingles[Math.floor(legalSingles.length / 2)]] });
-  }
+  for (const card of legalSingles) candidates.push({ type: 'play', cards: [card] });
 
   const byVal = new Map<number, Card[]>();
   for (const c of hand) {
@@ -483,11 +549,34 @@ function evaluateCandidate(state: GameState, playerId: number, candidate: any) {
   const player = state.players.find(p => p.id === playerId)!;
   const hand = player.hand;
   const pile = state.pile;
-  const counts = remainingCountsFromState(state, playerId);
+  const tracker = buildOpponentCardTracker(state, playerId);
   const opponentInfo = estimateOpponentStrength(state, playerId);
 
   const deltaHand = candidate.type === 'play' ? candidate.cards.length : 0;
   let score = 0;
+
+  if (candidate.type === 'take') {
+    const takeOptions = getTakeOptions(pile, state.options);
+    const takeCount = candidate.takeType === 'takeAll' ? takeOptions.takeAllCount : takeOptions.take3Count;
+    const cardsToTake = pile.slice(-takeCount);
+    const topValue = pile[pile.length - 1].value;
+    // Taking cards is a cost. Reward a pickup only when it creates a legal
+    // four of a kind or adds cards that can answer the current top card.
+    score -= takeCount * 45;
+    const handCounts = new Map<number, number>();
+    for (const card of hand) handCounts.set(card.value, (handCounts.get(card.value) ?? 0) + 1);
+    for (const card of cardsToTake) {
+      if (card.value >= topValue && (handCounts.get(card.value) ?? 0) === 3) {
+        score += 95;
+        handCounts.set(card.value, 4);
+      } else if (card.value >= topValue) {
+        score += 4;
+      }
+    }
+    if (opponentInfo.opponentCloseToWin && cardsToTake.some(card => card.value >= topValue)) score += 12;
+    return score;
+  }
+
   // Getting rid of cards matters, but keeping flexible high cards matters too.
   score += 18 * deltaHand;
 
@@ -497,39 +586,39 @@ function evaluateCandidate(state: GameState, playerId: number, candidate: any) {
 
   if (candidate.type === 'play') {
     for (const c of candidate.cards) {
-      if (c.value === 14) score -= 24;
-      else if (c.value === 13) score -= 13;
-      else if (c.value === 12) score -= 7;
+      // A higher card is more flexible later, so its cost rises with rank.
+      score -= Math.pow(c.value - 9, 1.35) * 2.2;
     }
     // Prefer the lowest card that still makes the next player spend a higher
     // card or pick up. This avoids wasting an Ace when a King does the job.
     const playedValue = candidate.cards[0].value;
-    const nextIdx = (state.players.findIndex(p => p.id === playerId) + 1) % state.players.length;
+    const nextIdx = getNextPlayerIndex(state.players.findIndex(p => p.id === playerId), state.players);
     const nextPlayer = state.players[nextIdx];
     if (nextPlayer && !nextPlayer.hasFinished) {
       const nextHandSize = nextPlayer.hand.length;
-      const forceProbability = 1 - approxProbOpponentHasAtLeast(counts, playedValue, nextHandSize);
-      score += 35 * forceProbability;
-      if (nextHandSize <= 2) score += playedValue >= 13 ? 30 : 0;
+      const forceProbability = 1 - probabilityOpponentCanAnswer(tracker, state, nextPlayer.id, playedValue);
+      if (nextHandSize <= 1) score += 55 * forceProbability;
+      else if (nextHandSize <= 2) score += 35 * forceProbability;
+      else if (nextHandSize <= 3) score += 25 * forceProbability;
+      else score += 18 * forceProbability;
       // Retaining multiple high cards gives options on later turns.
       score += Math.min(3, hand.filter(c => c.value >= 12).length) * (playedValue >= 13 ? 4 : 0);
     }
   }
 
   if (candidate.type === 'play' && candidate.cards.length === 4) {
-    if (candidate.cards[0].value === 14) {
-      if (hand.length !== 4 && !opponentInfo.opponentCloseToWin) score -= 200;
-    } else {
-      if (hand.length === 4) score += 120;
-      else if (pile.length >= 5) score += 30;
-    }
+    // A legal four of a kind sheds four cards and grants a continuation.
+    // That tempo is valuable even for Aces, which also lock the pile at 14.
+    score += 110;
+    if (candidate.cards[0].value === 14) score += 35;
   }
 
-  const nextIdx = (state.players.findIndex(p => p.id === playerId) + 1) % state.players.length;
+  const nextIdx = getNextPlayerIndex(state.players.findIndex(p => p.id === playerId), state.players);
   const nextPlayer = state.players[nextIdx];
-  const nextHandSize = nextPlayer ? nextPlayer.hand.length : 0;
   const newTop = candidate.type === 'play' ? candidate.cards[candidate.cards.length - 1].value : pile[pile.length - 1].value;
-  const probNextCanPlay = approxProbOpponentHasAtLeast(counts, newTop, nextHandSize);
+  const probNextCanPlay = nextPlayer
+    ? probabilityOpponentCanAnswer(tracker, state, nextPlayer.id, newTop)
+    : 0;
   const forceProb = 1 - probNextCanPlay;
   score += 10 * forceProb;
 
@@ -551,7 +640,9 @@ function evaluateCandidate(state: GameState, playerId: number, candidate: any) {
     score += trap.score;
   }
 
-  const enableProb = approxProbOpponentHasAtLeast(counts, newTop + 1, nextHandSize);
+  const enableProb = nextPlayer
+    ? probabilityOpponentCanAnswer(tracker, state, nextPlayer.id, newTop + 1)
+    : 0;
   score -= 8 * enableProb;
 
   return score;
@@ -661,8 +752,8 @@ function getHardAIMove(state: GameState, playerId: number): AIMove {
   const candidates = generateCandidates(state, playerId);
   if (!candidates || candidates.length === 0) {
     const takeOpts = getTakeOptions(pile, options);
-    if (takeOpts.canTakeAll) return returnTakeMove('takeAll');
     if (takeOpts.canTake3) return returnTakeMove('take3');
+    if (takeOpts.canTakeAll) return returnTakeMove('takeAll');
     // No candidates and no take options -> force a play (pile may be only 9♦)
     const fallback = enforceNoSkipDecision([], null, pile, options, hand);
     if (fallback.type === 'take') return returnTakeMove(fallback.takeType === 'takeAll' ? 'takeAll' : 'take3');
@@ -672,8 +763,7 @@ function getHardAIMove(state: GameState, playerId: number): AIMove {
   const scored = candidates.map(c => ({ c, score: evaluateCandidate(state, playerId, c) }));
   scored.sort((a, b) => b.score - a.score);
 
-  let bestMove = scored[0].c;
-  let bestScore = scored[0].score;
+  const bestMove = scored[0].c;
 
   // Keep the decision based on public information. The previous rollout used
   // the real opponent hands, which gave the AI information a human player
@@ -736,7 +826,7 @@ function getMediumAIMove(state: GameState, playerId: number): AIMove {
   }
 
   const hasValidPlays = possiblePlays.length > 0;
-  if (!hasValidPlays || takeOpts.canTakeAll) {
+  if (!hasValidPlays && takeOpts.canTakeAll) {
     const cardsToTake = pile.slice(-takeOpts.takeAllCount);
     const quadCheck = wouldCompleteQuad(hand, cardsToTake);
     if (quadCheck.wouldComplete) {
@@ -770,7 +860,7 @@ function getMediumAIMove(state: GameState, playerId: number): AIMove {
 }
 
 function evaluateTakeMove(takeCount: number, hand: Card[], pile: Card[], state: GameState, playerId: number) {
-  let score = SCORE_WEIGHTS.TAKING_CARDS_BASE_PENALTY;
+  let score = SCORE_WEIGHTS.TAKING_CARDS_BASE_PENALTY - takeCount * 12;
   const cardsToTake = pile.slice(-takeCount);
   const opponentInfo = estimateOpponentStrength(state, playerId);
   const quadCheck = wouldCompleteQuad(hand, cardsToTake);
@@ -785,7 +875,7 @@ function evaluateTakeMove(takeCount: number, hand: Card[], pile: Card[], state: 
   const currentHandScore = evaluateHandComposition(hand);
   const newHandScore = evaluateHandComposition([...hand, ...cardsToTake]);
   const handChange = newHandScore - currentHandScore;
-  if (handChange > 20) score += handChange * 0.5;
+  score += handChange * 0.75;
   return score;
 }
 
@@ -840,7 +930,7 @@ function getEasyAIMove(hand: Card[], pile: Card[], options: GameOptions): AIMove
   const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
   if (isFirstMove) {
     const nines = hand.filter(c => c.value === 9);
-    if (nines.length >= 3) return { type: 'play', cards: nines.slice(0, 3) };
+    if (options.specialNinesRule && nines.length >= 3) return { type: 'play', cards: nines.slice(0, 3) };
     if (nines.length >= 1) return { type: 'play', cards: [nines[0]] };
   }
   const fourValue = hasFourOfSameValue(hand);
@@ -866,7 +956,7 @@ function getEasyAIMove(hand: Card[], pile: Card[], options: GameOptions): AIMove
     return { type: 'play', cards: [sorted[0]] };
   }
 
-  return { type: 'take', cards: [], takeType: takeOpts.canTakeAll ? 'takeAll' : 'take3' };
+  return { type: 'take', cards: [], takeType: takeOpts.canTake3 ? 'take3' : 'takeAll' };
 
 }
 
