@@ -22,8 +22,8 @@ const SCORE_WEIGHTS = {
   NINE_TRIPLE_BONUS: 40,
   NINE_QUAD_BONUS: 90,
 
-  HIGH_CARD_PENALTY: -25,
-  ACE_PENALTY: -30,
+  HIGH_CARD_PENALTY: -29,
+  ACE_PENALTY: -36,
   FOUR_ACES_PENALTY: -500,
   PRESERVE_HIGH_CARDS_BONUS: 15,
 
@@ -495,6 +495,16 @@ function getPossiblePlays(hand: Card[], pile: Card[], options: GameOptions): Car
   return plays;
 }
 
+function isUnnecessaryAceOnOpening(cardsToPlay: Card[], hand: Card[], pile: Card[]) {
+  const isOpeningPile = pile.length === 1 && pile[0].value === 9 && pile[0].suit === 'diamonds';
+  if (!isOpeningPile || !cardsToPlay.some(card => card.value === 14)) return false;
+
+  const remainingHand = hand.filter(card => !cardsToPlay.some(played => played.id === card.id));
+  // Keep a winning play, but save the Ace when any lower card can open instead.
+  if (remainingHand.length === 0) return false;
+  return remainingHand.some(card => card.value < 14);
+}
+
 // -----------------------------
 // Candidate generation (small set) for Hard AI
 // -----------------------------
@@ -587,7 +597,8 @@ function evaluateCandidate(state: GameState, playerId: number, candidate: any) {
   if (candidate.type === 'play') {
     for (const c of candidate.cards) {
       // A higher card is more flexible later, so its cost rises with rank.
-      score -= Math.pow(c.value - 9, 1.35) * 2.2;
+      const preservationCost = Math.pow(c.value - 9, 1.35) * 2.6;
+      score -= preservationCost + (c.value === 14 ? 8 : c.value === 13 ? 4 : 0);
     }
     // Prefer the lowest card that still makes the next player spend a higher
     // card or pick up. This avoids wasting an Ace when a King does the job.
@@ -760,7 +771,11 @@ function getHardAIMove(state: GameState, playerId: number): AIMove {
     return fallback;
   }
 
-  const scored = candidates.map(c => ({ c, score: evaluateCandidate(state, playerId, c) }));
+  const preferredCandidates = candidates.filter(candidate =>
+    candidate.type !== 'play' || !isUnnecessaryAceOnOpening(candidate.cards, hand, pile)
+  );
+  const candidatesToScore = preferredCandidates.length > 0 ? preferredCandidates : candidates;
+  const scored = candidatesToScore.map(c => ({ c, score: evaluateCandidate(state, playerId, c) }));
   scored.sort((a, b) => b.score - a.score);
 
   const bestMove = scored[0].c;
@@ -798,6 +813,7 @@ function getMediumAIMove(state: GameState, playerId: number): AIMove {
   let bestScore = -Infinity;
 
   for (const playCards of possiblePlays) {
+    if (isUnnecessaryAceOnOpening(playCards, hand, pile)) continue;
     const validation = validatePlay(playCards, pile, isFirstMove, options);
     if (validation.valid) {
       const score = evaluatePlayMove(playCards, hand, pile, state, playerId);
@@ -936,7 +952,7 @@ function getEasyAIMove(hand: Card[], pile: Card[], options: GameOptions): AIMove
   const fourValue = hasFourOfSameValue(hand);
   if (fourValue !== null && fourValue >= topCard.value) {
     const fourCards = getCardsOfSameValue(hand, fourValue);
-    return { type: 'play', cards: fourCards };
+    if (!isUnnecessaryAceOnOpening(fourCards, hand, pile)) return { type: 'play', cards: fourCards };
   }
   const validCards = hand.filter(c => c.value >= topCard.value);
   if (validCards.length > 0) {
@@ -990,6 +1006,7 @@ export function getContinueTurnMove(
   let best: Card[] | null = null;
   let bestScore = -Infinity;
   for (const play of possiblePlays) {
+    if (isUnnecessaryAceOnOpening(play, hand, pile)) continue;
     const validation = validatePlay(play, pile, isFirstMove, options);
     if (!validation.valid) continue;
     const score = evaluatePlayMove(play, hand, pile, state, playerId);
