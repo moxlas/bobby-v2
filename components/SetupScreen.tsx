@@ -153,9 +153,9 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
     <>
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-emerald-800 rounded-xl shadow-2xl overflow-hidden border border-emerald-600">
-        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 bg-amber-500 px-2 py-4 text-center sm:block sm:p-6">
+        <div className="relative grid grid-cols-[1fr_auto_1fr] grid-rows-[auto_auto] items-center gap-x-2 gap-y-2 bg-amber-500 px-2 py-4 text-center sm:block sm:p-6">
             {/* Language selector */}
-            <div className="relative sm:absolute sm:left-4 sm:top-1/2 sm:-translate-y-1/2">
+            <div className="relative col-start-1 row-start-1 justify-self-start sm:absolute sm:left-4 sm:top-1/2 sm:-translate-y-1/2">
               <button
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                 onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 150)}
@@ -185,15 +185,15 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
               )}
             </div>
 
-            <div className="min-w-0">
-              <h1 className="whitespace-nowrap text-lg font-bold leading-tight text-emerald-900 sm:mb-1 sm:text-3xl">{t('setup.title')}</h1>
-              <p className="text-[10px] leading-tight text-amber-700 sm:text-sm">{t('setup.subtitle')}</p>
+            <div className="col-span-3 row-start-2 min-w-0">
+              <h1 className="mb-1 text-4xl font-bold leading-tight text-emerald-900 sm:text-3xl">{t('setup.title')}</h1>
+              <p className="text-xl leading-tight text-amber-700 sm:text-sm">{t('setup.subtitle')}</p>
             </div>
 
             <button
               onClick={() => setShowLeaderboard(true)}
               aria-label={t('setup.leaderboard')}
-              className="relative flex items-center gap-1.5 rounded-lg bg-emerald-900/20 px-2 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-900/30 sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2 sm:px-3"
+              className="relative col-start-3 row-start-1 flex items-center gap-1.5 justify-self-end rounded-lg bg-emerald-900/20 px-2 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-900/30 sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2 sm:px-3"
             >
               <Trophy className="w-4 h-4" />
               <span className="hidden sm:inline">{t('setup.leaderboard')}</span>
