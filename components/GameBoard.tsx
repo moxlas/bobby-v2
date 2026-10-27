@@ -675,7 +675,7 @@ export function GameBoard({
 
   return (
     <div
-      className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col pb-[max(env(safe-area-inset-bottom),2.5rem)] lg:pb-0"
+      className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col pb-[max(env(safe-area-inset-bottom),3.5rem)] lg:pb-0"
       onPointerMove={handleCardPointerMove}
       onPointerUp={handleCardPointerUp}
       onPointerCancel={handleCardPointerCancel}
@@ -1028,7 +1028,7 @@ export function GameBoard({
           </div>
         )}
 
-        <div className="mx-auto flex w-full max-w-md gap-2">
+        <div className="mx-auto flex min-h-11 w-full max-w-md gap-2">
           {showTakeOptions ? null : gameState.canContinueTurn && isHumanTurn ? (
             <div className="w-full rounded-xl border border-amber-400 bg-amber-600 p-2.5 text-center text-emerald-950">
               <p className="mb-2 text-xs font-semibold">
