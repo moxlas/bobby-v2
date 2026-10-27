@@ -567,7 +567,7 @@ export function GameBoard({
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
   return (
-    <div className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col">
+    <div className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col pb-[max(env(safe-area-inset-bottom),1.5rem)] lg:pb-0">
       {/* Top bar */}
       <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-2">
