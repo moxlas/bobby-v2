@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Card as CardType } from '../types/game';
 import { Card } from './Card';
 import { useTranslation } from '../lib/i18n';
@@ -7,6 +9,10 @@ interface GamePileProps {
   pile: CardType[];
   onTakeClick?: () => void;
 }
+
+const DRAG_THRESHOLD = 48;
+const MAX_PULL = 96;
+const CLICK_SUPPRESS_MS = 400;
 
 export function GamePile({ pile, onTakeClick }: GamePileProps) {
   const { t, tPlural } = useTranslation();
@@ -20,7 +26,63 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       : [];
   const topCard = pile[pile.length - 1];
   const topCardRef = usePileLand(topCard?.id);
-  const clickable = pile.length > 1 && onTakeClick;
+  const clickable = pile.length > 1 && Boolean(onTakeClick);
+
+  const dragRef = useRef<{ pointerId: number; startY: number; captured: boolean } | null>(null);
+  const dragEndedAtRef = useRef(0);
+  const [pull, setPull] = useState(0);
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!clickable || !event.isPrimary) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      captured: false,
+    };
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const deltaY = event.clientY - drag.startY;
+    if (deltaY <= 0) {
+      setPull(0);
+      return;
+    }
+
+    if (!drag.captured) {
+      if (deltaY < 8) return;
+      drag.captured = true;
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Synthetic or already-released pointer: dragging still works via bubbling.
+      }
+    }
+    setPull(Math.min(deltaY, MAX_PULL));
+  };
+
+  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+
+    const deltaY = event.clientY - drag.startY;
+    setPull(0);
+    if (!drag.captured) return;
+
+    if (deltaY >= DRAG_THRESHOLD) {
+      dragEndedAtRef.current = Date.now();
+      onTakeClick?.();
+    }
+  };
+
+  const handleClick = () => {
+    if (Date.now() - dragEndedAtRef.current < CLICK_SUPPRESS_MS) return;
+    onTakeClick?.();
+  };
 
   if (pile.length === 0) {
     return (
@@ -32,13 +94,25 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
     );
   }
 
+  const pullProgress = Math.min(pull / MAX_PULL, 1);
+
   return (
     <div
       className={`relative flex flex-col items-center ${clickable ? 'cursor-pointer' : ''}`}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? t('pile.tapToTake') : undefined}
-      onClick={clickable ? onTakeClick : undefined}
+      data-pile-draggable={clickable ? 'true' : undefined}
+      style={{
+        touchAction: clickable ? 'none' : undefined,
+        transform: `translateY(${pull}px) scale(${1 - pullProgress * 0.05})`,
+        transition: pull > 0 ? 'none' : 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+      }}
+      onClick={clickable ? handleClick : undefined}
+      onPointerDown={clickable ? handlePointerDown : undefined}
+      onPointerMove={clickable ? handlePointerMove : undefined}
+      onPointerUp={clickable ? endDrag : undefined}
+      onPointerCancel={clickable ? endDrag : undefined}
       onKeyDown={clickable ? (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();

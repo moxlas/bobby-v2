@@ -51,16 +51,74 @@ function getCardDisplayName(card: CardType): string {
 }
 
 /** First visible element matching `selector` (each hand card exists in both layouts). */
-function visibleRect(selector: string): DOMRect | null {
+function visibleElement(selector: string): HTMLElement | null {
   for (const element of document.querySelectorAll<HTMLElement>(selector)) {
     if (element.getClientRects().length === 0) continue;
-    return element.getBoundingClientRect();
+    return element;
   }
   return null;
 }
 
+function visibleRect(selector: string): DOMRect | null {
+  return visibleElement(selector)?.getBoundingClientRect() ?? null;
+}
+
 function pileFlightTarget(): DOMRect | null {
   return visibleRect('[data-pile-top]') ?? visibleRect('[data-pile-drop-zone]');
+}
+
+/** Visible hand cards and the hand dock they sit in. */
+function visibleHandCards(): { rects: DOMRect[]; dock: DOMRect | null } {
+  const dock = visibleElement('[data-hand-drop-zone]');
+  if (!dock) return { rects: [], dock: null };
+  const rects = Array.from(dock.querySelectorAll<HTMLElement>('[data-card-id]'))
+    .filter(element => element.getClientRects().length > 0)
+    .map(element => element.getBoundingClientRect());
+  return { rects, dock: dock.getBoundingClientRect() };
+}
+
+/**
+ * Random start rects inside the visible hand band.
+ *
+ * Not tied to the real card slot on purpose: the starting point must not reveal
+ * whether the played card sat at the low or high end of the sorted hand.
+ */
+function randomizedHandRects(count: number): DOMRect[] {
+  const { rects, dock } = visibleHandCards();
+  if (!dock) return [];
+
+  const width = rects[0]?.width ?? 48;
+  const height = rects[0]?.height ?? 67;
+  const left = rects.length ? Math.min(...rects.map(rect => rect.left)) : dock.left;
+  const right = rects.length ? Math.max(...rects.map(rect => rect.right)) : dock.right;
+  const top = rects.length ? Math.min(...rects.map(rect => rect.top)) : dock.top + (dock.height - height) / 2;
+  const bottom = rects.length ? Math.max(...rects.map(rect => rect.bottom)) : top + height;
+
+  const minX = Math.max(left, 0);
+  const maxX = Math.max(minX, Math.min(right, window.innerWidth) - width);
+  const minY = Math.max(top, 0);
+  const maxY = Math.max(minY, Math.min(bottom, window.innerHeight) - height);
+
+  return Array.from({ length: count }, () => new DOMRect(
+    minX + Math.random() * (maxX - minX),
+    minY + Math.random() * (maxY - minY),
+    width,
+    height,
+  ));
+}
+
+/** Landing spot at the left end of the hand, used when cards are picked up. */
+function handLeftTarget(): DOMRect | null {
+  const { rects, dock } = visibleHandCards();
+  if (!dock) return null;
+  if (rects.length === 0) return new DOMRect(dock.left + 8, dock.top + (dock.height - 67) / 2, 48, 67);
+
+  return new DOMRect(
+    Math.min(...rects.map(rect => rect.left)),
+    Math.min(...rects.map(rect => rect.top)),
+    rects[0].width,
+    rects[0].height,
+  );
 }
 
 export function GameBoard({
@@ -105,20 +163,21 @@ export function GameBoard({
     if (message) setErrorSequence((sequence) => sequence + 1);
   };
 
-  /** Fly ghost cards from the hand to the pile (or back) while the real state updates. */
+  /** Fly ghost cards between the hand and the pile (or back) while the real state updates. */
   const launchCardFlight = useCallback(
     (cards: CardType[], direction: 'toPile' | 'toHand', faceUp = true) => {
-      const target = direction === 'toPile' ? pileFlightTarget() : visibleRect('[data-hand-drop-zone]');
-      if (!target || cards.length === 0) return;
+      if (cards.length === 0) return;
+      const to = direction === 'toPile' ? pileFlightTarget() : handLeftTarget();
+      if (!to) return;
 
-      const sources = direction === 'toPile'
-        ? cards.map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
-        : cards.map(() => pileFlightTarget());
-      const from = sources.filter((rect): rect is DOMRect => rect !== null);
+      const pileRect = direction === 'toHand' ? pileFlightTarget() : null;
+      const from = direction === 'toPile'
+        ? randomizedHandRects(cards.length)
+        : cards.map(() => pileRect).filter((rect): rect is DOMRect => rect !== null);
       if (from.length === 0) return;
 
       flightSequenceRef.current += 1;
-      setFlight({ id: flightSequenceRef.current, direction, cards, from, to: target, faceUp });
+      setFlight({ id: flightSequenceRef.current, direction, cards, from, to, faceUp });
     },
     [],
   );
@@ -442,6 +501,7 @@ export function GameBoard({
     }
 
     showError(null);
+    if (options.skipConfirmations && applyPlay(cardsToPlay)) return;
     setPendingAction('play');
     setShowConfirm(true);
   };
@@ -462,6 +522,29 @@ export function GameBoard({
     event.stopPropagation();
   };
 
+  /** Commit a play: validate, animate the cards, and hand the move to the game. */
+  const applyPlay = (cards: CardType[]) => {
+    const validation = validatePlay(cards, pile, isFirstMove, options);
+    if (!validation.valid) {
+      showError(validation.error ?? 'invalidMove');
+      return false;
+    }
+    playCardSound(cards.length);
+    if (validation.continueTurn) playComboSound();
+    launchCardFlight(cards, 'toPile');
+    onPlayCards(currentPlayer.id, cards, validation.continueTurn || false);
+    setSelectedCards([]);
+    return true;
+  };
+
+  /** Commit a pickup after the 3/all choice has been made. */
+  const applyTake = (action: 'take3' | 'takeAll') => {
+    const count = action === 'take3' ? takeOptions.take3Count : takeOptions.takeAllCount;
+    playTakeSound();
+    launchCardFlight(pile.slice(-count), 'toHand');
+    onTakeCards(currentPlayer.id, count);
+  };
+
   const handlePlayClick = () => {
     playClickSound();
     if (selectedCards.length === 0) {
@@ -476,6 +559,10 @@ export function GameBoard({
     }
 
     showError(null);
+    if (options.skipConfirmations) {
+      applyPlay(selectedCards);
+      return;
+    }
     setPendingAction('play');
     setShowConfirm(true);
   };
@@ -486,8 +573,14 @@ export function GameBoard({
     if (takeOptions.canTake3 && takeOptions.canTakeAll) {
       setShowTakeOptions(true);
     } else if (takeOptions.canTakeAll) {
-      setPendingAction('takeAll');
-      setShowConfirm(true);
+      if (options.skipConfirmations) {
+        applyTake('takeAll');
+      } else {
+        setPendingAction('takeAll');
+        setShowConfirm(true);
+      }
+    } else if (options.skipConfirmations) {
+      applyTake('take3');
     } else {
       setPendingAction('take3');
       setShowConfirm(true);
@@ -497,17 +590,25 @@ export function GameBoard({
   const handleTake3 = () => {
     playClickSound();
     showError(null);
+    setShowTakeOptions(false);
+    if (options.skipConfirmations) {
+      applyTake('take3');
+      return;
+    }
     setPendingAction('take3');
     setShowConfirm(true);
-    setShowTakeOptions(false);
   };
 
   const handleTakeAll = () => {
     playClickSound();
     showError(null);
+    setShowTakeOptions(false);
+    if (options.skipConfirmations) {
+      applyTake('takeAll');
+      return;
+    }
     setPendingAction('takeAll');
     setShowConfirm(true);
-    setShowTakeOptions(false);
   };
 
   const handleEndTurnClick = () => {
@@ -519,26 +620,15 @@ export function GameBoard({
 
   const handleConfirm = () => {
     if (pendingAction === 'play') {
-      const validation = validatePlay(selectedCards, pile, isFirstMove, options);
-      if (validation.valid) {
-        playCardSound(selectedCards.length);
-        if (validation.continueTurn) playComboSound();
-        launchCardFlight(selectedCards, 'toPile');
-      } else {
-        showError(validation.error ?? 'invalidMove');
+      if (!applyPlay(selectedCards)) {
         setShowConfirm(false);
         setPendingAction(null);
         return;
       }
-      onPlayCards(currentPlayer.id, selectedCards, validation.continueTurn || false);
     } else if (pendingAction === 'take3') {
-      playTakeSound();
-      launchCardFlight(pile.slice(-takeOptions.take3Count), 'toHand');
-      onTakeCards(currentPlayer.id, takeOptions.take3Count);
+      applyTake('take3');
     } else if (pendingAction === 'takeAll') {
-      playTakeSound();
-      launchCardFlight(pile.slice(-takeOptions.takeAllCount), 'toHand');
-      onTakeCards(currentPlayer.id, takeOptions.takeAllCount);
+      applyTake('takeAll');
     } else if (pendingAction === 'endTurn') {
       playClickSound();
       onEndTurn();
@@ -782,7 +872,7 @@ export function GameBoard({
       onClickCapture={handleGestureClickCapture}
     >
       {/* Top bar */}
-      <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0">
+      <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-2 sm:py-3 flex-shrink-0">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 sm:gap-4">
             <h1 className="text-base sm:text-xl font-bold text-amber-300">{t('game.topBar.title')}</h1>

@@ -34,6 +34,10 @@
       "randomSeating": {
         "title": "Random Seating",
         "desc": "When enabled, player positions are randomised for the first game. Subsequent Play Again rounds keep the same order."
+      },
+      "skipConfirmations": {
+        "title": "Quick Play",
+        "desc": "Skip the confirmation step when playing cards and when finalizing a pickup. Starting a pickup still always shows the choice between taking 3 cards or all cards."
       }
     },
     "theme": {
@@ -229,7 +233,7 @@
     "count_one": "{count} card",
     "count_other": "{count} cards",
     "top": "Top: ",
-    "tapToTake": "Tap the pile to take cards"
+    "tapToTake": "Tap or drag the pile down to take cards"
   },
   "notFound": {
     "title": "404 Page Not Found",

@@ -85,6 +85,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(saved?.options.aiDifficulty ?? DEFAULT_OPTIONS.aiDifficulty);
   const [rankedSeating, setRankedSeating] = useState(saved?.options.rankedSeating ?? DEFAULT_OPTIONS.rankedSeating);
   const [randomSeating, setRandomSeating] = useState(saved?.options.randomSeating ?? DEFAULT_OPTIONS.randomSeating);
+  const [skipConfirmations, setSkipConfirmations] = useState(saved?.options.skipConfirmations ?? DEFAULT_OPTIONS.skipConfirmations);
   const [theme, setTheme] = useState<ThemeName>(saved?.options.theme ?? DEFAULT_OPTIONS.theme);
 
   useEffect(() => {
@@ -141,6 +142,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
       aiDifficulty,
       rankedSeating,
       randomSeating,
+      skipConfirmations,
       theme,
       language,
     };
@@ -359,6 +361,20 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                       </p>
                     </div>
                     <Toggle enabled={randomSeating} onToggle={() => setRandomSeating(v => !v)} />
+                  </div>
+
+                  {/* Skip Confirmations */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <Zap className="w-4 h-4 text-amber-400" />
+                        <span className="text-white font-medium text-sm">{t('setup.option.skipConfirmations.title')}</span>
+                      </div>
+                      <p className="text-emerald-400 text-xs">
+                        {t('setup.option.skipConfirmations.desc')}
+                      </p>
+                    </div>
+                    <Toggle enabled={skipConfirmations} onToggle={() => setSkipConfirmations(v => !v)} />
                   </div>
 
                   {/* Theme */}

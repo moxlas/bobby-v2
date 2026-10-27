@@ -34,6 +34,10 @@
       "randomSeating": {
         "title": "Atsitiktinė tvarka",
         "desc": "Kai įjungta, žaidėjų pozicijos yra atsitiktinai paskiriamos pirmam žaidimui. Vėlesni žaidimo ratai išlaiko tą pačią tvarką."
+      },
+      "skipConfirmations": {
+        "title": "Greitas žaidimas",
+        "desc": "Praleidžiamas patvirtinimas išmetant kortas ir užbaigiant kortų paėmimą. Pradedant paėmimą visada bus rodomas pasirinkimas imti 3 kortas arba visas."
       }
     },
     "theme": {
@@ -245,7 +249,7 @@
     "count_many": "{count} kortų",
     "count_other": "{count} kortų",
     "top": "Viršutinė korta: ",
-    "tapToTake": "Bakstelėkite krūvą, kad paimtumėte kortas"
+    "tapToTake": "Bakstelėkite arba nutempkite krūvą žemyn, kad paimtumėte kortas"
   },
   "notFound": {
     "title": "404 Puslapis nerastas",

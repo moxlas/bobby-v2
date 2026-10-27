@@ -54,6 +54,7 @@ export interface GameOptions {
   aiDifficulty: AIDifficulty;
   rankedSeating: boolean;
   randomSeating: boolean;
+  skipConfirmations: boolean;
   theme: ThemeName;
   language: Language;
 }
@@ -84,6 +85,7 @@ export const DEFAULT_OPTIONS: GameOptions = {
   aiDifficulty: 'medium',
   rankedSeating: false,
   randomSeating: false,
+  skipConfirmations: false,
   theme: 'summer',
   language: 'en',
 };
