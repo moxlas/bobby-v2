@@ -153,13 +153,13 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
     <>
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-emerald-800 rounded-xl shadow-2xl overflow-hidden border border-emerald-600">
-        <div className="relative flex flex-col items-center gap-3 bg-amber-500 px-6 py-4 text-center sm:block sm:p-6">
+        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 bg-amber-500 px-2 py-4 text-center sm:block sm:p-6">
             {/* Language selector */}
             <div className="relative sm:absolute sm:left-4 sm:top-1/2 sm:-translate-y-1/2">
               <button
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                 onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 150)}
-                className="flex items-center gap-1.5 bg-emerald-900/20 hover:bg-emerald-900/30 text-emerald-900 font-medium text-sm px-3 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-1 rounded-lg bg-emerald-900/20 px-2 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-900/30 sm:gap-1.5 sm:px-3"
               >
                 <LanguageFlag language={language} />
                 <span className="text-xs sm:text-sm">{LANGUAGES.find(l => l.code === language)?.name}</span>
@@ -185,17 +185,18 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
               )}
             </div>
 
-            <div>
-              <h1 className="mb-1 text-3xl font-bold text-emerald-900">{t('setup.title')}</h1>
-              <p className="text-sm text-amber-700">{t('setup.subtitle')}</p>
+            <div className="min-w-0">
+              <h1 className="whitespace-nowrap text-lg font-bold leading-tight text-emerald-900 sm:mb-1 sm:text-3xl">{t('setup.title')}</h1>
+              <p className="text-[10px] leading-tight text-amber-700 sm:text-sm">{t('setup.subtitle')}</p>
             </div>
 
             <button
               onClick={() => setShowLeaderboard(true)}
-              className="relative flex items-center gap-1.5 rounded-lg bg-emerald-900/20 px-3 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-900/30 sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2"
+              aria-label={t('setup.leaderboard')}
+              className="relative flex items-center gap-1.5 rounded-lg bg-emerald-900/20 px-2 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-900/30 sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2 sm:px-3"
             >
               <Trophy className="w-4 h-4" />
-              <span>{t('setup.leaderboard')}</span>
+              <span className="hidden sm:inline">{t('setup.leaderboard')}</span>
             </button>
           </div>
 
