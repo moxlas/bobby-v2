@@ -26,7 +26,7 @@ function getPlayerStagger(playerCount: number): number {
 }
 
 export function DealingAnimation({ players, onComplete }: DealingAnimationProps) {
-  const { t } = useTranslation();
+  const { t, tPlural } = useTranslation();
   const calledRef = useRef(false);
 
   const playerStagger = getPlayerStagger(players.length);
@@ -94,7 +94,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
             {t('dealing.title')}
           </h2>
           <p className="text-emerald-400 text-sm mt-1">
-            {t('dealing.subtitle', { players: players.length, cards: players[0]?.cardCount ?? 0 })}
+            {tPlural('dealing.players', players.length)} · {tPlural('dealing.cardsEach', players[0]?.cardCount ?? 0)}
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
                     {player.name}
                   </div>
                   <div className="text-xs text-emerald-400">
-                    {player.isAI ? t('dealing.ai') : t('dealing.you')} · {player.cardCount} {t('game.sidebar.cards')}
+                    {player.isAI ? t('dealing.ai') : t('dealing.you')} · {player.cardCount} {tPlural('game.sidebar.cards', player.cardCount)}
                   </div>
                 </div>
 

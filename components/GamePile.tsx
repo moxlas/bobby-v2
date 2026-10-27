@@ -8,7 +8,7 @@ interface GamePileProps {
 }
 
 export function GamePile({ pile, onTakeClick }: GamePileProps) {
-  const { t } = useTranslation();
+  const { t, tPlural } = useTranslation();
   const showBottomCard = pile.length > 1 && pile.length <= 4;
   const visibleCards = showBottomCard ? pile.slice(1) : pile.slice(-Math.min(3, pile.length));
   const visibleCount = visibleCards.length;
@@ -45,7 +45,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       } : undefined}
     >
       <div className={`hidden lg:block mt-0 mb-5 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
-        {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
+        {tPlural('pile.count', pile.length)}
       </div>
 
       <div className="relative h-[24dvh] max-h-40 w-24 flex items-center justify-center lg:h-40">
@@ -81,7 +81,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       </div>
 
       <div className={`lg:hidden mt-1 px-3 py-1 rounded-full text-xs whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
-        {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
+        {tPlural('pile.count', pile.length)}
       </div>
 
       <div className="hidden lg:block mt-1 sm:mt-3 mb-2 text-center">

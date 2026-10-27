@@ -75,7 +75,8 @@
     "sidebar": {
       "players": "Players",
       "ai": "AI",
-      "cards": "cards"
+      "cards_one": "card",
+      "cards_other": "cards"
     },
     "center": {
       "currentTurn": "Current Turn:",
@@ -111,7 +112,8 @@
     "hand": {
       "your": "Your",
       "their": "{name}'s",
-      "hand": "Hand ({count} cards)"
+      "hand_one": "Hand ({count} card)",
+      "hand_other": "Hand ({count} cards)"
     },
     "mobile": {
       "play": "Play ({count})",
@@ -134,7 +136,8 @@
       "playCards": "Play {cards}?",
       "takeCards_one": "Take {count} card from pile?",
       "takeCards_other": "Take {count} cards from pile?",
-      "takeAll": "Take all {count} cards from pile?",
+      "takeAll_one": "Take the {count} card from pile?",
+      "takeAll_other": "Take all {count} cards from pile?",
       "endTurn": "End your turn?"
     },
     "forfeit": {
@@ -196,7 +199,10 @@
   },
   "dealing": {
     "title": "Dealing Cards...",
-    "subtitle": "{players} players · {cards} cards each",
+    "players_one": "{count} player",
+    "players_other": "{count} players",
+    "cardsEach_one": "{count} card each",
+    "cardsEach_other": "{count} cards each",
     "ai": "AI",
     "you": "You",
     "gameStarting": "Game starting..."

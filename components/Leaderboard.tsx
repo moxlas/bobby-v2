@@ -8,7 +8,7 @@ interface LeaderboardProps {
 }
 
 export function Leaderboard({ onClose }: LeaderboardProps) {
-  const { t } = useTranslation();
+  const { t, tPlural } = useTranslation();
   const [records, setRecords] = useState<PlayerRecord[]>([]);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -102,7 +102,7 @@ export function Leaderboard({ onClose }: LeaderboardProps) {
                               </span>
                             </div>
                             <span className="text-emerald-400 text-xs">
-                              {t(record.totalGames === 1 ? 'leaderboard.gameCount_one' : 'leaderboard.gameCount_other', { count: record.totalGames })} · {t('leaderboard.avgPosition', { pos: avgPos })}
+                              {tPlural('leaderboard.gameCount', record.totalGames)} · {t('leaderboard.avgPosition', { pos: avgPos })}
                             </span>
                           </div>
                         </div>

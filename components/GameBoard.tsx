@@ -58,7 +58,7 @@ export function GameBoard({
   onRestartGame,
   onNewGame
 }: GameBoardProps) {
-  const { t } = useTranslation();
+  const { t, tPlural } = useTranslation();
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
@@ -562,16 +562,16 @@ export function GameBoard({
 
   const getConfirmMessage = () => {
     if (pendingAction === 'play') {
-      const cardNames = selectedCards.map(c =>
-        `${c.value === 11 ? 'J' : c.value === 12 ? 'Q' : c.value === 13 ? 'K' : c.value === 14 ? 'A' : c.value} of ${c.suit}`
-      ).join(', ');
-      return `Play ${cardNames}?`;
+      const cardNames = selectedCards
+        .map(c => t('card.format', { value: t(`card.value.${c.value}`), suit: t(`card.suit.${c.suit}`) }))
+        .join(', ');
+      return t('game.confirm.playCards', { cards: cardNames });
     } else if (pendingAction === 'take3') {
-      return `Take ${takeOptions.take3Count} card${takeOptions.take3Count !== 1 ? 's' : ''} from pile?`;
+      return tPlural('game.confirm.takeCards', takeOptions.take3Count);
     } else if (pendingAction === 'takeAll') {
-      return `Take all ${takeOptions.takeAllCount} cards from pile?`;
+      return tPlural('game.confirm.takeAll', takeOptions.takeAllCount);
     } else if (pendingAction === 'endTurn') {
-      return 'End your turn?';
+      return t('game.confirm.endTurn');
     }
     return '';
   };
@@ -812,7 +812,7 @@ export function GameBoard({
                           #{player.finishPosition}
                         </span>
                       ) : (
-                        `${player.hand.length} ${t('game.sidebar.cards')}`
+                        `${player.hand.length} ${tPlural('game.sidebar.cards', player.hand.length)}`
                       )}
                     </div>
                   </div>
@@ -979,7 +979,7 @@ export function GameBoard({
         <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-1.5 pb-2">
           <div className="mb-1 flex items-center justify-between gap-2 text-xs text-emerald-200">
             <span className="font-medium">
-              {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}
+              {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {tPlural('game.hand.hand', currentPlayer.hand.length)}
             </span>
             <span className="text-emerald-400">{isHumanTurn ? t('game.mobile.swipeCards') : ''}</span>
           </div>
@@ -1121,7 +1121,7 @@ export function GameBoard({
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-3">
               <span className="text-emerald-300 text-sm">
-                {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}
+                {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {tPlural('game.hand.hand', currentPlayer.hand.length)}
               </span>
             </div>
             <PlayerHand

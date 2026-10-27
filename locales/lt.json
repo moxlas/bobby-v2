@@ -75,7 +75,10 @@
     "sidebar": {
       "players": "Žaidėjai",
       "ai": "DI",
-      "cards": "kortos"
+      "cards_one": "korta",
+      "cards_few": "kortos",
+      "cards_many": "kortų",
+      "cards_other": "kortų"
     },
     "center": {
       "currentTurn": "Dabartinis ėjimas:",
@@ -111,7 +114,10 @@
     "hand": {
       "your": "Tavo",
       "their": "{name}",
-      "hand": "Rankoje ({count} kortos)"
+      "hand_one": "Rankoje ({count} korta)",
+      "hand_few": "Rankoje ({count} kortos)",
+      "hand_many": "Rankoje ({count} kortų)",
+      "hand_other": "Rankoje ({count} kortų)"
     },
     "mobile": {
       "play": "Žaisti ({count})",
@@ -131,10 +137,15 @@
       "valueTooLow": "Kortos vertė turi būti lygi arba didesnė už ankstesnę kortą"
     },
     "confirm": {
-      "playCards": "Pasirinkimas: {cards}",
+      "playCards": "Žaisti {cards}?",
       "takeCards_one": "Paimti {count} kortą iš krūvos?",
-      "takeCards_other": "Paimti {count} kortas iš krūvos?",
-      "takeAll": "Paimti visas {count} kortas iš krūvos?",
+      "takeCards_few": "Paimti {count} kortas iš krūvos?",
+      "takeCards_many": "Paimti {count} kortų iš krūvos?",
+      "takeCards_other": "Paimti {count} kortų iš krūvos?",
+      "takeAll_one": "Paimti {count} kortą iš krūvos?",
+      "takeAll_few": "Paimti visas {count} kortas iš krūvos?",
+      "takeAll_many": "Paimti visas {count} kortų iš krūvos?",
+      "takeAll_other": "Paimti visas {count} kortų iš krūvos?",
       "endTurn": "Baigti ėjimą?"
     },
     "forfeit": {
@@ -186,7 +197,9 @@
     "losses": "Pralaimėjimai",
     "winPercent": "Pergalės %",
     "gameCount_one": "{count} žaidimas",
-    "gameCount_other": "{count} žaidimai",
+    "gameCount_few": "{count} žaidimai",
+    "gameCount_many": "{count} žaidimų",
+    "gameCount_other": "{count} žaidimų",
     "avgPosition": "vid. #{pos}",
     "lastUpdated": "Paskutinį kartą atnaujinta {date}",
     "clearConfirm": "Išvalyti visus įrašus?",
@@ -196,7 +209,14 @@
   },
   "dealing": {
     "title": "Dalinamos kortos...",
-    "subtitle": "{players} žaidėjai · {cards} kortos kiekvienam",
+    "players_one": "{count} žaidėjas",
+    "players_few": "{count} žaidėjai",
+    "players_many": "{count} žaidėjų",
+    "players_other": "{count} žaidėjų",
+    "cardsEach_one": "po {count} kortą",
+    "cardsEach_few": "po {count} kortas",
+    "cardsEach_many": "po {count} kortų",
+    "cardsEach_other": "po {count} kortų",
     "ai": "DI",
     "you": "Tu",
     "gameStarting": "Žaidimas prasideda..."
@@ -221,7 +241,9 @@
   "pile": {
     "empty": "Tuščia",
     "count_one": "{count} korta",
-    "count_other": "{count} kortos",
+    "count_few": "{count} kortos",
+    "count_many": "{count} kortų",
+    "count_other": "{count} kortų",
     "top": "Viršutinė korta: ",
     "tapToTake": "Bakstelėkite krūvą, kad paimtumėte kortas"
   },
