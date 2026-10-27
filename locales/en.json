@@ -171,7 +171,8 @@
       "title": "Game Paused",
       "resume": "Resume Game",
       "gameRules": "Game Rules",
-      "forfeit": "Forfeit",
+      "forfeit": "Forfeit Game",
+      "forfeitOpponents": "Make Opponents Forfeit",
       "finishGame": "Finish The Game",
       "restartGame": "Restart Game",
       "newGame": "New Game"

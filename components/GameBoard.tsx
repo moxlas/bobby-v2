@@ -15,7 +15,7 @@ import {
   playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
-import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X } from 'lucide-react';
 
 interface GameBoardProps {
   gameState: any;
@@ -128,6 +128,8 @@ export function GameBoard({
   onEndTurn,
   onPauseGame,
   onResumeGame,
+  onForfeitPlayer,
+  onFinishGame,
   onRestartGame,
   onNewGame
 }: GameBoardProps) {
@@ -136,6 +138,7 @@ export function GameBoard({
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<'newGame' | 'restartGame' | null>(null);
+  const [pendingForfeit, setPendingForfeit] = useState<'self' | 'opponents' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorSequence, setErrorSequence] = useState(0);
   const [flight, setFlight] = useState<CardFlightRequest | null>(null);
@@ -163,17 +166,31 @@ export function GameBoard({
     if (message) setErrorSequence((sequence) => sequence + 1);
   };
 
-  /** Fly ghost cards between the hand and the pile (or back) while the real state updates. */
+  /**
+   * Fly ghost cards between the hand and the pile (or back) while the real state updates.
+   *
+   * Face-up ghosts start at the actual card slot. Face-down ghosts start at a random
+   * point in the hand so the starting position cannot reveal which card left the hand.
+   */
   const launchCardFlight = useCallback(
     (cards: CardType[], direction: 'toPile' | 'toHand', faceUp = true) => {
       if (cards.length === 0) return;
       const to = direction === 'toPile' ? pileFlightTarget() : handLeftTarget();
       if (!to) return;
 
-      const pileRect = direction === 'toHand' ? pileFlightTarget() : null;
-      const from = direction === 'toPile'
-        ? randomizedHandRects(cards.length)
-        : cards.map(() => pileRect).filter((rect): rect is DOMRect => rect !== null);
+      let from: DOMRect[];
+      if (direction === 'toHand') {
+        const pileRect = pileFlightTarget();
+        if (!pileRect) return;
+        from = cards.map(() => pileRect);
+      } else if (faceUp) {
+        // Real slots: the played card leaves exactly where it sat in the hand.
+        from = cards
+          .map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
+          .filter((rect): rect is DOMRect => rect !== null);
+      } else {
+        from = randomizedHandRects(cards.length);
+      }
       if (from.length === 0) return;
 
       flightSequenceRef.current += 1;
@@ -303,6 +320,21 @@ export function GameBoard({
   const humanPlayers = gameState.players.filter((p: any) => !p.isAI);
   const allHumanPlayersFinished = humanPlayers.length > 0 && humanPlayers.every((p: any) => p.hasFinished);
 
+  /** The local human whose pause-menu forfeit applies (first human in seating order). */
+  const localHuman = humanPlayers[0] ?? null;
+  const humansStillPlaying = humanPlayers.filter((p: any) => !p.hasFinished);
+  const aiStillPlaying = gameState.players.filter((p: any) => p.isAI && !p.hasFinished);
+  /** self → forfeit; opponents → end the game by forfeiting the AIs; blocked → disabled. */
+  const forfeitMode: 'self' | 'opponents' | 'blocked' | null = !localHuman
+    ? null
+    : !localHuman.hasFinished
+      ? 'self'
+      : humansStillPlaying.length > 0
+        ? 'blocked'
+        : aiStillPlaying.length > 0
+          ? 'opponents'
+          : null;
+
   const isHumanTurn = currentPlayer && !currentPlayer.isAI && !currentPlayer.hasFinished && gameState.phase === 'playing';
   const isPlayerTurn = currentPlayer && !currentPlayer.hasFinished;
   const handCardsFaceUp = currentPlayer && (!currentPlayer.isAI || allHumanPlayersFinished);
@@ -372,7 +404,11 @@ export function GameBoard({
         if (validation.valid) {
           playCardSound(aiMove.cards.length);
           if (validation.continueTurn) playComboSound();
-          launchCardFlight(aiMove.cards, 'toPile', false);
+          // Only hide the origin while the AI hand is face down.
+          const humansAllFinished = state.players
+            .filter((p: any) => !p.isAI)
+            .every((p: any) => p.hasFinished);
+          launchCardFlight(aiMove.cards, 'toPile', humansAllFinished);
           onPlayCardsRef.current(player.id, aiMove.cards, validation.continueTurn || false);
         } else {
           const takeOpts = getTakeOptions(pile, state.options);
@@ -672,6 +708,33 @@ export function GameBoard({
     if (action === 'restartGame') onRestartGame();
   };
 
+  const requestForfeit = () => {
+    if (forfeitMode !== 'self' && forfeitMode !== 'opponents') return;
+    playClickSound();
+    setPendingForfeit(forfeitMode);
+  };
+
+  const handleForfeitConfirm = () => {
+    const mode = pendingForfeit;
+    setPendingForfeit(null);
+    if (mode === 'self' && localHuman) {
+      onForfeitPlayer(localHuman.id);
+      // Play continues for the remaining players unless the forfeit ended the game.
+      onResumeGame();
+    } else if (mode === 'opponents') {
+      onFinishGame();
+    }
+  };
+
+  const forfeitConfirmDialog = pendingForfeit && (
+    <ConfirmPopup
+      titleKey={pendingForfeit === 'self' ? 'game.forfeit.title' : 'game.finishGame.title'}
+      message={pendingForfeit === 'self' ? t('game.forfeit.confirm') : t('game.finishGame.confirm')}
+      onConfirm={handleForfeitConfirm}
+      onCancel={() => setPendingForfeit(null)}
+    />
+  );
+
   const navigationConfirmDialog = pendingNavigationAction && (
     <ConfirmPopup
       titleKey="confirmPopup.areYouSure"
@@ -817,6 +880,21 @@ export function GameBoard({
               {t('game.paused.resume')}
             </button>
 
+            {forfeitMode && (
+              <button
+                onClick={requestForfeit}
+                disabled={forfeitMode === 'blocked'}
+                className={`w-full font-bold text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                  forfeitMode === 'blocked'
+                    ? 'bg-emerald-900/60 border border-emerald-700 text-emerald-500 cursor-not-allowed'
+                    : 'bg-red-600 border border-red-400 text-white hover:bg-red-500'
+                }`}
+              >
+                <Flag className="w-4 h-4" />
+                {t(forfeitMode === 'opponents' ? 'game.paused.forfeitOpponents' : 'game.paused.forfeit')}
+              </button>
+            )}
+
             <button
               type="button"
               aria-pressed={!mutedState}
@@ -850,6 +928,7 @@ export function GameBoard({
           </div>
         </div>
         {navigationConfirmDialog}
+        {forfeitConfirmDialog}
       </div>
     );
   }

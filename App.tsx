@@ -439,6 +439,7 @@ function App() {
   const handleResumeGame = useCallback(() => {
     setGameState(prev => {
       if (!prev) return prev;
+      if (prev.phase !== 'paused') return prev;
       const pauseDuration = Date.now() - (prev.pausedTime || Date.now());
       return {
         ...prev,
@@ -457,49 +458,51 @@ function App() {
       if (prev.players[playerIndex].hasFinished) return prev;
 
       const newPlayers = prev.players.map(p => ({ ...p }));
-      const finishOrder = [...prev.finishOrder];
-      const pos = finishOrder.length + 1;
       const elapsedTime = prev.gameStartTime
         ? (Date.now() - prev.gameStartTime) / 1000 - prev.totalPausedTime
         : 0;
+      // A forfeiter drops out without claiming a finishing position. If the game
+      // continues, they stay out of the rankings; if it ends now, they take last place.
       newPlayers[playerIndex] = {
         ...newPlayers[playerIndex],
         hasFinished: true,
-        finishPosition: pos,
+        finishPosition: null,
         finishTime: elapsedTime,
       };
-      finishOrder.push({ ...newPlayers[playerIndex] });
 
       const activePlayers = newPlayers.filter(p => !p.hasFinished);
-      if (activePlayers.length === 0) {
+      if (activePlayers.length <= 1) {
+        const finishOrder = [...prev.finishOrder];
+        if (activePlayers.length === 1) {
+          const winnerPos = finishOrder.length + 1;
+          const winnerIdx = newPlayers.findIndex(p => p.id === activePlayers[0].id);
+          const winner = {
+            ...newPlayers[winnerIdx],
+            hasFinished: true,
+            finishPosition: winnerPos,
+            finishTime: elapsedTime,
+          };
+          newPlayers[winnerIdx] = winner;
+          finishOrder.push(winner);
+        }
+
+        const forfeiter = {
+          ...newPlayers[playerIndex],
+          finishPosition: finishOrder.length + 1,
+        };
+        newPlayers[playerIndex] = forfeiter;
+        finishOrder.push(forfeiter);
+
         return {
           ...prev,
           players: newPlayers,
           phase: 'finished',
           finishOrder,
-          loser: newPlayers[playerIndex],
+          loser: forfeiter,
           canContinueTurn: false,
         };
       }
-      if (activePlayers.length === 1) {
-        const loserIdx = newPlayers.findIndex(p => p.id === activePlayers[0].id);
-        const loserPos = finishOrder.length + 1;
-        finishOrder.push({ ...activePlayers[0], finishPosition: loserPos, finishTime: elapsedTime });
-        newPlayers[loserIdx] = {
-          ...newPlayers[loserIdx],
-          hasFinished: true,
-          finishPosition: loserPos,
-          finishTime: elapsedTime,
-        };
-        return {
-          ...prev,
-          players: newPlayers,
-          phase: 'finished',
-          finishOrder,
-          loser: newPlayers[loserIdx],
-          canContinueTurn: false,
-        };
-      }
+
       // If the forfeited player was the current player, advance turn
       if (prev.currentPlayerIndex === playerIndex) {
         let next = playerIndex;
@@ -511,14 +514,12 @@ function App() {
           ...prev,
           players: newPlayers,
           currentPlayerIndex: next,
-          finishOrder,
           canContinueTurn: false,
         };
       }
       return {
         ...prev,
         players: newPlayers,
-        finishOrder,
       };
     });
   }, []);

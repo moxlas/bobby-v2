@@ -20,13 +20,13 @@ export function ConfirmPopup({ message, onConfirm, onCancel, titleKey = 'confirm
         <div className="flex gap-3">
           <button
             onClick={onConfirm}
-            className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold py-2 px-4 rounded-lg transition-colors"
+            className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold py-3.5 px-4 text-lg rounded-lg transition-colors lg:py-2 lg:text-base"
           >
             {t('confirmPopup.confirm')}
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 py-2 px-4 rounded-lg transition-colors"
+            className="flex-1 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 py-3.5 px-4 text-lg rounded-lg transition-colors lg:py-2 lg:text-base"
           >
             {t('confirmPopup.cancel')}
           </button>

@@ -27,19 +27,19 @@ export function TakeOptionsPopup({ takeAllCount, onTake3, onTakeAll, onCancel }:
         <div className="flex flex-col gap-3">
           <button
             onClick={onTake3}
-            className="w-full rounded-lg bg-amber-500 px-4 py-3 font-bold text-emerald-900 transition-colors hover:bg-amber-600"
+            className="w-full rounded-lg bg-amber-500 px-4 py-3.5 text-lg font-bold text-emerald-900 transition-colors hover:bg-amber-600 lg:py-3 lg:text-base"
           >
             {t('game.takeOptions.take3')}
           </button>
           <button
             onClick={onTakeAll}
-            className="w-full rounded-lg bg-amber-500 px-4 py-3 font-bold text-emerald-900 transition-colors hover:bg-amber-600"
+            className="w-full rounded-lg bg-amber-500 px-4 py-3.5 text-lg font-bold text-emerald-900 transition-colors hover:bg-amber-600 lg:py-3 lg:text-base"
           >
             {t('game.takeOptions.takeAll', { count: takeAllCount })}
           </button>
           <button
             onClick={onCancel}
-            className="w-full rounded-lg border border-emerald-400 bg-emerald-600 px-4 py-3 text-white transition-colors hover:bg-emerald-500"
+            className="w-full rounded-lg border border-emerald-400 bg-emerald-600 px-4 py-3.5 text-lg text-white transition-colors hover:bg-emerald-500 lg:py-3 lg:text-base"
           >
             {t('game.takeOptions.cancel')}
           </button>

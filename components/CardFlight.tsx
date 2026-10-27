@@ -60,10 +60,13 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
       const endScale = Math.max(0.45, Math.min(to.width / natural.width, maxEndScale));
 
       const halfWidth = natural.width / 2;
+      // Clamp using the scaled (visible) start width so the ghost's centre can sit
+      // exactly on the source slot even when the real card is narrower than the ghost.
+      const startHalfWidth = halfWidth * startScale;
       // Hand cards can be scrolled out of view; start those from the viewport edge.
       const fromX = Math.min(
-        Math.max(from.left + from.width / 2, halfWidth),
-        window.innerWidth - halfWidth,
+        Math.max(from.left + from.width / 2, startHalfWidth),
+        window.innerWidth - startHalfWidth,
       );
       const fromY = from.top + from.height / 2;
       const toX = to.left + to.width / 2;
