@@ -38,7 +38,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         }
       } : undefined}
     >
-      <div className={`hidden sm:block mt-0 mb-3 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
+      <div className={`mt-0 mb-2 sm:mb-3 px-3 py-1 rounded-full text-xs sm:text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
@@ -60,9 +60,9 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         })}
       </div>
 
-      <div className="hidden sm:block mt-3 mb-2 text-center">
-        <div className="text-emerald-300 text-xs">{t('pile.top')}</div>
-        <div className="text-amber-300 font-bold text-sm">
+      <div className="mt-1 sm:mt-3 mb-2 text-center">
+        <div className="text-emerald-300 text-[10px] sm:text-xs">{t('pile.top')}</div>
+        <div className="text-amber-300 font-bold text-xs sm:text-sm">
           {t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) })}
         </div>
       </div>

@@ -11,7 +11,7 @@ import {
   playCardSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
-import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX } from 'lucide-react';
+import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X } from 'lucide-react';
 
 interface GameBoardProps {
   gameState: any;
@@ -58,7 +58,8 @@ export function GameBoard({
   const [showTakeOptions, setShowTakeOptions] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showHistory, setShowHistory] = useState(true);
-  const [mutedState, setMutedState] = useState(false);
+  const [showMobileHistory, setShowMobileHistory] = useState(false);
+  const [mutedState, setMutedState] = useState(() => isMuted());
   const historyContainerRef = useRef<HTMLDivElement>(null);
   const prevPlayerIndexRef = useRef<number | null>(null);
   const finishSoundPlayedRef = useRef(false);
@@ -127,6 +128,17 @@ export function GameBoard({
       historyContainerRef.current.scrollTop = 0;
     }
   }, [gameState.moveHistory, showHistory]);
+
+  useEffect(() => {
+    if (!showMobileHistory) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowMobileHistory(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showMobileHistory]);
 
   useEffect(() => {
     if (gameState.phase === 'playing') {
@@ -379,6 +391,37 @@ export function GameBoard({
     />
   );
 
+  const moveHistoryEntries = gameState.moveHistory.length === 0 ? (
+    <p className="text-emerald-400 text-xs italic text-center py-4">{t('game.history.noMoves')}</p>
+  ) : (
+    gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
+      <div
+        key={move.id}
+        className={`text-xs p-2 rounded ${move.type === 'play' ? 'bg-emerald-700/50' : 'bg-amber-900/30'}`}
+      >
+        <div className="flex items-center justify-between mb-0.5">
+          <span className={`font-medium ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
+            {move.playerName}
+          </span>
+          <span className="text-emerald-500 text-[10px]">T{move.turnNumber}</span>
+        </div>
+        <div className="text-emerald-200 truncate">
+          {move.type === 'play' ? (
+            <span className="flex items-center gap-1">
+              <span className="text-emerald-400">→</span>
+              {move.cards.map(c => getCardDisplayName(c)).join(' ')}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <span className="text-amber-400">↑</span>
+              {t('game.history.took', { count: move.cards.length })}
+            </span>
+          )}
+        </div>
+      </div>
+    ))
+  );
+
   const getConfirmMessage = () => {
     if (pendingAction === 'play') {
       const cardNames = selectedCards.map(c =>
@@ -464,7 +507,7 @@ export function GameBoard({
         <div className="bg-emerald-800 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border border-emerald-600">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-amber-300" />
-            <h2 className="text-2xl sm:text-3xl font-bold text-amber-300">Game Paused</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-amber-300">{t('game.paused.title')}</h2>
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-6 sm:mb-8">
@@ -478,7 +521,22 @@ export function GameBoard({
               className="w-full bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-base sm:text-lg py-4 sm:py-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5" />
-              Resume Game
+              {t('game.paused.resume')}
+            </button>
+
+            <button
+              type="button"
+              aria-pressed={!mutedState}
+              aria-label={t(mutedState ? 'game.topBar.unmute' : 'game.topBar.mute')}
+              onClick={() => {
+                const next = !mutedState;
+                setMutedState(next);
+                setMuted(next);
+              }}
+              className="w-full bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              {mutedState ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {t(mutedState ? 'game.topBar.unmute' : 'game.topBar.mute')}
             </button>
 
             <button
@@ -486,7 +544,7 @@ export function GameBoard({
               className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              Restart Game
+              {t('game.paused.restartGame')}
             </button>
 
             <button
@@ -494,7 +552,7 @@ export function GameBoard({
               className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <Home className="w-4 h-4" />
-              New Game
+              {t('game.paused.newGame')}
             </button>
           </div>
         </div>
@@ -510,57 +568,67 @@ export function GameBoard({
   return (
     <div className="min-h-screen bg-emerald-900 flex flex-col">
       {/* Top bar */}
-      <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 py-3 sm:py-3 flex-shrink-0">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 sm:gap-4">
             <h1 className="text-base sm:text-xl font-bold text-amber-300">🃏 The Bobby</h1>
             <span className="text-emerald-300 text-xs hidden sm:inline">
-              Turn {gameState.turnNumber}
+              {t('game.topBar.turn', { turn: gameState.turnNumber })}
             </span>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 bg-emerald-700 px-3 sm:px-4 py-2 sm:py-2 rounded-lg">
-              <Clock className="w-5 h-5 text-amber-300" />
-              <span className="text-white font-mono text-base sm:text-lg">{formatTime(elapsedTime)}</span>
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-700 px-2 sm:px-4 py-2 rounded-lg">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
+              <span className="text-white font-mono text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
             </div>
 
             <button
               onClick={onPauseGame}
-              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 lg:flex hidden items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors"
+              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
             >
               <Pause className="w-4 h-4" />
-              Pause
-            </button>
-
-            <button
-              onClick={() => {
-                const next = !mutedState;
-                setMutedState(next);
-                setMuted(next);
-              }}
-              title={mutedState ? 'Unmute' : 'Mute'}
-              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 flex items-center px-3 py-2.5 sm:py-2 rounded-lg text-sm transition-colors"
-            >
-              {mutedState ? <VolumeX className="w-5 h-5 sm:w-4 sm:h-4" /> : <Volume2 className="w-5 h-5 sm:w-4 sm:h-4" />}
+              {t('game.topBar.pause')}
             </button>
 
             <button
               onClick={requestNewGame}
-              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 flex items-center gap-1 px-3 py-2.5 sm:py-2 rounded-lg text-sm transition-colors"
+              aria-label={t('game.topBar.newGame')}
+              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-lg text-sm transition-colors"
             >
-              <Home className="w-5 h-5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">New Game</span>
+              <Home className="w-4 h-4" />
+              <span className="hidden lg:inline">{t('game.topBar.newGame')}</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main game area */}
-      <div className="flex-none lg:flex-1 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-0 sm:p-4 max-w-6xl mx-auto w-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
+        {/* Mobile: compact player seats above the table */}
+        <div className="lg:hidden flex flex-nowrap gap-1.5 overflow-x-auto rounded-lg bg-emerald-800/70 p-1.5">
+          {gameState.players.map((player: any) => {
+            const isCurrent = player.id === currentPlayer?.id;
+            return (
+              <div
+                key={player.id}
+                className={`flex flex-shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
+                  isCurrent
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                    : 'border-emerald-600 bg-emerald-700/50 text-emerald-100'
+                } ${player.hasFinished ? 'opacity-60' : ''}`}
+              >
+                <span className="font-medium">{player.name}</span>
+                {player.isAI && <span className="rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">AI</span>}
+                <span className="text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.hand.length}</span>
+              </div>
+            );
+          })}
+        </div>
+
         {/* Left sidebar - Players (Desktop) */}
-        <div className="hidden lg:flex lg:w-44 flex-col gap-2 overflow-y-auto flex-shrink-0">
-          <div className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-1 px-1">Players</div>
+        <div className="hidden lg:flex lg:w-40 flex-col gap-2 overflow-y-auto flex-shrink-0">
+          <div className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-1 px-1">{t('game.sidebar.players')}</div>
           {gameState.players.map((player: any) => {
             const isCurrent = player.id === currentPlayer?.id;
 
@@ -592,7 +660,7 @@ export function GameBoard({
                           #{player.finishPosition}
                         </span>
                       ) : (
-                        `${player.hand.length} cards`
+                        `${player.hand.length} ${t('game.sidebar.cards')}`
                       )}
                     </div>
                   </div>
@@ -603,13 +671,13 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 grid grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-3 sm:gap-4 overflow-y-auto min-h-0">
+        <div className="flex-1 min-h-[340px] lg:min-h-0 grid grid-rows-[auto_minmax(150px,auto)_minmax(110px,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-2 sm:gap-4 overflow-y-auto rounded-xl bg-emerald-800/20">
           <div className="text-center self-end">
             <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
-              <span className="text-emerald-300 text-xs sm:text-sm">Current Turn:</span>
+              <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
               <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
               {currentPlayer?.isAI && <span className="text-[10px] sm:text-xs text-emerald-400">(AI)</span>}
-              {isAIThinking && <span className="text-amber-400 text-xs sm:text-sm animate-pulse">Thinking...</span>}
+              {isAIThinking && <span className="text-amber-400 text-xs sm:text-sm animate-pulse">{t('game.center.thinking')}</span>}
             </div>
           </div>
 
@@ -719,7 +787,7 @@ export function GameBoard({
                 disabled={selectedCards.length === 0}
                 className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold px-6 py-2 text-sm rounded-lg transition-colors disabled:opacity-50"
               >
-                Play ({selectedCards.length})
+                {t('game.mobile.play', { count: selectedCards.length })}
               </button>
 
               {canTakeCards && (
@@ -727,16 +795,58 @@ export function GameBoard({
                   onClick={handleTakeClick}
                   className="bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm px-6 py-2 rounded-lg transition-colors"
                 >
-                  Take Cards
+                {t('game.actions.takeCards')}
                 </button>
               )}
             </div>
           )}
+
+          {/* Mobile: primary turn actions */}
+          {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
+            <div className="flex lg:hidden w-full gap-2 px-2">
+              <button
+                onClick={handlePlayClick}
+                disabled={selectedCards.length === 0}
+                className="flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600 disabled:opacity-50"
+              >
+                {t('game.mobile.play', { count: selectedCards.length })}
+              </button>
+              {canTakeCards && (
+                <button
+                  onClick={handleTakeClick}
+                  className="flex-1 rounded-lg border border-emerald-400 bg-emerald-600 px-3 py-3 text-sm text-white transition-colors hover:bg-emerald-500"
+                >
+                  {t('game.mobile.take')}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Mobile: always reachable pause and move-history controls */}
+          <div className="flex lg:hidden w-full justify-center gap-2 px-2 pb-1">
+            <button
+              onClick={onPauseGame}
+              className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+            >
+              <Pause className="h-3.5 w-3.5" />
+              {t('game.mobile.pause')}
+            </button>
+            <button
+              onClick={() => setShowMobileHistory(true)}
+              aria-haspopup="dialog"
+              aria-expanded={showMobileHistory}
+              className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+            >
+              <History className="h-3.5 w-3.5 text-amber-300" />
+              {t('game.history.title')}
+              <span className="text-emerald-300">{gameState.moveHistory.length}</span>
+            </button>
+          </div>
           </div>
         </div>
 
         {/* Right sidebar - Move History (Desktop) */}
-        <div className="hidden lg:flex lg:w-56 flex-col gap-3 flex-shrink-0">
+        <div className="hidden lg:flex lg:w-52 flex-col gap-3 flex-shrink-0">
           <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: '400px' }}>
             <button
               onClick={() => setShowHistory(!showHistory)}
@@ -744,7 +854,7 @@ export function GameBoard({
             >
               <div className="flex items-center gap-2">
                 <History className="w-4 h-4 text-amber-400" />
-                <span className="text-white font-medium text-sm">Move History</span>
+                <span className="text-white font-medium text-sm">{t('game.history.title')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-emerald-400 text-xs">{gameState.moveHistory.length}</span>
@@ -758,217 +868,72 @@ export function GameBoard({
 
             {showHistory && (
               <div ref={historyContainerRef} className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
-                {gameState.moveHistory.length === 0 ? (
-                  <p className="text-emerald-400 text-xs italic text-center py-4">No moves yet</p>
-                ) : (
-                  gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
-                    <div
-                      key={move.id}
-                      className={`text-xs p-2 rounded ${
-                        move.type === 'play'
-                          ? 'bg-emerald-700/50'
-                          : 'bg-amber-900/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className={`font-medium ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
-                          {move.playerName}
-                        </span>
-                        <span className="text-emerald-500 text-[10px]">T{move.turnNumber}</span>
-                      </div>
-                      <div className="text-emerald-200 truncate">
-                        {move.type === 'play' ? (
-                          <span className="flex items-center gap-1">
-                            <span className="text-emerald-400">→</span>
-                            {move.cards.map(c => getCardDisplayName(c)).join(' ')}
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <span className="text-amber-400">↑</span>
-                            Took {move.cards.length}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
+                {moveHistoryEntries}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Mobile: Bottom Section */}
-      <div className="lg:hidden bg-emerald-800 border-t border-emerald-600 flex-shrink-0">
-        {shouldShowHand && (
-          <div className="border-b border-emerald-600 px-2 pt-1 pb-2 sm:p-3">
-            <div className="text-center mb-1">
-              <span className="text-emerald-300 text-xs sm:text-sm">{isHumanTurn ? 'Your' : `${currentPlayer.name}'s`} Hand ({currentPlayer.hand.length} cards)</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {currentPlayer.hand.map((card: CardType) => {
-                const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
-                const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
-                const suitSymbol = card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠';
-                const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
+      {/* Mobile: Arena hand dock */}
+      {shouldShowHand && (
+        <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-2 pb-3">
+          <div className="mb-2 flex items-center justify-between gap-2 text-xs text-emerald-200">
+            <span className="font-medium">
+              {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}
+            </span>
+            <span className="text-emerald-400">{isHumanTurn ? t('game.mobile.swipeCards') : ''}</span>
+          </div>
+          <div className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-1">
+            {currentPlayer.hand.map((card: CardType) => {
+              const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
+              const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
+              const suitSymbol = card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠';
+              const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
 
-                if (!handCardsFaceUp) {
-                  return (
-                    <div
-                      key={card.id}
-                      className="w-14 h-20 rounded-lg border-2 border-blue-400 bg-blue-600 flex items-center justify-center shadow-sm opacity-75"
-                    >
-                      <div className="w-8 h-12 bg-blue-500 rounded border border-blue-300" />
-                    </div>
-                  );
-                }
-
+              if (!handCardsFaceUp) {
                 return (
-                  <button
+                  <div
                     key={card.id}
-                    onClick={() => handleCardSelect(card)}
-                    disabled={!isHumanTurn}
-                    className={`w-14 h-20 rounded-lg border-2 flex flex-col items-center justify-center text-base font-bold transition-all shadow-sm ${
-                      isSelected
-                        ? 'border-amber-400 bg-amber-50 scale-105 shadow-md'
-                        : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
-                    } ${!isHumanTurn ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    aria-hidden="true"
+                    className="flex h-16 w-12 flex-shrink-0 items-center justify-center rounded-lg border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
                   >
-                    <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} leading-none`}>
-                      {valueStr}
-                    </span>
-                    <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-sm mt-0.5`}>
-                      {suitSymbol}
-                    </span>
-                  </button>
+                    <div className="h-11 w-8 rounded border border-blue-300 bg-blue-500" />
+                  </div>
                 );
-              })}
-            </div>
-          </div>
-        )}
+              }
 
-        {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
-          <div className="p-4 sm:p-3 border-b border-emerald-600">
-            <div className="flex gap-4 sm:gap-3 justify-center mb-4 sm:mb-3">
-              <button
-                onClick={handlePlayClick}
-                disabled={selectedCards.length === 0}
-                className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold px-5 py-3 text-sm rounded-lg flex-1 max-w-32 transition-colors disabled:opacity-50"
-              >
-                Play ({selectedCards.length})
-              </button>
-
-              {canTakeCards && (
-                <button
-                  onClick={handleTakeClick}
-                  className="bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 px-5 py-3 text-sm rounded-lg flex-1 max-w-32 transition-colors"
-                >
-                  Take
-                </button>
-              )}
-            </div>
-
-            <div className="flex justify-center lg:hidden">
-              <button
-                onClick={onPauseGame}
-                className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 py-2 px-4 text-xs font-medium rounded-lg flex items-center gap-2 transition-colors"
-              >
-                <Pause className="w-3 h-3" />
-                Pause
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="p-2 sm:p-3 border-b border-emerald-600">
-          <div className="text-emerald-300 text-[10px] sm:text-xs font-medium uppercase tracking-wide mb-1 sm:mb-2">Players</div>
-          <div className="flex flex-wrap gap-1 sm:gap-2">
-            {gameState.players.map((player: any) => {
-              const isCurrent = player.id === currentPlayer?.id;
               return (
-                <div
-                  key={player.id}
-                  className={`px-2 py-1 rounded text-[10px] sm:text-xs border ${
-                    isCurrent
-                      ? 'border-amber-400 bg-amber-500/20 text-amber-300'
-                      : 'border-emerald-600 bg-emerald-700/50 text-emerald-200'
-                  } ${player.hasFinished ? 'opacity-60' : ''}`}
+                <button
+                  key={card.id}
+                  type="button"
+                  aria-label={getCardDisplayName(card)}
+                  aria-pressed={isSelected}
+                  onClick={() => handleCardSelect(card)}
+                  disabled={!isHumanTurn}
+                  className={`flex h-16 w-12 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${
+                    isSelected
+                      ? 'scale-105 border-amber-400 bg-amber-50 shadow-md'
+                      : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
+                  } ${!isHumanTurn ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
-                  <span className="font-medium">{player.name}</span>
-                  {player.isAI && <span className="text-emerald-400 ml-0.5">AI</span>}
-                  <span className="text-emerald-400 ml-1">
-                    {player.hasFinished ? `#${player.finishPosition}` : `(${player.hand.length})`}
-                  </span>
-                </div>
+                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} leading-none`}>{valueStr}</span>
+                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} mt-0.5 text-sm`}>{suitSymbol}</span>
+                </button>
               );
             })}
           </div>
         </div>
-
-        <div className="p-2 sm:p-3">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center justify-between w-full"
-          >
-            <div className="flex items-center gap-1 sm:gap-2">
-              <History className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
-              <span className="text-white font-medium text-xs sm:text-sm">Move History</span>
-              <span className="text-emerald-400 text-[10px] sm:text-xs">({gameState.moveHistory.length})</span>
-            </div>
-            {showHistory ? (
-              <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-            ) : (
-              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-            )}
-          </button>
-
-          {showHistory && (
-            <div ref={historyContainerRef} className="mt-2 sm:mt-3 space-y-1 max-h-24 sm:max-h-32 overflow-y-auto">
-              {gameState.moveHistory.length === 0 ? (
-                <p className="text-emerald-400 text-[10px] sm:text-xs italic">No moves yet</p>
-              ) : (
-                gameState.moveHistory.slice().reverse().map((move: PlayerMove) => (
-                  <div
-                    key={move.id}
-                    className={`text-[10px] sm:text-xs p-1.5 sm:p-2 rounded ${
-                      move.type === 'play'
-                        ? 'bg-emerald-700/50'
-                        : 'bg-amber-900/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className={`font-medium ${move.type === 'play' ? 'text-amber-300' : 'text-emerald-300'}`}>
-                        {move.playerName}
-                      </span>
-                      <span className="text-emerald-500 text-[8px] sm:text-[10px]">T{move.turnNumber}</span>
-                    </div>
-                    <div className="text-emerald-200 truncate">
-                      {move.type === 'play' ? (
-                        <span className="flex items-center gap-1">
-                          <span className="text-emerald-400">→</span>
-                          {move.cards.map(c => getCardDisplayName(c)).join(' ')}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <span className="text-amber-400">↑</span>
-                          Took {move.cards.length}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Desktop: Player Hand at bottom */}
       {shouldShowHand && (
         <div className="hidden lg:block bg-emerald-800 border-t border-emerald-600 p-4 flex-shrink-0">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-3">
-              <span className="text-emerald-300 text-sm">{isHumanTurn ? 'Your' : `${currentPlayer.name}'s`} Hand ({currentPlayer.hand.length} cards)</span>
+              <span className="text-emerald-300 text-sm">
+                {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}
+              </span>
             </div>
             <PlayerHand
               hand={currentPlayer.hand}
@@ -989,6 +954,41 @@ export function GameBoard({
         />
       )}
       {navigationConfirmDialog}
+      {showMobileHistory && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 lg:hidden"
+          onClick={() => setShowMobileHistory(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-history-title"
+            onClick={event => event.stopPropagation()}
+            className="flex max-h-[82dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-emerald-500 bg-emerald-900 shadow-2xl"
+          >
+            <header className="flex flex-shrink-0 items-center justify-between border-b border-emerald-700 bg-emerald-800 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-amber-300" />
+                <h2 id="mobile-history-title" className="font-semibold text-white">
+                  {t('game.history.title')}
+                </h2>
+                <span className="text-xs text-emerald-300">{gameState.moveHistory.length}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileHistory(false)}
+                aria-label={t('confirmPopup.cancel')}
+                className="rounded-lg p-2 text-emerald-200 transition-colors hover:bg-emerald-700 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+            <div ref={historyContainerRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+              {moveHistoryEntries}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
