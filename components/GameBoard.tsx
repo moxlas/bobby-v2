@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '../lib/i18n';
 import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
@@ -50,6 +50,19 @@ function getCardDisplayName(card: CardType): string {
   return `${valueStr}${suitEmoji}`;
 }
 
+/** First visible element matching `selector` (each hand card exists in both layouts). */
+function visibleRect(selector: string): DOMRect | null {
+  for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+    if (element.getClientRects().length === 0) continue;
+    return element.getBoundingClientRect();
+  }
+  return null;
+}
+
+function pileFlightTarget(): DOMRect | null {
+  return visibleRect('[data-pile-top]') ?? visibleRect('[data-pile-drop-zone]');
+}
+
 export function GameBoard({
   gameState,
   onPlayCards,
@@ -92,34 +105,23 @@ export function GameBoard({
     if (message) setErrorSequence((sequence) => sequence + 1);
   };
 
-  /** First visible element matching `selector` (each hand card exists in both layouts). */
-  const visibleRect = (selector: string): DOMRect | null => {
-    for (const element of document.querySelectorAll<HTMLElement>(selector)) {
-      if (element.getClientRects().length === 0) continue;
-      return element.getBoundingClientRect();
-    }
-    return null;
-  };
-
-  const pileFlightTarget = () =>
-    visibleRect('[data-pile-top]') ?? visibleRect('[data-pile-drop-zone]');
-
   /** Fly ghost cards from the hand to the pile (or back) while the real state updates. */
-  const launchCardFlight = (cards: CardType[], direction: 'toPile' | 'toHand') => {
-    const target = direction === 'toPile'
-      ? pileFlightTarget()
-      : visibleRect('[data-hand-drop-zone]');
-    if (!target || cards.length === 0) return;
+  const launchCardFlight = useCallback(
+    (cards: CardType[], direction: 'toPile' | 'toHand', faceUp = true) => {
+      const target = direction === 'toPile' ? pileFlightTarget() : visibleRect('[data-hand-drop-zone]');
+      if (!target || cards.length === 0) return;
 
-    const sources = direction === 'toPile'
-      ? cards.map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
-      : cards.map(() => pileFlightTarget());
-    const from = sources.filter((rect): rect is DOMRect => rect !== null);
-    if (from.length === 0) return;
+      const sources = direction === 'toPile'
+        ? cards.map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
+        : cards.map(() => pileFlightTarget());
+      const from = sources.filter((rect): rect is DOMRect => rect !== null);
+      if (from.length === 0) return;
 
-    flightSequenceRef.current += 1;
-    setFlight({ id: flightSequenceRef.current, direction, cards, from, to: target });
-  };
+      flightSequenceRef.current += 1;
+      setFlight({ id: flightSequenceRef.current, direction, cards, from, to: target, faceUp });
+    },
+    [],
+  );
 
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -311,12 +313,14 @@ export function GameBoard({
         if (validation.valid) {
           playCardSound(aiMove.cards.length);
           if (validation.continueTurn) playComboSound();
+          launchCardFlight(aiMove.cards, 'toPile', false);
           onPlayCardsRef.current(player.id, aiMove.cards, validation.continueTurn || false);
         } else {
           const takeOpts = getTakeOptions(pile, state.options);
           const count = takeOpts.canTake3 ? takeOpts.take3Count : takeOpts.takeAllCount;
           if (count > 0) {
             playTakeSound();
+            launchCardFlight(state.pile.slice(-count), 'toHand');
             onTakeCardsRef.current(player.id, count);
           } else {
             onPlayCardsRef.current(player.id, [], false);
@@ -330,6 +334,7 @@ export function GameBoard({
 
         if (count > 0) {
           playTakeSound();
+          launchCardFlight(state.pile.slice(-count), 'toHand');
           onTakeCardsRef.current(player.id, count);
         } else {
           onPlayCardsRef.current(player.id, [], false);
@@ -348,7 +353,7 @@ export function GameBoard({
       clearTimeout(timeout);
       setIsAIThinking(false);
     };
-  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn]);
+  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, launchCardFlight]);
 
   const handleCardSelect = (card: CardType) => {
     if (!isHumanTurn) return;
@@ -1051,6 +1056,7 @@ export function GameBoard({
                 return (
                   <div
                     key={card.id}
+                    data-card-id={card.id}
                     aria-hidden="true"
                     className="flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 items-center justify-center rounded-lg border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
                   >

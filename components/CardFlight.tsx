@@ -9,6 +9,8 @@ export interface CardFlightRequest {
   cards: CardType[];
   from: DOMRect[];
   to: DOMRect;
+  /** Ghost face; AI hand cards stay face down while they fly. */
+  faceUp?: boolean;
 }
 
 interface CardFlightProps {
@@ -57,7 +59,12 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
       const maxEndScale = request.direction === 'toPile' ? 1.25 : 1;
       const endScale = Math.max(0.45, Math.min(to.width / natural.width, maxEndScale));
 
-      const fromX = from.left + from.width / 2;
+      const halfWidth = natural.width / 2;
+      // Hand cards can be scrolled out of view; start those from the viewport edge.
+      const fromX = Math.min(
+        Math.max(from.left + from.width / 2, halfWidth),
+        window.innerWidth - halfWidth,
+      );
       const fromY = from.top + from.height / 2;
       const toX = to.left + to.width / 2;
       const toY = to.top + to.height / 2;
@@ -115,7 +122,7 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
     >
       {request.cards.map((card, index) => (
         <div key={`${card.id}-${index}`} className="absolute opacity-0">
-          <Card card={{ ...card, faceUp: true }} size="md" />
+          <Card card={{ ...card, faceUp: request.faceUp ?? true }} size="md" />
         </div>
       ))}
     </div>
