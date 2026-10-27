@@ -604,26 +604,28 @@ export function GameBoard({
       </div>
 
       {/* Main game area */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
         {/* Mobile: compact player seats above the table */}
-        <div className="lg:hidden flex flex-nowrap gap-1.5 overflow-x-auto rounded-lg bg-emerald-800/70 p-1.5">
-          {gameState.players.map((player: any) => {
-            const isCurrent = player.id === currentPlayer?.id;
-            return (
-              <div
-                key={player.id}
-                className={`flex flex-shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
-                  isCurrent
-                    ? 'border-amber-400 bg-amber-500/20 text-amber-200'
-                    : 'border-emerald-600 bg-emerald-700/50 text-emerald-100'
-                } ${player.hasFinished ? 'opacity-60' : ''}`}
-              >
-                <span className="font-medium">{player.name}</span>
-                {player.isAI && <span className="rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">AI</span>}
-                <span className="text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.hand.length}</span>
-              </div>
-            );
-          })}
+        <div className="lg:hidden w-full overflow-x-auto rounded-lg bg-emerald-800/70 p-1.5">
+          <div className="mx-auto flex w-max min-w-full flex-nowrap justify-center gap-1.5">
+            {gameState.players.map((player: any) => {
+              const isCurrent = player.id === currentPlayer?.id;
+              return (
+                <div
+                  key={player.id}
+                  className={`flex flex-shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
+                    isCurrent
+                      ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                      : 'border-emerald-600 bg-emerald-700/50 text-emerald-100'
+                  } ${player.hasFinished ? 'opacity-60' : ''}`}
+                >
+                  <span className="font-medium">{player.name}</span>
+                  {player.isAI && <span className="rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">AI</span>}
+                  <span className="text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.hand.length}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Left sidebar - Players (Desktop) */}
@@ -671,7 +673,7 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 min-h-[340px] lg:min-h-0 grid grid-rows-[auto_minmax(150px,auto)_minmax(110px,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-2 sm:gap-4 overflow-y-auto rounded-xl bg-emerald-800/20">
+        <div className="flex-1 min-h-[380px] lg:min-h-0 grid grid-rows-[auto_minmax(170px,auto)_minmax(120px,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-3 sm:gap-4 overflow-y-auto rounded-xl bg-emerald-800/20 px-2 py-4 sm:px-4">
           <div className="text-center self-end">
             <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
               <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
@@ -688,7 +690,7 @@ export function GameBoard({
             />
           </div>
 
-          <div className="row-start-3 self-start flex w-full max-w-sm flex-col items-center gap-4 sm:gap-4">
+          <div className="row-start-3 self-start flex w-full max-w-sm flex-col items-center gap-3 sm:gap-4">
           {error && (
             <div className="flex items-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-sm">
               <AlertCircle className="w-4 h-4" />

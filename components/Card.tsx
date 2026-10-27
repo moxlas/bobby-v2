@@ -72,17 +72,19 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
     const face = (
       <>
         <path d="M 28 42 L 27 56 L 36 56 L 35 42 Z" fill="#dca77e" stroke={portraitInk} strokeWidth="0.8" />
-        <path d="M 21 30 C 18 16 26 8 37 9 C 48 10 50 21 46 34 L 43 43 L 24 43 Z" fill="#493438" stroke={portraitInk} strokeWidth="1" />
-        <path d="M 23 25 C 24 16 31 13 38 15 C 44 17 46 23 44 31 L 42 38 C 40 45 35 49 30 46 C 25 44 22 37 22 31 Z" fill="#f0c69e" stroke={portraitInk} strokeWidth="0.9" />
-        <path d="M 23 27 C 24 19 30 16 37 16 C 32 19 29 22 25 24 Z" fill="#493438" />
-        <path d="M 23 27 Q 27 24 30 26" fill="none" stroke={portraitInk} strokeWidth="1.1" strokeLinecap="round" />
-        <path d="M 34 25 Q 37 23.5 40 25" fill="none" stroke={portraitInk} strokeWidth="1.1" strokeLinecap="round" />
-        <path d="M 24.5 29 Q 27 27 30 29 M 35 28 Q 37 26.5 39 28" fill="none" stroke={portraitInk} strokeWidth="0.9" strokeLinecap="round" />
-        <circle cx="28" cy="29" r="0.8" fill={portraitInk} />
-        <circle cx="37" cy="28" r="0.8" fill={portraitInk} />
-        <path d="M 32 29 C 31 33 29 35 31 36 L 34 36" fill="none" stroke="#a45e4e" strokeWidth="0.9" strokeLinecap="round" />
-        <path d="M 29 40 Q 32 41.5 35 39.5" fill="none" stroke="#8e4350" strokeWidth="0.9" strokeLinecap="round" />
-        <path d="M 26 36 Q 27 37 28 36" fill="none" stroke="#d89b7f" strokeWidth="0.7" strokeLinecap="round" />
+        <g transform="translate(-3.6 -3.6) scale(1.12)">
+          <path d="M 21 30 C 18 16 26 8 37 9 C 48 10 50 21 46 34 L 43 43 L 24 43 Z" fill="#493438" stroke={portraitInk} strokeWidth="1" />
+          <path d="M 23 25 C 24 16 31 13 38 15 C 44 17 46 23 44 31 L 42 38 C 40 45 35 49 30 46 C 25 44 22 37 22 31 Z" fill="#f0c69e" stroke={portraitInk} strokeWidth="0.9" />
+          <path d="M 23 27 C 24 19 30 16 37 16 C 32 19 29 22 25 24 Z" fill="#493438" />
+          <path d="M 23 27 Q 27 24 30 26" fill="none" stroke={portraitInk} strokeWidth="1.1" strokeLinecap="round" />
+          <path d="M 34 25 Q 37 23.5 40 25" fill="none" stroke={portraitInk} strokeWidth="1.1" strokeLinecap="round" />
+          <path d="M 24.5 29 Q 27 27 30 29 M 35 28 Q 37 26.5 39 28" fill="none" stroke={portraitInk} strokeWidth="0.9" strokeLinecap="round" />
+          <circle cx="28" cy="29" r="0.8" fill={portraitInk} />
+          <circle cx="37" cy="28" r="0.8" fill={portraitInk} />
+          <path d="M 32 29 C 31 33 29 35 31 36 L 34 36" fill="none" stroke="#a45e4e" strokeWidth="0.9" strokeLinecap="round" />
+          <path d="M 29 40 Q 32 41.5 35 39.5" fill="none" stroke="#8e4350" strokeWidth="0.9" strokeLinecap="round" />
+          <path d="M 26 36 Q 27 37 28 36" fill="none" stroke="#d89b7f" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
       </>
     );
 
@@ -185,7 +187,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
     };
 
     return (
-      <svg viewBox="0 0 60 80" className={`w-[68%] h-[68%] ${color}`} aria-hidden="true">
+      <svg viewBox="0 0 60 80" className={`w-[78%] h-[82%] ${color}`} aria-hidden="true">
         <path d={shoulderPaths[suit]} fill="currentColor" stroke={portraitInk} strokeWidth="1.2" strokeLinejoin="round" />
         <path d="M 18 56 L 26 54 L 30 62 L 34 54 L 42 56 L 50 78 L 10 78 Z" fill="#eee4d1" stroke={portraitInk} strokeWidth="1" strokeLinejoin="round" />
         <path d="M 18 57 L 26 56 L 30 63 L 24 77 L 12 77 Z M 42 57 L 34 56 L 30 63 L 36 77 L 48 77 Z" fill="currentColor" />
@@ -218,6 +220,8 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
 
         {v === 11 && (
           <>
+            <path d="M 25 37.5 C 27.5 34.5 30.5 35 33 37 C 35.5 35 38.5 34.5 41 37.5 C 39 40 36.5 40 33 38.5 C 29.5 40 27 40 25 37.5 Z" fill="#493438" stroke={portraitInk} strokeWidth="0.7" strokeLinejoin="round" />
+            <path d="M 29 41 Q 33 43 37 41 L 36 45 Q 34.5 48 33 49 Q 30.5 47 29 45 Z" fill="#493438" stroke={portraitInk} strokeWidth="0.65" strokeLinejoin="round" />
             <path d={jackData[suit].hat} fill="currentColor" stroke={portraitInk} strokeWidth="1" strokeLinejoin="round" />
             {jackData[suit].hatTop && <path d={jackData[suit].hatTop} fill="#493438" stroke={portraitInk} strokeWidth="0.8" />}
             <path d="M 22 20 Q 31 15 43 19" fill="none" stroke={portraitGold} strokeWidth="1.4" />

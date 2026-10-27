@@ -42,7 +42,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
-      <div className="relative h-44 sm:h-40 flex items-center justify-center -translate-x-12 translate-y-1">
+      <div className="relative h-44 w-24 sm:h-40 flex items-center justify-center translate-y-1">
         {visibleCards.map((card, index) => {
           const totalWidth = (visibleCount - 1) * 28;
           const offsetX = index * 28 - totalWidth / 2;
@@ -66,11 +66,6 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
           {t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) })}
         </div>
       </div>
-      {clickable && (
-        <span className="sm:hidden -mt-2 mb-1 text-xs font-medium text-amber-300">
-          {t('pile.tapToTake')}
-        </span>
-      )}
     </div>
   );
 }
