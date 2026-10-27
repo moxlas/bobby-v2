@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '../lib/i18n';
 import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
 import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
+import { TakeOptionsPopup } from './TakeOptionsPopup';
 import { validatePlay, getTakeOptions, getValidMoves } from '../utils/gameLogic';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
 import {
@@ -24,6 +25,14 @@ interface GameBoardProps {
   onFinishGame: () => void;
   onRestartGame: () => void;
   onNewGame: () => void;
+}
+
+interface CardPointerGesture {
+  card: CardType;
+  pointerId: number;
+  pointerType: string;
+  startX: number;
+  startY: number;
 }
 
 function formatTime(seconds: number): string {
@@ -59,10 +68,15 @@ export function GameBoard({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showHistory, setShowHistory] = useState(true);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
+  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(null);
   const [mutedState, setMutedState] = useState(() => isMuted());
   const historyContainerRef = useRef<HTMLDivElement>(null);
   const prevPlayerIndexRef = useRef<number | null>(null);
   const finishSoundPlayedRef = useRef(false);
+  const cardPointerGestureRef = useRef<CardPointerGesture | null>(null);
+  const suppressGestureClickRef = useRef(false);
+  const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onPlayCardsRef = useRef(onPlayCards);
   const onTakeCardsRef = useRef(onTakeCards);
@@ -167,6 +181,9 @@ export function GameBoard({
       setPendingAction(null);
       setError(null);
       setShowTakeOptions(false);
+      cardPointerGestureRef.current = null;
+      setDraggingCardId(null);
+      setDragPreviewPosition(null);
     }
   }, [gameState.currentPlayerIndex]);
 
@@ -295,6 +312,90 @@ export function GameBoard({
       setSelectedCards([...selectedCards, card]);
     }
     setError(null);
+  };
+
+  const handleCardPointerDown = (card: CardType, event: ReactPointerEvent<HTMLElement>) => {
+    if (!isHumanTurn || !event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+
+    cardPointerGestureRef.current = {
+      card,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+    setDragPreviewPosition(null);
+  };
+
+  const handleCardPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const gesture = cardPointerGestureRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - gesture.startX;
+    const deltaY = event.clientY - gesture.startY;
+    const isMouseDrag = gesture.pointerType === 'mouse' && Math.hypot(deltaX, deltaY) > 8;
+    const isTouchSwipeUp = gesture.pointerType !== 'mouse' && deltaY < -8 && Math.abs(deltaY) > Math.abs(deltaX) * 0.8;
+
+    if (isMouseDrag || isTouchSwipeUp) {
+      setDraggingCardId(gesture.card.id);
+      setDragPreviewPosition({ x: event.clientX, y: event.clientY });
+    }
+  };
+
+  const handleCardPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const gesture = cardPointerGestureRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    cardPointerGestureRef.current = null;
+    setDraggingCardId(null);
+    setDragPreviewPosition(null);
+
+    const deltaX = event.clientX - gesture.startX;
+    const deltaY = event.clientY - gesture.startY;
+    const movedDistance = Math.hypot(deltaX, deltaY);
+    const releasedOverPile = Boolean(document.elementFromPoint(event.clientX, event.clientY)
+      ?.closest('[data-pile-drop-zone]'));
+    const isTouchSwipeUp = gesture.pointerType !== 'mouse' && deltaY < -42 && Math.abs(deltaY) > Math.abs(deltaX) * 1.1;
+    const isMouseDropOnPile = gesture.pointerType === 'mouse' && releasedOverPile && movedDistance > 10;
+
+    if (!isTouchSwipeUp && !isMouseDropOnPile) return;
+
+    suppressGestureClickRef.current = true;
+    if (suppressGestureClickTimerRef.current) clearTimeout(suppressGestureClickTimerRef.current);
+    suppressGestureClickTimerRef.current = setTimeout(() => {
+      suppressGestureClickRef.current = false;
+      suppressGestureClickTimerRef.current = null;
+    }, 500);
+
+    const cardsToPlay = selectedCards.some(selected => selected.id === gesture.card.id)
+      ? selectedCards
+      : [gesture.card];
+    setSelectedCards(cardsToPlay);
+    const validation = validatePlay(cardsToPlay, pile, isFirstMove, options);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid move');
+      return;
+    }
+
+    setError(null);
+    setPendingAction('play');
+    setShowConfirm(true);
+  };
+
+  const handleCardPointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (cardPointerGestureRef.current?.pointerId !== event.pointerId) return;
+    cardPointerGestureRef.current = null;
+    setDraggingCardId(null);
+    setDragPreviewPosition(null);
+  };
+
+  const handleGestureClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!suppressGestureClickRef.current) return;
+    suppressGestureClickRef.current = false;
+    if (suppressGestureClickTimerRef.current) clearTimeout(suppressGestureClickTimerRef.current);
+    suppressGestureClickTimerRef.current = null;
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   const handlePlayClick = () => {
@@ -563,11 +664,23 @@ export function GameBoard({
   }
 
   const shouldShowHand = currentPlayer && !currentPlayer.hasFinished;
+  const draggedCard = draggingCardId
+    ? currentPlayer?.hand.find((card: CardType) => card.id === draggingCardId)
+    : null;
+  const draggedCardSuit = draggedCard?.suit === 'hearts' ? '♥' : draggedCard?.suit === 'diamonds' ? '♦' : draggedCard?.suit === 'clubs' ? '♣' : '♠';
+  const draggedCardValue = draggedCard?.value === 11 ? 'J' : draggedCard?.value === 12 ? 'Q' : draggedCard?.value === 13 ? 'K' : draggedCard?.value === 14 ? 'A' : draggedCard?.value;
+  const draggedCardIsRed = draggedCard?.suit === 'hearts' || draggedCard?.suit === 'diamonds';
 
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
   return (
-    <div className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col pb-[max(env(safe-area-inset-bottom),1.5rem)] lg:pb-0">
+    <div
+      className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col pb-[max(env(safe-area-inset-bottom),2.5rem)] lg:pb-0"
+      onPointerMove={handleCardPointerMove}
+      onPointerUp={handleCardPointerUp}
+      onPointerCancel={handleCardPointerCancel}
+      onClickCapture={handleGestureClickCapture}
+    >
       {/* Top bar */}
       <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-2">
@@ -672,9 +785,9 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center overflow-hidden rounded-xl bg-emerald-800/20 px-2 py-2 sm:px-4 lg:gap-4 lg:py-4">
+        <div className="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center overflow-hidden rounded-xl bg-emerald-800/20 px-2 py-2 sm:px-4 lg:gap-2 lg:py-4">
           <div className="hidden text-center self-end lg:block">
-            <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
+            <div className="flex items-center gap-1 sm:gap-2 justify-center mb-0">
               <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
               <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
               {currentPlayer?.isAI && <span className="text-[10px] sm:text-xs text-emerald-400">(AI)</span>}
@@ -682,7 +795,7 @@ export function GameBoard({
             </div>
           </div>
 
-          <div className="flex min-h-0 items-center justify-center lg:row-start-2">
+          <div data-pile-drop-zone="true" className="flex min-h-0 items-center justify-center lg:row-start-2">
             <GamePile
               pile={pile}
               onTakeClick={isHumanTurn && canTakeCards && !showTakeOptions ? handleTakeClick : undefined}
@@ -850,7 +963,7 @@ export function GameBoard({
             </span>
             <span className="text-emerald-400">{isHumanTurn ? t('game.mobile.swipeCards') : ''}</span>
           </div>
-          <div className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5">
+          <div className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5 touch-pan-x">
             {currentPlayer.hand.map((card: CardType) => {
               const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
               const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
@@ -875,9 +988,10 @@ export function GameBoard({
                   type="button"
                   aria-label={getCardDisplayName(card)}
                   aria-pressed={isSelected}
+                  onPointerDown={event => handleCardPointerDown(card, event)}
                   onClick={() => handleCardSelect(card)}
                   disabled={!isHumanTurn}
-                  className={`flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${
+                  className={`relative flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 select-none flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${draggingCardId === card.id ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${
                     isSelected
                       ? 'scale-105 border-amber-400 bg-amber-50 shadow-md'
                       : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
@@ -915,31 +1029,7 @@ export function GameBoard({
         )}
 
         <div className="mx-auto flex w-full max-w-md gap-2">
-          {showTakeOptions ? (
-            <div className="w-full space-y-2 rounded-xl border border-emerald-600 bg-emerald-800 p-3">
-              <p className="text-center text-sm font-medium text-emerald-100">{t('game.takeOptions.title')}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleTake3}
-                  className="flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600"
-                >
-                  {t('game.takeOptions.take3')}
-                </button>
-                <button
-                  onClick={handleTakeAll}
-                  className="flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600"
-                >
-                  {t('game.takeOptions.takeAll', { count: takeOptions.takeAllCount })}
-                </button>
-              </div>
-              <button
-                onClick={handleCancel}
-                className="w-full rounded-lg border border-emerald-500 bg-emerald-700 px-3 py-2 text-sm text-emerald-100 transition-colors hover:bg-emerald-600"
-              >
-                {t('game.takeOptions.cancel')}
-              </button>
-            </div>
-          ) : gameState.canContinueTurn && isHumanTurn ? (
+          {showTakeOptions ? null : gameState.canContinueTurn && isHumanTurn ? (
             <div className="w-full rounded-xl border border-amber-400 bg-amber-600 p-2.5 text-center text-emerald-950">
               <p className="mb-2 text-xs font-semibold">
                 {t(isFourNinesStart ? 'game.ninesStart.title' : 'game.combo.title')}
@@ -1015,6 +1105,8 @@ export function GameBoard({
               hand={currentPlayer.hand}
               selectedCards={selectedCards}
               onCardSelect={handleCardSelect}
+              onCardPointerDown={handleCardPointerDown}
+              draggingCardId={draggingCardId}
               disabled={!isHumanTurn}
               faceUp={handCardsFaceUp}
             />
@@ -1028,6 +1120,26 @@ export function GameBoard({
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />
+      )}
+      {showTakeOptions && isHumanTurn && (
+        <TakeOptionsPopup
+          takeAllCount={takeOptions.takeAllCount}
+          onTake3={handleTake3}
+          onTakeAll={handleTakeAll}
+          onCancel={handleCancel}
+        />
+      )}
+      {draggedCard && dragPreviewPosition && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-1/2"
+          style={{ left: dragPreviewPosition.x, top: dragPreviewPosition.y }}
+        >
+          <div className={`flex h-24 w-16 flex-col items-center justify-center rounded-xl border-2 border-slate-300 bg-white text-xl font-bold shadow-2xl lg:h-28 lg:w-20 ${draggedCardIsRed ? 'text-red-600' : 'text-slate-900'}`}>
+            <span>{draggedCardValue}</span>
+            <span>{draggedCardSuit}</span>
+          </div>
+        </div>
       )}
       {navigationConfirmDialog}
       {showMobileHistory && (

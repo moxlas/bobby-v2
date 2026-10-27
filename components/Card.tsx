@@ -1,9 +1,12 @@
 import { Card as CardType } from '../types/game';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 
 interface CardProps {
   card: CardType;
   onClick?: () => void;
+  onPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
   isSelected?: boolean;
+  isDragging?: boolean;
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -187,7 +190,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
     };
 
     return (
-      <svg viewBox="0 0 60 80" className={`w-[78%] h-[82%] ${color}`} aria-hidden="true">
+      <svg viewBox="0 0 60 80" className={`w-[78%] h-[82%] overflow-visible ${color}`} aria-hidden="true">
         <path d={shoulderPaths[suit]} fill="currentColor" stroke={portraitInk} strokeWidth="1.2" strokeLinejoin="round" />
         <path d="M 18 56 L 26 54 L 30 62 L 34 54 L 42 56 L 50 78 L 10 78 Z" fill="#eee4d1" stroke={portraitInk} strokeWidth="1" strokeLinejoin="round" />
         <path d="M 18 57 L 26 56 L 30 63 L 24 77 L 12 77 Z M 42 57 L 34 56 L 30 63 L 36 77 L 48 77 Z" fill="currentColor" />
@@ -201,7 +204,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
             <path d={kingData[suit].beard} fill="#493438" stroke={portraitInk} strokeWidth="0.8" strokeLinejoin="round" />
             <path d={kingData[suit].moustache} fill="#493438" stroke={portraitInk} strokeWidth="0.55" strokeLinejoin="round" />
             <path d="M 30 42 Q 33 44 36 42" fill="none" stroke="#d98978" strokeWidth="1.2" strokeLinecap="round" />
-            <g transform="translate(2 -1)">
+            <g transform="translate(4 -3)">
               <polygon points={kingData[suit].crown} fill={portraitGold} stroke="#79572b" strokeWidth="0.9" strokeLinejoin="round" />
               <path d={kingData[suit].band} fill="none" stroke="#79572b" strokeWidth="1.3" />
               {kingData[suit].cross && <path d={kingData[suit].cross} fill="none" stroke="#fff0c6" strokeWidth="1" strokeLinecap="round" />}
@@ -215,7 +218,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
             <path d={queenData[suit].hair} fill="#493438" stroke={portraitInk} strokeWidth="0.9" strokeLinejoin="round" />
             <path d="M 45 27 Q 49 34 45 43" fill="none" stroke="#b98658" strokeWidth="0.7" />
             <circle cx="44" cy="38" r="1.3" fill={gemColor} stroke={portraitGold} strokeWidth="0.6" />
-            <g transform="translate(2 -1)">
+            <g transform="translate(4 -3)">
               <polygon points={queenData[suit].crown} fill={portraitGold} stroke="#79572b" strokeWidth="0.9" strokeLinejoin="round" />
               <path d={queenData[suit].band} fill="none" stroke="#79572b" strokeWidth="1.3" />
               {queenData[suit].jewel && <path d={queenData[suit].jewel} fill={gemColor} stroke="#fff0c6" strokeWidth="0.35" />}
@@ -243,7 +246,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
   return <div className={`text-lg ${suitColor}`}>{suitSymbol}</div>;
 }
 
-export function Card({ card, onClick, isSelected, disabled, size = 'md' }: CardProps) {
+export function Card({ card, onClick, onPointerDown, isSelected, isDragging, disabled, size = 'md' }: CardProps) {
   const sizeClasses = {
     sm: 'w-16 h-24',
     md: 'w-20 h-28',
@@ -277,9 +280,10 @@ export function Card({ card, onClick, isSelected, disabled, size = 'md' }: CardP
   const btmCorner = isLg ? 'bottom-1 right-1.5' : 'bottom-0.5 right-1';
 
   return (
-    <div
-      className={`${sizeClasses[size]} relative rounded-xl border ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-300'} bg-gradient-to-br from-white via-[#fffefa] to-[#f1eee6] shadow-[0_3px_8px_rgba(15,23,42,0.18)] transition-all duration-200 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_7px_14px_rgba(15,23,42,0.24)] active:translate-y-0'} ${!disabled && isSelected ? 'hover:-translate-y-1' : ''}`}
-      onClick={disabled ? undefined : onClick}
+      <div
+        className={`${sizeClasses[size]} relative select-none rounded-xl border ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-300'} bg-gradient-to-br from-white via-[#fffefa] to-[#f1eee6] shadow-[0_3px_8px_rgba(15,23,42,0.18)] transition-all duration-200 ${isDragging ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_7px_14px_rgba(15,23,42,0.24)] active:translate-y-0'} ${!disabled && isSelected ? 'hover:-translate-y-1' : ''}`}
+        onClick={disabled ? undefined : onClick}
+        onPointerDown={disabled ? undefined : onPointerDown}
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-[3px] rounded-[9px] border border-slate-200/80" />
       <div className={`absolute ${topCorner} z-10 ${cornerValCls} font-serif font-black ${suitColor} leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.8)]`}>

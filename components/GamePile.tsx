@@ -38,7 +38,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         }
       } : undefined}
     >
-      <div className={`hidden lg:block mt-0 mb-3 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
+      <div className={`hidden lg:block mt-0 mb-1 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
