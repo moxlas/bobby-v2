@@ -104,7 +104,7 @@
       "takeCards": "Paimti kortas"
     },
     "history": {
-      "title": "Istorija",
+      "title": "Ėjimų istorija",
       "noMoves": "Dar nėra ėjimų",
       "took": "Paėmė {count}"
     },
@@ -116,7 +116,8 @@
     "mobile": {
       "play": "Žaisti ({count})",
       "take": "Paimti",
-      "pause": "Pristabdyti"
+      "pause": "Pristabdyti",
+      "swipeCards": "Braukite kortoms peržiūrėti"
     },
     "error": {
       "selectCards": "Pasirinkite kortas žaidimui",
