@@ -185,6 +185,7 @@ export function GameBoard({
   const isPlayerTurn = currentPlayer && !currentPlayer.hasFinished;
   const handCardsFaceUp = currentPlayer && (!currentPlayer.isAI || allHumanPlayersFinished);
   const pile = gameState.pile;
+  const pileTopCard = pile[pile.length - 1];
   const options: GameOptions = gameState.options;
 
   const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
@@ -606,7 +607,7 @@ export function GameBoard({
       {/* Main game area */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
         {/* Mobile: compact player seats above the table */}
-        <div className="lg:hidden w-full overflow-x-auto rounded-lg bg-emerald-800/70 p-1.5">
+        <div className="relative z-10 -mb-2 lg:hidden w-full overflow-x-auto rounded-lg bg-emerald-800/70 p-1.5">
           <div className="mx-auto flex w-max min-w-full flex-nowrap justify-center gap-1.5">
             {gameState.players.map((player: any) => {
               const isCurrent = player.id === currentPlayer?.id;
@@ -673,7 +674,7 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 min-h-[380px] lg:min-h-0 grid grid-rows-[auto_minmax(170px,auto)_minmax(120px,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-3 sm:gap-4 overflow-y-auto rounded-xl bg-emerald-800/20 px-2 py-4 sm:px-4">
+        <div className="flex-1 min-h-[min(52dvh,460px)] lg:min-h-0 grid grid-rows-[84px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-3 sm:gap-4 overflow-y-auto rounded-xl bg-emerald-800/20 px-2 py-4 sm:px-4">
           <div className="text-center self-end">
             <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
               <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
@@ -756,7 +757,7 @@ export function GameBoard({
 
           {/* Take options popup */}
           {showTakeOptions && (
-            <div className="bg-emerald-700 rounded-lg p-4 sm:p-4 border border-emerald-500 shadow-lg w-full">
+            <div className="hidden lg:block bg-emerald-700 rounded-lg p-4 border border-emerald-500 shadow-lg w-full">
               <p className="text-emerald-100 mb-4 sm:mb-3 text-center font-medium text-sm sm:text-base">How many cards to take?</p>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-3">
                 <button
@@ -803,47 +804,6 @@ export function GameBoard({
             </div>
           )}
 
-          {/* Mobile: primary turn actions */}
-          {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
-            <div className="flex lg:hidden w-full gap-2 px-2">
-              <button
-                onClick={handlePlayClick}
-                disabled={selectedCards.length === 0}
-                className="flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600 disabled:opacity-50"
-              >
-                {t('game.mobile.play', { count: selectedCards.length })}
-              </button>
-              {canTakeCards && (
-                <button
-                  onClick={handleTakeClick}
-                  className="flex-1 rounded-lg border border-emerald-400 bg-emerald-600 px-3 py-3 text-sm text-white transition-colors hover:bg-emerald-500"
-                >
-                  {t('game.mobile.take')}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Mobile: always reachable pause and move-history controls */}
-          <div className="flex lg:hidden w-full justify-center gap-2 px-2 pb-1">
-            <button
-              onClick={onPauseGame}
-              className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
-            >
-              <Pause className="h-3.5 w-3.5" />
-              {t('game.mobile.pause')}
-            </button>
-            <button
-              onClick={() => setShowMobileHistory(true)}
-              aria-haspopup="dialog"
-              aria-expanded={showMobileHistory}
-              className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
-            >
-              <History className="h-3.5 w-3.5 text-amber-300" />
-              {t('game.history.title')}
-              <span className="text-emerald-300">{gameState.moveHistory.length}</span>
-            </button>
-          </div>
           </div>
         </div>
 
@@ -927,6 +887,88 @@ export function GameBoard({
           </div>
         </div>
       )}
+
+      <div className="lg:hidden border-y border-emerald-700 bg-emerald-900/50 px-3 py-2 text-center">
+        {pileTopCard && (
+          <>
+            <div className="text-[10px] text-emerald-300">{t('pile.top')}</div>
+            <div className="text-xs font-bold text-amber-300">
+              {t('card.format', {
+                value: t(`card.value.${pileTopCard.value}`),
+                suit: t(`card.suit.${pileTopCard.suit}`),
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="lg:hidden space-y-3 bg-emerald-900/70 px-3 pt-3 pb-5">
+        <div className="mx-auto flex w-full max-w-md gap-2">
+          {showTakeOptions ? (
+            <div className="w-full space-y-2 rounded-xl border border-emerald-600 bg-emerald-800 p-3">
+              <p className="text-center text-sm font-medium text-emerald-100">{t('game.takeOptions.title')}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleTake3}
+                  className="flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600"
+                >
+                  {t('game.takeOptions.take3')}
+                </button>
+                <button
+                  onClick={handleTakeAll}
+                  className="flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600"
+                >
+                  {t('game.takeOptions.takeAll', { count: takeOptions.takeAllCount })}
+                </button>
+              </div>
+              <button
+                onClick={handleCancel}
+                className="w-full rounded-lg border border-emerald-500 bg-emerald-700 px-3 py-2 text-sm text-emerald-100 transition-colors hover:bg-emerald-600"
+              >
+                {t('game.takeOptions.cancel')}
+              </button>
+            </div>
+          ) : isHumanTurn && !gameState.canContinueTurn ? (
+            <>
+              <button
+                onClick={handlePlayClick}
+                disabled={selectedCards.length === 0}
+                className="min-h-12 flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600 disabled:opacity-50"
+              >
+                {t('game.mobile.play', { count: selectedCards.length })}
+              </button>
+              {canTakeCards && (
+                <button
+                  onClick={handleTakeClick}
+                  className="min-h-12 flex-1 rounded-lg border border-emerald-400 bg-emerald-600 px-3 py-3 text-sm text-white transition-colors hover:bg-emerald-500"
+                >
+                  {t('game.mobile.take')}
+                </button>
+              )}
+            </>
+          ) : null}
+        </div>
+
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={onPauseGame}
+            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2.5 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+          >
+            <Pause className="h-3.5 w-3.5" />
+            {t('game.mobile.pause')}
+          </button>
+          <button
+            onClick={() => setShowMobileHistory(true)}
+            aria-haspopup="dialog"
+            aria-expanded={showMobileHistory}
+            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2.5 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+          >
+            <History className="h-3.5 w-3.5 text-amber-300" />
+            {t('game.history.title')}
+            <span className="text-emerald-300">{gameState.moveHistory.length}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Desktop: Player Hand at bottom */}
       {shouldShowHand && (

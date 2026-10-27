@@ -26,7 +26,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
 
   return (
     <div
-      className={`relative flex flex-col items-center ${clickable ? 'cursor-pointer' : ''}`}
+      className={`relative -translate-y-7 lg:translate-y-0 flex flex-col items-center ${clickable ? 'cursor-pointer' : ''}`}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? t('pile.tapToTake') : undefined}
@@ -42,7 +42,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
-      <div className="relative h-44 w-24 sm:h-40 flex items-center justify-center translate-y-1">
+      <div className="relative mt-14 h-44 w-24 flex items-center justify-center translate-y-1 lg:mt-0 sm:h-40">
         {visibleCards.map((card, index) => {
           const totalWidth = (visibleCount - 1) * 28;
           const offsetX = index * 28 - totalWidth / 2;
@@ -60,7 +60,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         })}
       </div>
 
-      <div className="mt-1 sm:mt-3 mb-2 text-center">
+      <div className="hidden lg:block mt-1 sm:mt-3 mb-2 text-center">
         <div className="text-emerald-300 text-[10px] sm:text-xs">{t('pile.top')}</div>
         <div className="text-amber-300 font-bold text-xs sm:text-sm">
           {t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) })}
