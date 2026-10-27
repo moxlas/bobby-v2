@@ -1,6 +1,7 @@
 import { Card as CardType } from '../types/game';
 import { Card } from './Card';
 import { useTranslation } from '../lib/i18n';
+import { usePileLand } from '../lib/animations';
 
 interface GamePileProps {
   pile: CardType[];
@@ -18,6 +19,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       ? pile.slice(0, -3)
       : [];
   const topCard = pile[pile.length - 1];
+  const topCardRef = usePileLand(topCard?.id);
   const clickable = pile.length > 1 && onTakeClick;
 
   if (pile.length === 0) {
@@ -71,6 +73,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
           return (
             <div
               key={card.id}
+              ref={index === visibleCards.length - 1 ? topCardRef : undefined}
               className={`absolute transition-all duration-200 ${clickable ? 'hover:-translate-y-2' : ''} scale-[1.05] lg:scale-100`}
               style={{ left: `${offsetX}px`, top: `${offsetY}px`, zIndex: underCards.length + index + 1 }}
             >

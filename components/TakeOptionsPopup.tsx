@@ -1,4 +1,5 @@
 import { useTranslation } from '../lib/i18n';
+import { usePopIn } from '../lib/animations';
 
 interface TakeOptionsPopupProps {
   takeAllCount: number;
@@ -9,10 +10,12 @@ interface TakeOptionsPopupProps {
 
 export function TakeOptionsPopup({ takeAllCount, onTake3, onTakeAll, onCancel }: TakeOptionsPopupProps) {
   const { t } = useTranslation();
+  const panelRef = usePopIn<HTMLDivElement>();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-900/70 p-4">
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="take-options-title"

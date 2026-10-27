@@ -8,6 +8,7 @@ import { ConfirmPopup } from './ConfirmPopup';
 import { TakeOptionsPopup } from './TakeOptionsPopup';
 import { validatePlay, getTakeOptions, getValidMoves } from '../utils/gameLogic';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
+import { animateShake } from '../lib/animations';
 import {
   initAudio, setMuted, isMuted,
   playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
@@ -64,6 +65,7 @@ export function GameBoard({
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<'newGame' | 'restartGame' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorSequence, setErrorSequence] = useState(0);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showTakeOptions, setShowTakeOptions] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -73,11 +75,19 @@ export function GameBoard({
   const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(null);
   const [mutedState, setMutedState] = useState(() => isMuted());
   const historyContainerRef = useRef<HTMLDivElement>(null);
+  const errorBannerRef = useRef<HTMLDivElement>(null);
+  const mobileErrorBannerRef = useRef<HTMLDivElement>(null);
   const prevPlayerIndexRef = useRef<number | null>(null);
   const finishSoundPlayedRef = useRef(false);
   const cardPointerGestureRef = useRef<CardPointerGesture | null>(null);
   const cardGestureSoundPlayedRef = useRef(false);
   const suppressGestureClickRef = useRef(false);
+
+  /** Set or clear the error banner; a new message bumps the sequence to re-trigger the shake. */
+  const showError = (message: string | null) => {
+    setError(message);
+    if (message) setErrorSequence((sequence) => sequence + 1);
+  };
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onPlayCardsRef = useRef(onPlayCards);
@@ -174,7 +184,7 @@ export function GameBoard({
       setSelectedCards([]);
       setShowConfirm(false);
       setPendingAction(null);
-      setError(null);
+      showError(null);
       setShowTakeOptions(false);
       cardPointerGestureRef.current = null;
       setDraggingCardId(null);
@@ -185,9 +195,15 @@ export function GameBoard({
   useEffect(() => {
     if (gameState.canContinueTurn) {
       setSelectedCards([]);
-      setError(null);
+      showError(null);
     }
   }, [gameState.canContinueTurn]);
+
+  useEffect(() => {
+    if (!error) return;
+    animateShake(errorBannerRef.current);
+    animateShake(mobileErrorBannerRef.current);
+  }, [error, errorSequence]);
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const humanPlayers = gameState.players.filter((p: any) => !p.isAI);
@@ -311,7 +327,7 @@ export function GameBoard({
     } else {
       setSelectedCards([...selectedCards, card]);
     }
-    setError(null);
+    showError(null);
   };
 
   const handleCardPointerDown = (card: CardType, event: ReactPointerEvent<HTMLElement>) => {
@@ -383,11 +399,11 @@ export function GameBoard({
     setSelectedCards(cardsToPlay);
     const validation = validatePlay(cardsToPlay, pile, isFirstMove, options);
     if (!validation.valid) {
-      setError(validation.error ?? 'invalidMove');
+      showError(validation.error ?? 'invalidMove');
       return;
     }
 
-    setError(null);
+    showError(null);
     setPendingAction('play');
     setShowConfirm(true);
   };
@@ -411,22 +427,24 @@ export function GameBoard({
   const handlePlayClick = () => {
     playClickSound();
     if (selectedCards.length === 0) {
-      setError('selectCards');
+      showError('selectCards');
       return;
     }
 
     const validation = validatePlay(selectedCards, pile, isFirstMove, options);
     if (!validation.valid) {
-      setError(validation.error ?? 'invalidMove');
+      showError(validation.error ?? 'invalidMove');
       return;
     }
 
+    showError(null);
     setPendingAction('play');
     setShowConfirm(true);
   };
 
   const handleTakeClick = () => {
     playClickSound();
+    showError(null);
     if (takeOptions.canTake3 && takeOptions.canTakeAll) {
       setShowTakeOptions(true);
     } else if (takeOptions.canTakeAll) {
@@ -440,6 +458,7 @@ export function GameBoard({
 
   const handleTake3 = () => {
     playClickSound();
+    showError(null);
     setPendingAction('take3');
     setShowConfirm(true);
     setShowTakeOptions(false);
@@ -447,6 +466,7 @@ export function GameBoard({
 
   const handleTakeAll = () => {
     playClickSound();
+    showError(null);
     setPendingAction('takeAll');
     setShowConfirm(true);
     setShowTakeOptions(false);
@@ -454,6 +474,7 @@ export function GameBoard({
 
   const handleEndTurnClick = () => {
     playClickSound();
+    showError(null);
     setPendingAction('endTurn');
     setShowConfirm(true);
   };
@@ -465,7 +486,7 @@ export function GameBoard({
         playCardSound(selectedCards.length);
         if (validation.continueTurn) playComboSound();
       } else {
-        setError(validation.error ?? 'invalidMove');
+        showError(validation.error ?? 'invalidMove');
         setShowConfirm(false);
         setPendingAction(null);
         return;
@@ -842,7 +863,7 @@ export function GameBoard({
 
           <div className="hidden row-start-3 self-start w-full max-w-sm flex-col items-center gap-3 sm:gap-4 lg:flex">
           {error && (
-            <div className="flex items-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-sm">
+            <div ref={errorBannerRef} className="flex items-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-sm">
               <AlertCircle className="w-4 h-4" />
               {t(`game.error.${error}`)}
             </div>
@@ -1042,7 +1063,7 @@ export function GameBoard({
 
       <div className="lg:hidden flex-shrink-0 space-y-2 bg-emerald-900/70 px-3 pt-2 pb-3">
         {error && (
-          <div className="mx-auto flex max-w-md items-center gap-2 rounded-lg bg-red-500 px-3 py-1.5 text-xs text-white">
+          <div ref={mobileErrorBannerRef} className="mx-auto flex max-w-md items-center gap-2 rounded-lg bg-red-500 px-3 py-1.5 text-xs text-white">
             <AlertCircle className="h-3.5 w-3.5" />
             {t(`game.error.${error}`)}
           </div>

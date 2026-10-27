@@ -1,4 +1,5 @@
 import { useTranslation } from '../lib/i18n';
+import { usePopIn } from '../lib/animations';
 
 interface ConfirmPopupProps {
   message: string;
@@ -9,10 +10,11 @@ interface ConfirmPopupProps {
 
 export function ConfirmPopup({ message, onConfirm, onCancel, titleKey = 'confirmPopup.title' }: ConfirmPopupProps) {
   const { t } = useTranslation();
+  const panelRef = usePopIn<HTMLDivElement>();
 
   return (
     <div className="fixed inset-0 bg-emerald-900/70 flex items-center justify-center z-50">
-      <div className="bg-emerald-800 rounded-lg p-6 max-w-sm w-full mx-4 border border-emerald-600 shadow-2xl">
+      <div ref={panelRef} className="bg-emerald-800 rounded-lg p-6 max-w-sm w-full mx-4 border border-emerald-600 shadow-2xl">
         <h3 className="text-lg font-bold text-amber-300 mb-4">{t(titleKey)}</h3>
         <p className="text-emerald-100 mb-6">{message}</p>
         <div className="flex gap-3">
