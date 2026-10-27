@@ -7,7 +7,7 @@ import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
 import { TakeOptionsPopup } from './TakeOptionsPopup';
 import { CardFlight, type CardFlightRequest } from './CardFlight';
-import { validatePlay, getTakeOptions, getValidMoves } from '../utils/gameLogic';
+import { validatePlay, getTakeOptions, getValidMoves, orderCardsForPlay } from '../utils/gameLogic';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
 import { animateShake } from '../lib/animations';
 import {
@@ -44,10 +44,32 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+function getCardValueLabel(value: number): string {
+  return value === 11 ? 'J' : value === 12 ? 'Q' : value === 13 ? 'K' : value === 14 ? 'A' : value.toString();
+}
+
 function getCardDisplayName(card: CardType): string {
-  const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
   const suitEmoji = card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠';
-  return `${valueStr}${suitEmoji}`;
+  return `${getCardValueLabel(card.value)}${suitEmoji}`;
+}
+
+/** "3 x 9, 4 x 10, J♣" — same-value cards collapse into a count. */
+function formatCardSummary(
+  cards: CardType[],
+  groupLabel: (count: number, value: string) => string,
+): string {
+  const groups = new Map<number, CardType[]>();
+  for (const card of orderCardsForPlay(cards)) {
+    const group = groups.get(card.value);
+    if (group) group.push(card);
+    else groups.set(card.value, [card]);
+  }
+
+  return [...groups.values()]
+    .map(group => group.length > 1
+      ? groupLabel(group.length, getCardValueLabel(group[0].value))
+      : getCardDisplayName(group[0]))
+    .join(', ');
 }
 
 /** First visible element matching `selector` (each hand card exists in both layouts). */
@@ -560,15 +582,16 @@ export function GameBoard({
 
   /** Commit a play: validate, animate the cards, and hand the move to the game. */
   const applyPlay = (cards: CardType[]) => {
-    const validation = validatePlay(cards, pile, isFirstMove, options);
+    const orderedCards = orderCardsForPlay(cards);
+    const validation = validatePlay(orderedCards, pile, isFirstMove, options);
     if (!validation.valid) {
       showError(validation.error ?? 'invalidMove');
       return false;
     }
-    playCardSound(cards.length);
+    playCardSound(orderedCards.length);
     if (validation.continueTurn) playComboSound();
-    launchCardFlight(cards, 'toPile');
-    onPlayCards(currentPlayer.id, cards, validation.continueTurn || false);
+    launchCardFlight(orderedCards, 'toPile');
+    onPlayCards(currentPlayer.id, orderedCards, validation.continueTurn || false);
     setSelectedCards([]);
     return true;
   };
@@ -777,9 +800,10 @@ export function GameBoard({
 
   const getConfirmMessage = () => {
     if (pendingAction === 'play') {
-      const cardNames = selectedCards
-        .map(c => t('card.format', { value: t(`card.value.${c.value}`), suit: t(`card.suit.${c.suit}`) }))
-        .join(', ');
+      const cardNames = formatCardSummary(
+        selectedCards,
+        (count, value) => t('game.confirm.cardGroup', { count, value }),
+      );
       return t('game.confirm.playCards', { cards: cardNames });
     } else if (pendingAction === 'take3') {
       return tPlural('game.confirm.takeCards', takeOptions.take3Count);

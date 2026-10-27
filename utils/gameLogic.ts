@@ -86,6 +86,14 @@ export function getNextPlayerIndex(currentIndex: number, players: Player[]): num
   return nextIndex;
 }
 
+/**
+ * Canonical order for a multi-card play: same-value groups ascend, matching the
+ * order the cards land on the pile. Selection order therefore never matters.
+ */
+export function orderCardsForPlay(cards: Card[]): Card[] {
+  return [...cards].sort((a, b) => a.value - b.value);
+}
+
 export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, options: GameOptions): { valid: boolean; error?: PlayError; continueTurn?: boolean } {
   if (cards.length === 0) {
     return { valid: false, error: 'selectCards' };
@@ -100,20 +108,21 @@ export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, 
     return { valid: false, error: 'noPile' };
   }
 
+  const orderedCards = orderCardsForPlay(cards);
   const startsOnNineOfDiamonds = isFirstMove && pile.length === 1 &&
     pile[0].suit === 'diamonds' && pile[0].value === 9;
   let index = 0;
   let finalGroupContinuesTurn = false;
 
-  // The selected order is the order the cards will be added to the pile.
-  // Validate each consecutive same-value group against the updated top card.
-  while (index < cards.length) {
+  // The selected cards are reordered into same-value groups, ascending by value.
+  // Validate each consecutive group against the updated top card.
+  while (index < orderedCards.length) {
     let groupEnd = index + 1;
-    while (groupEnd < cards.length && cards[groupEnd].value === cards[index].value) {
+    while (groupEnd < orderedCards.length && orderedCards[groupEnd].value === orderedCards[index].value) {
       groupEnd++;
     }
 
-    const group = cards.slice(index, groupEnd);
+    const group = orderedCards.slice(index, groupEnd);
     const value = group[0].value;
     const isOpeningNineGroup = startsOnNineOfDiamonds && index === 0 && value === 9;
     let groupContinuesTurn = false;
@@ -234,8 +243,11 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
     };
   }
 
-  player.hand = sortHand(player.hand.filter(c => !cards.find(pc => pc.id === c.id)));
-  const newPile = [...state.pile, ...cards.map(c => ({ ...c, faceUp: true }))];
+  // Same-value groups always land on the pile in ascending order, regardless
+  // of the order the caller passed the cards in.
+  const orderedCards = orderCardsForPlay(cards);
+  player.hand = sortHand(player.hand.filter(c => !orderedCards.find(pc => pc.id === c.id)));
+  const newPile = [...state.pile, ...orderedCards.map(c => ({ ...c, faceUp: true }))];
 
   const elapsedTime = state.gameStartTime
     ? (Date.now() - state.gameStartTime) / 1000 - state.totalPausedTime
@@ -246,7 +258,7 @@ export function playCards(state: GameState, playerId: number, cards: Card[], con
     playerId,
     playerName: player.name,
     type: 'play',
-    cards: cards.map(c => ({ ...c })),
+    cards: orderedCards.map(c => ({ ...c })),
     timestamp: Date.now(),
     turnNumber: state.turnNumber,
   };

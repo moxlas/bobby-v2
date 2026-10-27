@@ -138,6 +138,7 @@
     },
     "confirm": {
       "playCards": "Play {cards}?",
+      "cardGroup": "{count} x {value}",
       "takeCards_one": "Take {count} card from pile?",
       "takeCards_other": "Take {count} cards from pile?",
       "takeAll_one": "Take the {count} card from pile?",

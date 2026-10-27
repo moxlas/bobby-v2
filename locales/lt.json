@@ -142,6 +142,7 @@
     },
     "confirm": {
       "playCards": "Žaisti {cards}?",
+      "cardGroup": "{count} x {value}",
       "takeCards_one": "Paimti {count} kortą iš krūvos?",
       "takeCards_few": "Paimti {count} kortas iš krūvos?",
       "takeCards_many": "Paimti {count} kortų iš krūvos?",
