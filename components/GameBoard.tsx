@@ -567,7 +567,7 @@ export function GameBoard({
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
   return (
-    <div className="min-h-screen bg-emerald-900 flex flex-col">
+    <div className="h-[100dvh] min-h-0 overflow-hidden bg-emerald-900 flex flex-col">
       {/* Top bar */}
       <div className="bg-emerald-800 border-b border-emerald-600 px-2 sm:px-4 py-2 sm:py-3 flex-shrink-0">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-2">
@@ -605,28 +605,26 @@ export function GameBoard({
       </div>
 
       {/* Main game area */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
         {/* Mobile: compact player seats above the table */}
-        <div className="relative z-10 -mb-2 lg:hidden w-full overflow-x-auto rounded-lg bg-emerald-800/70 p-1.5">
-          <div className="mx-auto flex w-max min-w-full flex-nowrap justify-center gap-1.5">
-            {gameState.players.map((player: any) => {
-              const isCurrent = player.id === currentPlayer?.id;
-              return (
-                <div
-                  key={player.id}
-                  className={`flex flex-shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
-                    isCurrent
-                      ? 'border-amber-400 bg-amber-500/20 text-amber-200'
-                      : 'border-emerald-600 bg-emerald-700/50 text-emerald-100'
-                  } ${player.hasFinished ? 'opacity-60' : ''}`}
-                >
-                  <span className="font-medium">{player.name}</span>
-                  {player.isAI && <span className="rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">AI</span>}
-                  <span className="text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.hand.length}</span>
-                </div>
-              );
-            })}
-          </div>
+        <div className="lg:hidden flex flex-shrink-0 flex-wrap justify-center gap-1.5 rounded-lg bg-emerald-800/70 p-1.5">
+          {gameState.players.map((player: any) => {
+            const isCurrent = player.id === currentPlayer?.id;
+            return (
+              <div
+                key={player.id}
+                className={`flex min-w-[88px] max-w-[112px] flex-1 basis-24 items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[11px] ${
+                  isCurrent
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                    : 'border-emerald-600 bg-emerald-700/50 text-emerald-100'
+                } ${player.hasFinished ? 'opacity-60' : ''}`}
+              >
+                <span className="min-w-0 truncate font-medium">{player.name}</span>
+                {player.isAI && <span className="flex-shrink-0 rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">AI</span>}
+                <span className="flex-shrink-0 text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.hand.length}</span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Left sidebar - Players (Desktop) */}
@@ -674,8 +672,8 @@ export function GameBoard({
         </div>
 
         {/* Center - Pile and actions */}
-        <div className="flex-1 min-h-[min(52dvh,460px)] lg:min-h-0 grid grid-rows-[84px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center gap-3 sm:gap-4 overflow-y-auto rounded-xl bg-emerald-800/20 px-2 py-4 sm:px-4">
-          <div className="text-center self-end">
+        <div className="flex-1 min-h-0 grid grid-rows-[minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto_minmax(0,1fr)] place-items-center overflow-hidden rounded-xl bg-emerald-800/20 px-2 py-2 sm:px-4 lg:gap-4 lg:py-4">
+          <div className="hidden text-center self-end lg:block">
             <div className="flex items-center gap-1 sm:gap-2 justify-center mb-1 sm:mb-2">
               <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
               <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
@@ -684,14 +682,14 @@ export function GameBoard({
             </div>
           </div>
 
-          <div className="row-start-2 flex items-center justify-center">
+          <div className="flex min-h-0 items-center justify-center lg:row-start-2">
             <GamePile
               pile={pile}
               onTakeClick={isHumanTurn && canTakeCards && !showTakeOptions ? handleTakeClick : undefined}
             />
           </div>
 
-          <div className="row-start-3 self-start flex w-full max-w-sm flex-col items-center gap-3 sm:gap-4">
+          <div className="hidden row-start-3 self-start w-full max-w-sm flex-col items-center gap-3 sm:gap-4 lg:flex">
           {error && (
             <div className="flex items-center gap-2 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-sm">
               <AlertCircle className="w-4 h-4" />
@@ -839,14 +837,20 @@ export function GameBoard({
 
       {/* Mobile: Arena hand dock */}
       {shouldShowHand && (
-        <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-2 pb-3">
-          <div className="mb-2 flex items-center justify-between gap-2 text-xs text-emerald-200">
+        <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-1.5 pb-2">
+          <div className="mb-1 flex items-center justify-center gap-1.5 text-xs text-emerald-300">
+            <span>{t('game.center.currentTurn')}</span>
+            <span className="font-bold text-amber-300">{currentPlayer.name}</span>
+            {currentPlayer.isAI && <span className="text-[10px] text-emerald-400">({t('game.sidebar.ai')})</span>}
+            {isAIThinking && <span className="animate-pulse text-amber-400">{t('game.center.thinking')}</span>}
+          </div>
+          <div className="mb-1 flex items-center justify-between gap-2 text-xs text-emerald-200">
             <span className="font-medium">
               {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}
             </span>
             <span className="text-emerald-400">{isHumanTurn ? t('game.mobile.swipeCards') : ''}</span>
           </div>
-          <div className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-1">
+          <div className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5">
             {currentPlayer.hand.map((card: CardType) => {
               const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
               const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
@@ -858,7 +862,7 @@ export function GameBoard({
                   <div
                     key={card.id}
                     aria-hidden="true"
-                    className="flex h-16 w-12 flex-shrink-0 items-center justify-center rounded-lg border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
+                    className="flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 items-center justify-center rounded-lg border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
                   >
                     <div className="h-11 w-8 rounded border border-blue-300 bg-blue-500" />
                   </div>
@@ -873,7 +877,7 @@ export function GameBoard({
                   aria-pressed={isSelected}
                   onClick={() => handleCardSelect(card)}
                   disabled={!isHumanTurn}
-                  className={`flex h-16 w-12 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${
+                  className={`flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${
                     isSelected
                       ? 'scale-105 border-amber-400 bg-amber-50 shadow-md'
                       : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
@@ -888,11 +892,11 @@ export function GameBoard({
         </div>
       )}
 
-      <div className="lg:hidden border-y border-emerald-700 bg-emerald-900/50 px-3 py-2 text-center">
+      <div className="lg:hidden flex-shrink-0 border-y border-emerald-700 bg-emerald-900/50 px-3 py-1 text-center">
         {pileTopCard && (
           <>
-            <div className="text-[10px] text-emerald-300">{t('pile.top')}</div>
-            <div className="text-xs font-bold text-amber-300">
+            <div className="text-[9px] text-emerald-300">{t('pile.top')}</div>
+            <div className="text-[11px] font-bold text-amber-300">
               {t('card.format', {
                 value: t(`card.value.${pileTopCard.value}`),
                 suit: t(`card.suit.${pileTopCard.suit}`),
@@ -902,7 +906,14 @@ export function GameBoard({
         )}
       </div>
 
-      <div className="lg:hidden space-y-3 bg-emerald-900/70 px-3 pt-3 pb-5">
+      <div className="lg:hidden flex-shrink-0 space-y-2 bg-emerald-900/70 px-3 pt-2 pb-3">
+        {error && (
+          <div className="mx-auto flex max-w-md items-center gap-2 rounded-lg bg-red-500 px-3 py-1.5 text-xs text-white">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {error}
+          </div>
+        )}
+
         <div className="mx-auto flex w-full max-w-md gap-2">
           {showTakeOptions ? (
             <div className="w-full space-y-2 rounded-xl border border-emerald-600 bg-emerald-800 p-3">
@@ -928,19 +939,40 @@ export function GameBoard({
                 {t('game.takeOptions.cancel')}
               </button>
             </div>
-          ) : isHumanTurn && !gameState.canContinueTurn ? (
+          ) : gameState.canContinueTurn && isHumanTurn ? (
+            <div className="w-full rounded-xl border border-amber-400 bg-amber-600 p-2.5 text-center text-emerald-950">
+              <p className="mb-2 text-xs font-semibold">
+                {t(isFourNinesStart ? 'game.ninesStart.title' : 'game.combo.title')}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePlayClick}
+                  disabled={selectedCards.length === 0}
+                  className="flex-1 rounded-lg bg-emerald-800 px-2 py-2 text-xs font-bold text-white disabled:opacity-50"
+                >
+                  {t(isFourNinesStart ? 'game.ninesStart.playSelected' : 'game.combo.playSelected', { count: selectedCards.length })}
+                </button>
+                <button
+                  onClick={handleEndTurnClick}
+                  className="flex-1 rounded-lg border border-emerald-800 bg-emerald-700 px-2 py-2 text-xs font-medium text-white"
+                >
+                  {t(isFourNinesStart ? 'game.ninesStart.saveForLater' : 'game.combo.endTurn')}
+                </button>
+              </div>
+            </div>
+          ) : isHumanTurn ? (
             <>
               <button
                 onClick={handlePlayClick}
                 disabled={selectedCards.length === 0}
-                className="min-h-12 flex-1 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600 disabled:opacity-50"
+                className="min-h-11 flex-1 rounded-lg bg-amber-500 px-3 py-2.5 text-sm font-bold text-emerald-900 transition-colors hover:bg-amber-600 disabled:opacity-50"
               >
                 {t('game.mobile.play', { count: selectedCards.length })}
               </button>
               {canTakeCards && (
                 <button
                   onClick={handleTakeClick}
-                  className="min-h-12 flex-1 rounded-lg border border-emerald-400 bg-emerald-600 px-3 py-3 text-sm text-white transition-colors hover:bg-emerald-500"
+                  className="min-h-11 flex-1 rounded-lg border border-emerald-400 bg-emerald-600 px-3 py-2.5 text-sm text-white transition-colors hover:bg-emerald-500"
                 >
                   {t('game.mobile.take')}
                 </button>
@@ -952,7 +984,7 @@ export function GameBoard({
         <div className="flex justify-center gap-2">
           <button
             onClick={onPauseGame}
-            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2.5 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
           >
             <Pause className="h-3.5 w-3.5" />
             {t('game.mobile.pause')}
@@ -961,7 +993,7 @@ export function GameBoard({
             onClick={() => setShowMobileHistory(true)}
             aria-haspopup="dialog"
             aria-expanded={showMobileHistory}
-            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2.5 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
           >
             <History className="h-3.5 w-3.5 text-amber-300" />
             {t('game.history.title')}

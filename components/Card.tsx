@@ -103,7 +103,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
       hearts: {
         crown: '18,18 15,6 23,12 30,4 37,12 45,6 42,18',
         band: 'M 18 17 h 24',
-        beard: 'M 24 39 Q 31 43 42 38 L 39 48 Q 34 54 29 51 Q 25 48 24 39 Z',
+        beard: 'M 24 44 Q 31 47 42 43 L 39 50 Q 34 55 29 52 Q 25 49 24 44 Z',
         moustache: 'M 28 37 Q 31 35 33 37 Q 36 35 39 37 Q 37 41 34 39 Q 31 41 28 37 Z',
         cross: 'M 28 6 v 6 M 25 9 h 6',
         jewel: 'M 23 12 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0 M 37 12 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0',
@@ -111,14 +111,14 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
       diamonds: {
         crown: '18,18 14,6 24,10 30,2 36,10 44,6 42,18',
         band: 'M 18 17 h 24',
-        beard: 'M 24 39 Q 31 42 42 38 L 38 48 L 32 53 L 27 48 Z',
+        beard: 'M 24 44 Q 31 46 42 43 L 38 50 L 32 54 L 27 50 Z',
         moustache: 'M 28 37 Q 31 35 33 37 Q 36 35 39 37 Q 37 40 34 39 Q 31 40 28 37 Z',
         jewel: 'M 24 10 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0 M 36 10 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0',
       },
       clubs: {
         crown: '18,18 14,8 20,4 26,10 30,2 34,10 40,4 46,8 42,18',
         band: 'M 18 17 h 24',
-        beard: 'M 24 39 Q 32 43 42 38 L 40 48 Q 35 55 30 52 Q 25 49 24 39 Z',
+        beard: 'M 24 44 Q 32 47 42 43 L 40 50 Q 35 56 30 53 Q 25 50 24 44 Z',
         moustache: 'M 27 37 Q 31 35 33 37 Q 36 35 40 37 Q 37 41 34 39 Q 30 41 27 37 Z',
         cross: 'M 28 2 v 8',
         jewel: 'M 20 4 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0 M 40 4 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0',
@@ -126,7 +126,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
       spades: {
         crown: '18,18 14,8 20,4 26,10 30,0 34,10 40,4 46,8 42,18',
         band: 'M 18 17 h 24',
-        beard: 'M 24 39 Q 32 43 42 38 L 38 49 L 33 53 L 27 48 Z',
+        beard: 'M 24 44 Q 32 47 42 43 L 38 50 L 33 54 L 27 50 Z',
         moustache: 'M 28 37 Q 31 35 33 37 Q 36 35 39 37 Q 37 40 34 39 Q 31 40 28 37 Z',
         jewel: 'M 20 4 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0 M 40 4 m -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0',
       },
@@ -200,10 +200,13 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
           <>
             <path d={kingData[suit].beard} fill="#493438" stroke={portraitInk} strokeWidth="0.8" strokeLinejoin="round" />
             <path d={kingData[suit].moustache} fill="#493438" stroke={portraitInk} strokeWidth="0.55" strokeLinejoin="round" />
-            <polygon points={kingData[suit].crown} fill={portraitGold} stroke="#79572b" strokeWidth="0.9" strokeLinejoin="round" />
-            <path d={kingData[suit].band} fill="none" stroke="#79572b" strokeWidth="1.3" />
-            {kingData[suit].cross && <path d={kingData[suit].cross} fill="none" stroke="#fff0c6" strokeWidth="1" strokeLinecap="round" />}
-            {kingData[suit].jewel && <path d={kingData[suit].jewel} fill={gemColor} stroke="#fff0c6" strokeWidth="0.35" />}
+            <path d="M 30 42 Q 33 44 36 42" fill="none" stroke="#d98978" strokeWidth="1.2" strokeLinecap="round" />
+            <g transform="translate(2 -1)">
+              <polygon points={kingData[suit].crown} fill={portraitGold} stroke="#79572b" strokeWidth="0.9" strokeLinejoin="round" />
+              <path d={kingData[suit].band} fill="none" stroke="#79572b" strokeWidth="1.3" />
+              {kingData[suit].cross && <path d={kingData[suit].cross} fill="none" stroke="#fff0c6" strokeWidth="1" strokeLinecap="round" />}
+              {kingData[suit].jewel && <path d={kingData[suit].jewel} fill={gemColor} stroke="#fff0c6" strokeWidth="0.35" />}
+            </g>
           </>
         )}
 
@@ -212,9 +215,11 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
             <path d={queenData[suit].hair} fill="#493438" stroke={portraitInk} strokeWidth="0.9" strokeLinejoin="round" />
             <path d="M 45 27 Q 49 34 45 43" fill="none" stroke="#b98658" strokeWidth="0.7" />
             <circle cx="44" cy="38" r="1.3" fill={gemColor} stroke={portraitGold} strokeWidth="0.6" />
-            <polygon points={queenData[suit].crown} fill={portraitGold} stroke="#79572b" strokeWidth="0.9" strokeLinejoin="round" />
-            <path d={queenData[suit].band} fill="none" stroke="#79572b" strokeWidth="1.3" />
-            {queenData[suit].jewel && <path d={queenData[suit].jewel} fill={gemColor} stroke="#fff0c6" strokeWidth="0.35" />}
+            <g transform="translate(2 -1)">
+              <polygon points={queenData[suit].crown} fill={portraitGold} stroke="#79572b" strokeWidth="0.9" strokeLinejoin="round" />
+              <path d={queenData[suit].band} fill="none" stroke="#79572b" strokeWidth="1.3" />
+              {queenData[suit].jewel && <path d={queenData[suit].jewel} fill={gemColor} stroke="#fff0c6" strokeWidth="0.35" />}
+            </g>
           </>
         )}
 
