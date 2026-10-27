@@ -1,4 +1,4 @@
-import { Card, GameState, Player, PlayerMove, GameOptions, DEFAULT_OPTIONS } from '../types/game';
+import { Card, GameState, Player, PlayerMove, GameOptions, PlayError, DEFAULT_OPTIONS } from '../types/game';
 import { createDeck, shuffleDeck, cutDeck, dealCards, findNineOfDiamonds, hasFourOfSameValue, sortHand } from './deckUtils';
 
 export interface PlayerSetup {
@@ -86,18 +86,18 @@ export function getNextPlayerIndex(currentIndex: number, players: Player[]): num
   return nextIndex;
 }
 
-export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, options: GameOptions): { valid: boolean; error?: string; continueTurn?: boolean } {
+export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, options: GameOptions): { valid: boolean; error?: PlayError; continueTurn?: boolean } {
   if (cards.length === 0) {
-    return { valid: false, error: 'No cards selected' };
+    return { valid: false, error: 'selectCards' };
   }
 
   if (new Set(cards.map(card => card.id)).size !== cards.length) {
-    return { valid: false, error: 'A card can only be played once' };
+    return { valid: false, error: 'duplicateCards' };
   }
 
   let topCard = pile[pile.length - 1];
   if (!topCard) {
-    return { valid: false, error: 'There is no card on the pile to play against' };
+    return { valid: false, error: 'noPile' };
   }
 
   const startsOnNineOfDiamonds = isFirstMove && pile.length === 1 &&
@@ -119,35 +119,35 @@ export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, 
     let groupContinuesTurn = false;
 
     if (isOpeningNineGroup && group.length > 1 && !options.specialNinesRule) {
-      return { valid: false, error: 'Special 9s Rule is disabled — play one card at a time' };
+      return { valid: false, error: 'specialNinesOff' };
     }
 
     if (isOpeningNineGroup && group.length === 2) {
-      return { valid: false, error: 'You can only play 1, 3, or 4 nine cards on 9 of diamonds' };
+      return { valid: false, error: 'ninesOnDiamonds' };
     }
 
     if (value === 9 && topCard.value === 9 && group.length > 1 && !isOpeningNineGroup) {
-      return { valid: false, error: 'You can only play a single 9 card on other 9s' };
+      return { valid: false, error: 'nineOnNine' };
     }
 
     if (group.length === 2 || group.length === 3) {
       if (isOpeningNineGroup && group.length === 3 && options.specialNinesRule) {
         groupContinuesTurn = true;
       } else {
-        return { valid: false, error: 'Play single cards or groups of exactly 4 matching cards' };
+        return { valid: false, error: 'groupSize' };
       }
     } else if (group.length === 4) {
       if (isOpeningNineGroup && value === 9 && !options.specialNinesRule) {
-        return { valid: false, error: 'Special 9s Rule is disabled — play one card at a time' };
+        return { valid: false, error: 'specialNinesOff' };
       }
       if (value < topCard.value) {
-        return { valid: false, error: 'Card value must be equal or higher than the previous card' };
+        return { valid: false, error: 'valueTooLow' };
       }
       groupContinuesTurn = isOpeningNineGroup && value === 9
         ? true
         : options.fourOfAKindRule;
     } else if (value < topCard.value) {
-      return { valid: false, error: 'Card value must be equal or higher than the previous card' };
+      return { valid: false, error: 'valueTooLow' };
     }
 
     topCard = group[group.length - 1];

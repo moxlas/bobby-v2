@@ -6,7 +6,9 @@ export type Language = 'en' | 'lt';
 
 const messages: Record<Language, any> = { en, lt };
 
-function resolve(lang: Language, key: string): any {
+const isDev = (import.meta as any).env?.DEV === true;
+
+function lookup(lang: Language, key: string): any {
   const keys = key.split('.');
   let value: any = messages[lang];
   for (const k of keys) {
@@ -16,9 +18,22 @@ function resolve(lang: Language, key: string): any {
   return value;
 }
 
+/** Resolve a key in `lang`, falling back to English when it is missing. */
+function resolve(lang: Language, key: string): any {
+  const value = lookup(lang, key);
+  if (value !== undefined) return value;
+  if (lang !== 'en' && isDev) {
+    console.warn(`[i18n] missing "${key}" in "${lang}" - falling back to "en"`);
+  }
+  return lookup('en', key);
+}
+
 export function translate(lang: Language, key: string, replacements?: Record<string, string | number>): string {
   const value = resolve(lang, key);
-  if (typeof value !== 'string') return key;
+  if (typeof value !== 'string') {
+    if (isDev) console.warn(`[i18n] key "${key}" is missing in every locale`);
+    return key;
+  }
   if (replacements) {
     return value.replace(/\{(\w+)\}/g, (_, prop) => String(replacements[prop] ?? `{${prop}}`));
   }

@@ -121,7 +121,14 @@
     },
     "error": {
       "selectCards": "Pasirinkite kortas žaidimui",
-      "invalidMove": "Negalimas ėjimas"
+      "invalidMove": "Negalimas ėjimas",
+      "duplicateCards": "Kortą galima padėti tik vieną kartą",
+      "noPile": "Ant krūvos nėra kortos, su kuria galima žaisti",
+      "specialNinesOff": "Taisyklė „Specialios devynetės“ išjungta - žaiskite po vieną kortą",
+      "ninesOnDiamonds": "Ant devynetės būgnų galima dėti 1, 3 arba 4 devynetes",
+      "nineOnNine": "Ant kitų devynetų galima dėti tik vieną devynetę",
+      "groupSize": "Žaiskite vieną kortą arba tiksliai 4 vienodos vertės kortas",
+      "valueTooLow": "Kortos vertė turi būti lygi arba didesnė už ankstesnę kortą"
     },
     "confirm": {
       "playCards": "Pasirinkimas: {cards}",

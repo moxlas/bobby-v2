@@ -121,7 +121,14 @@
     },
     "error": {
       "selectCards": "Select cards to play",
-      "invalidMove": "Invalid move"
+      "invalidMove": "Invalid move",
+      "duplicateCards": "A card can only be played once",
+      "noPile": "There is no card on the pile to play against",
+      "specialNinesOff": "Special 9s rule is disabled - play one card at a time",
+      "ninesOnDiamonds": "You can only play 1, 3 or 4 nines on the 9 of diamonds",
+      "nineOnNine": "You can only play a single 9 on other 9s",
+      "groupSize": "Play one card, or exactly 4 of the same value",
+      "valueTooLow": "The card must be equal to or higher than the previous card"
     },
     "confirm": {
       "playCards": "Play {cards}?",

@@ -32,6 +32,17 @@ export interface PlayerMove {
 
 export type GamePhase = 'setup' | 'playing' | 'paused' | 'finished';
 
+/** Codes returned by validatePlay — resolve with t(`game.error.${code}`). */
+export type PlayError =
+  | 'selectCards'
+  | 'duplicateCards'
+  | 'noPile'
+  | 'specialNinesOff'
+  | 'ninesOnDiamonds'
+  | 'nineOnNine'
+  | 'groupSize'
+  | 'valueTooLow';
+
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
 export type ThemeName = 'summer' | 'midnight' | 'autumn';
 export type Language = 'en' | 'lt';
