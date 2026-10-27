@@ -27,7 +27,16 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
   return (
     <div
       className={`relative flex flex-col items-center ${clickable ? 'cursor-pointer' : ''}`}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? t('pile.tapToTake') : undefined}
       onClick={clickable ? onTakeClick : undefined}
+      onKeyDown={clickable ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onTakeClick?.();
+        }
+      } : undefined}
     >
       <div className={`hidden sm:block mt-0 mb-3 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
@@ -57,6 +66,11 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
           {t('card.format', { value: t(`card.value.${topCard.value}`), suit: t(`card.suit.${topCard.suit}`) })}
         </div>
       </div>
+      {clickable && (
+        <span className="sm:hidden -mt-2 mb-1 text-xs font-medium text-amber-300">
+          {t('pile.tapToTake')}
+        </span>
+      )}
     </div>
   );
 }

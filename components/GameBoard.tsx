@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from '../lib/i18n';
 import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
 import { GamePile } from './GamePile';
@@ -19,6 +20,8 @@ interface GameBoardProps {
   onEndTurn: () => void;
   onPauseGame: () => void;
   onResumeGame: () => void;
+  onForfeitPlayer: (playerId: number) => void;
+  onFinishGame: () => void;
   onRestartGame: () => void;
   onNewGame: () => void;
 }
@@ -45,9 +48,11 @@ export function GameBoard({
   onRestartGame,
   onNewGame
 }: GameBoardProps) {
+  const { t } = useTranslation();
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
+  const [pendingNavigationAction, setPendingNavigationAction] = useState<'newGame' | 'restartGame' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showTakeOptions, setShowTakeOptions] = useState(false);
@@ -355,6 +360,25 @@ export function GameBoard({
     setShowTakeOptions(false);
   };
 
+  const requestNewGame = () => setPendingNavigationAction('newGame');
+  const requestRestartGame = () => setPendingNavigationAction('restartGame');
+
+  const handleNavigationConfirm = () => {
+    const action = pendingNavigationAction;
+    setPendingNavigationAction(null);
+    if (action === 'newGame') onNewGame();
+    if (action === 'restartGame') onRestartGame();
+  };
+
+  const navigationConfirmDialog = pendingNavigationAction && (
+    <ConfirmPopup
+      titleKey="confirmPopup.areYouSure"
+      message={pendingNavigationAction === 'restartGame' ? t('game.restartGame.confirm') : t('confirmPopup.newGame')}
+      onConfirm={handleNavigationConfirm}
+      onCancel={() => setPendingNavigationAction(null)}
+    />
+  );
+
   const getConfirmMessage = () => {
     if (pendingAction === 'play') {
       const cardNames = selectedCards.map(c =>
@@ -421,7 +445,7 @@ export function GameBoard({
               Play Again
             </button>
             <button
-              onClick={onNewGame}
+              onClick={requestNewGame}
               className="flex-1 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <Home className="w-4 h-4" />
@@ -429,6 +453,7 @@ export function GameBoard({
             </button>
           </div>
         </div>
+        {navigationConfirmDialog}
       </div>
     );
   }
@@ -457,7 +482,7 @@ export function GameBoard({
             </button>
 
             <button
-              onClick={onRestartGame}
+              onClick={requestRestartGame}
               className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
@@ -465,7 +490,7 @@ export function GameBoard({
             </button>
 
             <button
-              onClick={onNewGame}
+              onClick={requestNewGame}
               className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <Home className="w-4 h-4" />
@@ -473,6 +498,7 @@ export function GameBoard({
             </button>
           </div>
         </div>
+        {navigationConfirmDialog}
       </div>
     );
   }
@@ -520,7 +546,7 @@ export function GameBoard({
             </button>
 
             <button
-              onClick={onNewGame}
+              onClick={requestNewGame}
               className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 flex items-center gap-1 px-3 py-2.5 sm:py-2 rounded-lg text-sm transition-colors"
             >
               <Home className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -588,7 +614,10 @@ export function GameBoard({
           </div>
 
           <div className="row-start-2 flex items-center justify-center">
-            <GamePile pile={pile} />
+            <GamePile
+              pile={pile}
+              onTakeClick={isHumanTurn && canTakeCards && !showTakeOptions ? handleTakeClick : undefined}
+            />
           </div>
 
           <div className="row-start-3 self-start flex w-full max-w-sm flex-col items-center gap-4 sm:gap-4">
@@ -959,6 +988,7 @@ export function GameBoard({
           onCancel={handleCancel}
         />
       )}
+      {navigationConfirmDialog}
     </div>
   );
 }

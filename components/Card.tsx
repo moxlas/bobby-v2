@@ -34,27 +34,27 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
   const symCls = `${suitColor} ${pipSize} leading-none`;
 
   if (v === 14) {
-    return <div className={`text-4xl leading-none ${suitColor}`}>{suitSymbol}</div>;
-  }
-
-  if (v === 9) {
     return (
-      <div className={`flex flex-col items-center gap-0 ${suitColor}`}>
-        {[[0,0],[0,0],[0],[0,0],[0,0]].map((row, ri) => (
-          <div key={ri} className={`flex ${row.length === 1 ? 'justify-center' : 'justify-between'} ${rowW}`}>
-            {row.map((_, ci) => <span key={ci} className={symCls}>{suitSymbol}</span>)}
-          </div>
-        ))}
+      <div className={`relative flex ${isLg ? 'h-[72%] w-[72%]' : 'h-[68%] w-[68%]'} items-center justify-center ${suitColor}`}>
+        <span aria-hidden="true" className="absolute inset-0 rounded-full border border-current/20" />
+        <span aria-hidden="true" className="absolute inset-[12%] rotate-45 rounded-[22%] border border-current/15" />
+        <span aria-hidden="true" className="absolute inset-[22%] rounded-full border border-current/15" />
+        <span className={`relative drop-shadow-sm ${isLg ? 'text-5xl' : 'text-4xl'} leading-none`}>{suitSymbol}</span>
       </div>
     );
   }
 
-  if (v === 10) {
+  if (v === 9 || v === 10) {
+    const rows = v === 9 ? [2, 2, 1, 2, 2] : [2, 1, 2, 2, 1, 2];
     return (
-      <div className={`flex flex-col items-center gap-0 ${suitColor}`}>
-        {[[0,0],[0],[0,0],[0,0],[0],[0,0]].map((row, ri) => (
-          <div key={ri} className={`flex ${row.length === 1 ? 'justify-center' : 'justify-between'} ${rowW}`}>
-            {row.map((_, ci) => <span key={ci} className={symCls}>{suitSymbol}</span>)}
+      <div className={`flex ${isLg ? 'h-[74%] w-12' : 'h-[70%] w-9'} flex-col justify-around ${suitColor}`}>
+        {rows.map((pipCount, ri) => (
+          <div key={ri} className={`flex items-center ${pipCount === 1 ? 'justify-center' : 'justify-between'} ${rowW}`}>
+            {Array.from({ length: pipCount }, (_, ci) => (
+              <span key={ci} className={`${symCls} ${ri >= Math.ceil(rows.length / 2) ? 'rotate-180' : ''}`}>
+                {suitSymbol}
+              </span>
+            ))}
           </div>
         ))}
       </div>
@@ -227,10 +227,15 @@ export function Card({ card, onClick, isSelected, disabled, size = 'md' }: CardP
   if (!card.faceUp) {
     return (
       <div
-        className={`${sizeClasses[size]} bg-blue-600 rounded-lg border-2 border-blue-400 flex items-center justify-center cursor-pointer shadow-md ${disabled ? 'opacity-50' : ''}`}
-        onClick={onClick}
+        className={`${sizeClasses[size]} relative flex items-center justify-center rounded-xl border-2 border-sky-100/80 bg-gradient-to-br from-indigo-600 via-blue-800 to-slate-950 shadow-[0_5px_12px_rgba(15,23,42,0.28)] ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
+        onClick={disabled ? undefined : onClick}
       >
-        <div className="w-10 h-14 bg-blue-500 rounded border border-blue-300" />
+        <div aria-hidden="true" className="absolute inset-[4px] rounded-[9px] border border-sky-100/70" />
+        <div aria-hidden="true" className="absolute inset-[8px] rounded-[6px] border border-sky-200/30" />
+        <div aria-hidden="true" className="relative flex h-[68%] w-[62%] items-center justify-center rounded-md border border-sky-100/30 bg-sky-100/5">
+          <span className="text-3xl font-serif text-sky-100/80">✦</span>
+          <span className="absolute inset-[12%] rotate-45 border border-sky-100/30" />
+        </div>
       </div>
     );
   }
@@ -243,14 +248,15 @@ export function Card({ card, onClick, isSelected, disabled, size = 'md' }: CardP
 
   return (
     <div
-      className={`${sizeClasses[size]} relative bg-white rounded-lg border-2 ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-300'} cursor-pointer shadow-md hover:shadow-lg transition-shadow ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`${sizeClasses[size]} relative rounded-xl border ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-300'} bg-gradient-to-br from-white via-[#fffefa] to-[#f1eee6] shadow-[0_3px_8px_rgba(15,23,42,0.18)] transition-all duration-200 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_7px_14px_rgba(15,23,42,0.24)] active:translate-y-0'} ${!disabled && isSelected ? 'hover:-translate-y-1' : ''}`}
       onClick={disabled ? undefined : onClick}
     >
-      <div className={`absolute ${topCorner} z-10 ${cornerValCls} font-bold ${suitColor} leading-none`}>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-[3px] rounded-[9px] border border-slate-200/80" />
+      <div className={`absolute ${topCorner} z-10 ${cornerValCls} font-serif font-black ${suitColor} leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.8)]`}>
         <div>{valueDisplay}</div>
         <div className={cornerSuitCls}>{suitSymbol}</div>
       </div>
-      <div className={`absolute ${btmCorner} z-10 ${cornerValCls} font-bold ${suitColor} rotate-180 leading-none`}>
+      <div className={`absolute ${btmCorner} z-10 ${cornerValCls} font-serif font-black ${suitColor} rotate-180 leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.8)]`}>
         <div>{valueDisplay}</div>
         <div className={cornerSuitCls}>{suitSymbol}</div>
       </div>

@@ -137,6 +137,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                 onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 150)}
                 className="flex items-center gap-1.5 bg-emerald-900/20 hover:bg-emerald-900/30 text-emerald-900 font-medium text-sm px-3 py-2 rounded-lg transition-colors"
               >
+                <span aria-hidden="true" className="text-base leading-none">{LANGUAGES.find(l => l.code === language)?.flag}</span>
                 <span className="text-[10px] font-bold leading-none bg-emerald-900/30 text-emerald-800 rounded px-1 py-0.5">{LANGUAGES.find(l => l.code === language)?.badge}</span>
                 <span className="hidden sm:inline text-sm">{LANGUAGES.find(l => l.code === language)?.name}</span>
               </button>
@@ -152,6 +153,7 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
                           : 'text-emerald-200 hover:bg-emerald-700'
                       }`}
                     >
+                      <span aria-hidden="true" className="text-lg leading-none">{lang.flag}</span>
                       <span className="text-[10px] font-bold leading-none bg-emerald-700 text-emerald-300 rounded px-1 py-0.5">{lang.badge}</span>
                       <span className="text-sm">{lang.name}</span>
                       {language === lang.code && <span className="ml-auto text-xs text-amber-400">✓</span>}
