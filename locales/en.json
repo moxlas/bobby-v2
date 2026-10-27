@@ -166,7 +166,8 @@
     "title": "Confirm Move",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "areYouSure": "Are you sure?"
+    "areYouSure": "Are you sure?",
+    "newGame": "Start a new game? Your current game will be abandoned."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -213,7 +214,8 @@
     "empty": "Empty",
     "count_one": "{count} card",
     "count_other": "{count} cards",
-    "top": "Top: "
+    "top": "Top: ",
+    "tapToTake": "Tap the pile to take cards"
   },
   "notFound": {
     "title": "404 Page Not Found",
