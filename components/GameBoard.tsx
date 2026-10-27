@@ -10,7 +10,7 @@ import { validatePlay, getTakeOptions, getValidMoves } from '../utils/gameLogic'
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
 import {
   initAudio, setMuted, isMuted,
-  playCardSound, playTakeSound, playComboSound,
+  playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
 import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X } from 'lucide-react';
@@ -76,6 +76,7 @@ export function GameBoard({
   const prevPlayerIndexRef = useRef<number | null>(null);
   const finishSoundPlayedRef = useRef(false);
   const cardPointerGestureRef = useRef<CardPointerGesture | null>(null);
+  const cardGestureSoundPlayedRef = useRef(false);
   const suppressGestureClickRef = useRef(false);
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -110,13 +111,6 @@ export function GameBoard({
       }
     }
   }, [gameState.currentPlayerIndex, gameState.phase]);
-
-  // Combo (4-of-a-kind bonus turn) sound
-  useEffect(() => {
-    if (gameState.canContinueTurn) {
-      playComboSound();
-    }
-  }, [gameState.canContinueTurn]);
 
   // Win / lose sound on game end
   useEffect(() => {
@@ -266,11 +260,14 @@ export function GameBoard({
         const validation = validatePlay(aiMove.cards, pile, isFirstMove, state.options);
 
         if (validation.valid) {
+          playCardSound(aiMove.cards.length);
+          if (validation.continueTurn) playComboSound();
           onPlayCardsRef.current(player.id, aiMove.cards, validation.continueTurn || false);
         } else {
           const takeOpts = getTakeOptions(pile, state.options);
           const count = takeOpts.canTake3 ? takeOpts.take3Count : takeOpts.takeAllCount;
           if (count > 0) {
+            playTakeSound();
             onTakeCardsRef.current(player.id, count);
           } else {
             onPlayCardsRef.current(player.id, [], false);
@@ -283,6 +280,7 @@ export function GameBoard({
           : takeOpts.take3Count;
 
         if (count > 0) {
+          playTakeSound();
           onTakeCardsRef.current(player.id, count);
         } else {
           onPlayCardsRef.current(player.id, [], false);
@@ -307,6 +305,7 @@ export function GameBoard({
     if (!isHumanTurn) return;
 
     const isSelected = selectedCards.find(c => c.id === card.id);
+    playCardSelectSound(!isSelected);
     if (isSelected) {
       setSelectedCards(selectedCards.filter(c => c.id !== card.id));
     } else {
@@ -325,6 +324,7 @@ export function GameBoard({
       startX: event.clientX,
       startY: event.clientY,
     };
+    cardGestureSoundPlayedRef.current = false;
     setDragPreviewPosition(null);
   };
 
@@ -338,6 +338,10 @@ export function GameBoard({
     const isTouchSwipeUp = gesture.pointerType !== 'mouse' && deltaY < -8 && Math.abs(deltaY) > Math.abs(deltaX) * 0.8;
 
     if (isMouseDrag || isTouchSwipeUp) {
+      if (!cardGestureSoundPlayedRef.current) {
+        playCardPickupSound();
+        cardGestureSoundPlayedRef.current = true;
+      }
       setDraggingCardId(gesture.card.id);
       setDragPreviewPosition({ x: event.clientX, y: event.clientY });
     }
@@ -360,6 +364,11 @@ export function GameBoard({
     const isMouseDropOnPile = gesture.pointerType === 'mouse' && releasedOverPile && movedDistance > 10;
 
     if (!isTouchSwipeUp && !isMouseDropOnPile) return;
+
+    if (!cardGestureSoundPlayedRef.current) {
+      playCardPickupSound();
+      cardGestureSoundPlayedRef.current = true;
+    }
 
     suppressGestureClickRef.current = true;
     if (suppressGestureClickTimerRef.current) clearTimeout(suppressGestureClickTimerRef.current);
@@ -400,6 +409,7 @@ export function GameBoard({
   };
 
   const handlePlayClick = () => {
+    playClickSound();
     if (selectedCards.length === 0) {
       setError('Select cards to play');
       return;
@@ -416,6 +426,7 @@ export function GameBoard({
   };
 
   const handleTakeClick = () => {
+    playClickSound();
     if (takeOptions.canTake3 && takeOptions.canTakeAll) {
       setShowTakeOptions(true);
     } else if (takeOptions.canTakeAll) {
@@ -428,18 +439,21 @@ export function GameBoard({
   };
 
   const handleTake3 = () => {
+    playClickSound();
     setPendingAction('take3');
     setShowConfirm(true);
     setShowTakeOptions(false);
   };
 
   const handleTakeAll = () => {
+    playClickSound();
     setPendingAction('takeAll');
     setShowConfirm(true);
     setShowTakeOptions(false);
   };
 
   const handleEndTurnClick = () => {
+    playClickSound();
     setPendingAction('endTurn');
     setShowConfirm(true);
   };
@@ -447,10 +461,9 @@ export function GameBoard({
   const handleConfirm = () => {
     if (pendingAction === 'play') {
       const validation = validatePlay(selectedCards, pile, isFirstMove, options);
-      if (validation.continueTurn) {
-        playComboSound();
-      } else {
-        playCardSound();
+      if (validation.valid) {
+        playCardSound(selectedCards.length);
+        if (validation.continueTurn) playComboSound();
       }
       onPlayCards(currentPlayer.id, selectedCards, validation.continueTurn || false);
     } else if (pendingAction === 'take3') {
@@ -470,13 +483,30 @@ export function GameBoard({
   };
 
   const handleCancel = () => {
+    playClickSound();
     setShowConfirm(false);
     setPendingAction(null);
     setShowTakeOptions(false);
   };
 
-  const requestNewGame = () => setPendingNavigationAction('newGame');
-  const requestRestartGame = () => setPendingNavigationAction('restartGame');
+  const requestNewGame = () => {
+    playClickSound();
+    setPendingNavigationAction('newGame');
+  };
+  const requestRestartGame = () => {
+    playClickSound();
+    setPendingNavigationAction('restartGame');
+  };
+
+  const handlePauseClick = () => {
+    playClickSound();
+    onPauseGame();
+  };
+
+  const handleResumeClick = () => {
+    playClickSound();
+    onResumeGame();
+  };
 
   const handleNavigationConfirm = () => {
     const action = pendingNavigationAction;
@@ -584,7 +614,10 @@ export function GameBoard({
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={onRestartGame}
+              onClick={() => {
+                playClickSound();
+                onRestartGame();
+              }}
               className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
@@ -620,7 +653,7 @@ export function GameBoard({
 
           <div className="space-y-3 sm:space-y-4">
             <button
-              onClick={onResumeGame}
+              onClick={handleResumeClick}
               className="w-full bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-base sm:text-lg py-4 sm:py-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -698,7 +731,7 @@ export function GameBoard({
             </div>
 
             <button
-              onClick={onPauseGame}
+              onClick={handlePauseClick}
               className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
             >
               <Pause className="w-4 h-4" />
@@ -895,7 +928,10 @@ export function GameBoard({
         <div className="hidden lg:flex lg:w-52 flex-col gap-3 flex-shrink-0">
           <div className="bg-emerald-800 rounded-lg border border-emerald-600 flex flex-col" style={{ maxHeight: '400px' }}>
             <button
-              onClick={() => setShowHistory(!showHistory)}
+              onClick={() => {
+                playClickSound();
+                setShowHistory(!showHistory);
+              }}
               className="flex items-center justify-between p-3 border-b border-emerald-600 flex-shrink-0"
             >
               <div className="flex items-center gap-2">
@@ -1046,14 +1082,17 @@ export function GameBoard({
 
         <div className="flex justify-center gap-2">
           <button
-            onClick={onPauseGame}
+            onClick={handlePauseClick}
             className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
           >
             <Pause className="h-3.5 w-3.5" />
             {t('game.mobile.pause')}
           </button>
           <button
-            onClick={() => setShowMobileHistory(true)}
+            onClick={() => {
+              playClickSound();
+              setShowMobileHistory(true);
+            }}
             aria-haspopup="dialog"
             aria-expanded={showMobileHistory}
             className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
@@ -1123,7 +1162,10 @@ export function GameBoard({
       {showMobileHistory && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 lg:hidden"
-          onClick={() => setShowMobileHistory(false)}
+          onClick={() => {
+            playClickSound();
+            setShowMobileHistory(false);
+          }}
         >
           <section
             role="dialog"
@@ -1142,7 +1184,10 @@ export function GameBoard({
               </div>
               <button
                 type="button"
-                onClick={() => setShowMobileHistory(false)}
+                onClick={() => {
+                  playClickSound();
+                  setShowMobileHistory(false);
+                }}
                 aria-label={t('confirmPopup.cancel')}
                 className="rounded-lg p-2 text-emerald-200 transition-colors hover:bg-emerald-700 hover:text-white"
               >
