@@ -1094,7 +1094,7 @@ export function GameBoard({
 
       {/* Desktop: Player Hand at bottom */}
       {shouldShowHand && (
-        <div className="hidden lg:block bg-emerald-800 border-t border-emerald-600 p-4 flex-shrink-0">
+        <div className="hidden lg:block min-h-[300px] bg-emerald-800 border-t border-emerald-600 p-4 flex-shrink-0">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-3">
               <span className="text-emerald-300 text-sm">

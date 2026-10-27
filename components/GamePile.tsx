@@ -9,9 +9,16 @@ interface GamePileProps {
 
 export function GamePile({ pile, onTakeClick }: GamePileProps) {
   const { t } = useTranslation();
-  const visibleCount = Math.min(3, pile.length);
-  const visibleCards = pile.slice(-visibleCount);
-  const underCard = pile.length > 3 ? pile[pile.length - 4] : null;
+  const showBottomCard = pile.length > 1 && pile.length <= 4;
+  const visibleCards = showBottomCard
+    ? pile.slice(1)
+    : pile.slice(-Math.min(3, pile.length));
+  const visibleCount = visibleCards.length;
+  const underCard = showBottomCard
+    ? pile[0]
+    : pile.length > 5
+      ? pile[pile.length - 4]
+      : null;
   const topCard = pile[pile.length - 1];
   const clickable = pile.length > 1 && onTakeClick;
 
@@ -47,7 +54,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         {underCard && (
           <div
             className="absolute transition-all duration-200 scale-[1.05] lg:scale-100"
-            style={{ left: '0px', top: '4px', zIndex: 0 }}
+            style={{ left: '-48px', top: '0px', zIndex: 0 }}
           >
             <Card card={{ ...underCard, faceUp: true }} size="lg" />
           </div>
