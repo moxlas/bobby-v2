@@ -223,6 +223,13 @@ export function GameBoard({
 
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Drop any pending gesture-click suppression, e.g. when a dialog takes over the screen. */
+  const clearGestureClickSuppression = () => {
+    suppressGestureClickRef.current = false;
+    if (suppressGestureClickTimerRef.current) clearTimeout(suppressGestureClickTimerRef.current);
+    suppressGestureClickTimerRef.current = null;
+  };
+
   const onPlayCardsRef = useRef(onPlayCards);
   const onTakeCardsRef = useRef(onTakeCards);
   const onEndTurnRef = useRef(onEndTurn);
@@ -560,6 +567,9 @@ export function GameBoard({
 
     showError(null);
     if (options.skipConfirmations && applyPlay(cardsToPlay)) return;
+    // The confirm dialog covers the board, so its own tap guard handles the
+    // leftover compatibility click instead of a 500 ms blanket suppression.
+    clearGestureClickSuppression();
     setPendingAction('play');
     setShowConfirm(true);
   };
@@ -573,9 +583,14 @@ export function GameBoard({
 
   const handleGestureClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (!suppressGestureClickRef.current) return;
-    suppressGestureClickRef.current = false;
-    if (suppressGestureClickTimerRef.current) clearTimeout(suppressGestureClickTimerRef.current);
-    suppressGestureClickTimerRef.current = null;
+
+    // Only the card surfaces can receive the compatibility click left over from
+    // a swipe or drag. Scoping it this way keeps dialogs and the board's own
+    // buttons on the first-tap path instead of eating a tap for 500 ms.
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('[data-card-id], [data-hand-drop-zone], [data-pile-drop-zone]')) return;
+
+    clearGestureClickSuppression();
     event.preventDefault();
     event.stopPropagation();
   };
@@ -622,6 +637,7 @@ export function GameBoard({
       applyPlay(selectedCards);
       return;
     }
+    clearGestureClickSuppression();
     setPendingAction('play');
     setShowConfirm(true);
   };
@@ -629,6 +645,7 @@ export function GameBoard({
   const handleTakeClick = () => {
     playClickSound();
     showError(null);
+    clearGestureClickSuppression();
     if (takeOptions.canTake3 && takeOptions.canTakeAll) {
       setShowTakeOptions(true);
     } else if (takeOptions.canTakeAll) {

@@ -1,5 +1,7 @@
+import { useId } from 'react';
 import { useTranslation } from '../lib/i18n';
 import { usePopIn } from '../lib/animations';
+import { useDialogTapGuard } from '../lib/useDialogTapGuard';
 
 interface ConfirmPopupProps {
   message: string;
@@ -11,22 +13,33 @@ interface ConfirmPopupProps {
 export function ConfirmPopup({ message, onConfirm, onCancel, titleKey = 'confirmPopup.title' }: ConfirmPopupProps) {
   const { t } = useTranslation();
   const panelRef = usePopIn<HTMLDivElement>();
+  const tapGuard = useDialogTapGuard();
+  const titleId = useId();
 
   return (
     <div className="fixed inset-0 bg-emerald-900/70 flex items-center justify-center z-50">
-      <div ref={panelRef} className="bg-emerald-800 rounded-lg p-6 max-w-sm w-full mx-4 border border-emerald-600 shadow-2xl">
-        <h3 className="text-lg font-bold text-amber-300 mb-4">{t(titleKey)}</h3>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        {...tapGuard}
+        className="bg-emerald-800 rounded-lg p-6 max-w-sm w-full mx-4 border border-emerald-600 shadow-2xl touch-manipulation"
+      >
+        <h3 id={titleId} className="text-lg font-bold text-amber-300 mb-4">{t(titleKey)}</h3>
         <p className="text-emerald-100 mb-6">{message}</p>
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={onConfirm}
-            className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold py-3.5 px-4 text-lg rounded-lg transition-colors lg:py-2 lg:text-base"
+            className="flex-1 bg-amber-500 hover:bg-amber-600 active:bg-amber-600 text-emerald-900 font-bold py-3.5 px-4 text-lg rounded-lg transition-colors lg:py-2 lg:text-base touch-manipulation"
           >
             {t('confirmPopup.confirm')}
           </button>
           <button
+            type="button"
             onClick={onCancel}
-            className="flex-1 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 py-3.5 px-4 text-lg rounded-lg transition-colors lg:py-2 lg:text-base"
+            className="flex-1 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 active:bg-emerald-500 py-3.5 px-4 text-lg rounded-lg transition-colors lg:py-2 lg:text-base touch-manipulation"
           >
             {t('confirmPopup.cancel')}
           </button>
