@@ -10,15 +10,13 @@ interface GamePileProps {
 export function GamePile({ pile, onTakeClick }: GamePileProps) {
   const { t } = useTranslation();
   const showBottomCard = pile.length > 1 && pile.length <= 4;
-  const visibleCards = showBottomCard
-    ? pile.slice(1)
-    : pile.slice(-Math.min(3, pile.length));
+  const visibleCards = showBottomCard ? pile.slice(1) : pile.slice(-Math.min(3, pile.length));
   const visibleCount = visibleCards.length;
-  const underCard = showBottomCard
-    ? pile[0]
-    : pile.length > 5
-      ? pile[pile.length - 4]
-      : null;
+  const underCards = showBottomCard
+    ? pile.slice(0, 1)
+    : pile.length >= 5
+      ? pile.slice(0, -3)
+      : [];
   const topCard = pile[pile.length - 1];
   const clickable = pile.length > 1 && onTakeClick;
 
@@ -51,14 +49,20 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       </div>
 
       <div className="relative h-[24dvh] max-h-40 w-24 flex items-center justify-center lg:h-40">
-        {underCard && (
-          <div
-            className="absolute transition-all duration-200 scale-[1.05] lg:scale-100"
-            style={{ left: '-48px', top: '0px', zIndex: 0 }}
-          >
-            <Card card={{ ...underCard, faceUp: true }} size="lg" />
-          </div>
-        )}
+        {underCards.map((card, index) => {
+          const isFourthFromTop = index === underCards.length - 1;
+          const offsetY = isFourthFromTop ? 0 : (underCards.length - index - 1) * 1;
+
+          return (
+            <div
+              key={card.id}
+              className="absolute transition-all duration-200 scale-[1.05] lg:scale-100"
+              style={{ left: '-48px', top: `${offsetY}px`, zIndex: index + 1 }}
+            >
+              <Card card={{ ...card, faceUp: true }} size="lg" />
+            </div>
+          );
+        })}
         {visibleCards.map((card, index) => {
           const totalWidth = (visibleCount - 1) * 28;
           const offsetX = index * 28 - totalWidth / 2;
@@ -68,7 +72,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
             <div
               key={card.id}
               className={`absolute transition-all duration-200 ${clickable ? 'hover:-translate-y-2' : ''} scale-[1.05] lg:scale-100`}
-              style={{ left: `${offsetX}px`, top: `${offsetY}px`, zIndex: index + 1 }}
+              style={{ left: `${offsetX}px`, top: `${offsetY}px`, zIndex: underCards.length + index + 1 }}
             >
               <Card card={{ ...card, faceUp: true }} size="lg" />
             </div>

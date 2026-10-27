@@ -866,33 +866,6 @@ export function GameBoard({
             </div>
           )}
 
-          {/* Take options popup */}
-          {showTakeOptions && (
-            <div className="hidden lg:block bg-emerald-700 rounded-lg p-4 border border-emerald-500 shadow-lg w-full">
-              <p className="text-emerald-100 mb-4 sm:mb-3 text-center font-medium text-sm sm:text-base">How many cards to take?</p>
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-3">
-                <button
-                  onClick={handleTake3}
-                  className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors"
-                >
-                  Take 3 Cards
-                </button>
-                <button
-                  onClick={handleTakeAll}
-                  className="bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors"
-                >
-                  Take All ({takeOptions.takeAllCount})
-                </button>
-              </div>
-              <button
-                onClick={handleCancel}
-                className="w-full mt-4 sm:mt-3 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm px-4 py-3 sm:py-2 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
           {/* Action buttons - Desktop only */}
           {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
             <div className="hidden lg:flex flex-wrap gap-3 justify-center">

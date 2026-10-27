@@ -11,7 +11,7 @@ export function TakeOptionsPopup({ takeAllCount, onTake3, onTakeAll, onCancel }:
   const { t } = useTranslation();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-900/70 p-4 lg:hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-900/70 p-4">
       <div
         role="dialog"
         aria-modal="true"
