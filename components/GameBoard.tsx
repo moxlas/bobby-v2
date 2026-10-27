@@ -957,15 +957,21 @@ export function GameBoard({
         </div>
       </div>
 
-      {/* Mobile: Arena hand dock */}
+      {/* Mobile: turn indicator sits above and outside the hand dock */}
       {shouldShowHand && (
-        <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-1.5 pb-2">
-          <div className="mb-1 flex items-center justify-center gap-1.5 text-xs text-emerald-300">
+        <div className="lg:hidden flex-shrink-0 border-t border-emerald-700 bg-emerald-900/50 px-3 py-1.5">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-300">
             <span>{t('game.center.currentTurn')}</span>
             <span className="font-bold text-amber-300">{currentPlayer.name}</span>
             {currentPlayer.isAI && <span className="text-[10px] text-emerald-400">({t('game.sidebar.ai')})</span>}
             {isAIThinking && <span className="animate-pulse text-amber-400">{t('game.center.thinking')}</span>}
           </div>
+        </div>
+      )}
+
+      {/* Mobile: Arena hand dock */}
+      {shouldShowHand && (
+        <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-1.5 pb-2">
           <div className="mb-1 flex items-center justify-between gap-2 text-xs text-emerald-200">
             <span className="font-medium">
               {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {t('game.hand.hand', { count: currentPlayer.hand.length })}
