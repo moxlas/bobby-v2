@@ -91,67 +91,71 @@ export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, 
     return { valid: false, error: 'No cards selected' };
   }
 
-  const firstValue = cards[0].value;
-  const allSameValue = cards.every(c => c.value === firstValue);
-
-  if (!allSameValue) {
-    return { valid: false, error: 'All cards must have the same value' };
+  if (new Set(cards.map(card => card.id)).size !== cards.length) {
+    return { valid: false, error: 'A card can only be played once' };
   }
 
-  const topCard = pile[pile.length - 1];
+  let topCard = pile[pile.length - 1];
+  if (!topCard) {
+    return { valid: false, error: 'There is no card on the pile to play against' };
+  }
 
-  if (isFirstMove && pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9) {
-    const allNines = cards.every(c => c.value === 9);
-    if (allNines) {
-      if (options.specialNinesRule && cards.length === 4) {
-        return { valid: true, continueTurn: true };
-      }
-      if (cards.length === 2) {
-        return { valid: false, error: 'You can only play 1, 3, or 4 nine cards on 9 of diamonds' };
-      }
-      if (options.specialNinesRule && cards.length === 3) {
-        return { valid: true, continueTurn: true };
-      }
-      if (cards.length === 1) {
-        return { valid: true, continueTurn: false };
-      }
-      if (!options.specialNinesRule && cards.length > 1) {
-        return { valid: false, error: 'Special 9s Rule is disabled — play one card at a time' };
-      }
-      return { valid: false, error: 'Invalid number of nine cards' };
+  const startsOnNineOfDiamonds = isFirstMove && pile.length === 1 &&
+    pile[0].suit === 'diamonds' && pile[0].value === 9;
+  let index = 0;
+  let finalGroupContinuesTurn = false;
+
+  // The selected order is the order the cards will be added to the pile.
+  // Validate each consecutive same-value group against the updated top card.
+  while (index < cards.length) {
+    let groupEnd = index + 1;
+    while (groupEnd < cards.length && cards[groupEnd].value === cards[index].value) {
+      groupEnd++;
     }
-  }
 
-  if (firstValue === 9 && topCard.value === 9) {
-    if (cards.length !== 1) {
+    const group = cards.slice(index, groupEnd);
+    const value = group[0].value;
+    const isOpeningNineGroup = startsOnNineOfDiamonds && index === 0 && value === 9;
+    let groupContinuesTurn = false;
+
+    if (isOpeningNineGroup && group.length > 1 && !options.specialNinesRule) {
+      return { valid: false, error: 'Special 9s Rule is disabled — play one card at a time' };
+    }
+
+    if (isOpeningNineGroup && group.length === 2) {
+      return { valid: false, error: 'You can only play 1, 3, or 4 nine cards on 9 of diamonds' };
+    }
+
+    if (value === 9 && topCard.value === 9 && group.length > 1 && !isOpeningNineGroup) {
       return { valid: false, error: 'You can only play a single 9 card on other 9s' };
     }
-    return { valid: true, continueTurn: false };
-  }
 
-  if (cards.length === 2 || cards.length === 3) {
-    return { valid: false, error: 'You can only play 1 card or 4 cards of the same value' };
-  }
-
-  if (cards.length > 4) {
-    return { valid: false, error: 'Cannot play more than 4 cards at once' };
-  }
-
-  if (cards.length === 1) {
-    if (firstValue < topCard.value) {
-      return { valid: false, error: 'Card value must be equal or higher than top card' };
+    if (group.length === 2 || group.length === 3) {
+      if (isOpeningNineGroup && group.length === 3 && options.specialNinesRule) {
+        groupContinuesTurn = true;
+      } else {
+        return { valid: false, error: 'Play single cards or groups of exactly 4 matching cards' };
+      }
+    } else if (group.length === 4) {
+      if (isOpeningNineGroup && value === 9 && !options.specialNinesRule) {
+        return { valid: false, error: 'Special 9s Rule is disabled — play one card at a time' };
+      }
+      if (value < topCard.value) {
+        return { valid: false, error: 'Card value must be equal or higher than the previous card' };
+      }
+      groupContinuesTurn = isOpeningNineGroup && value === 9
+        ? true
+        : options.fourOfAKindRule;
+    } else if (value < topCard.value) {
+      return { valid: false, error: 'Card value must be equal or higher than the previous card' };
     }
-    return { valid: true, continueTurn: false };
+
+    topCard = group[group.length - 1];
+    finalGroupContinuesTurn = groupContinuesTurn;
+    index = groupEnd;
   }
 
-  if (cards.length === 4) {
-    if (firstValue < topCard.value) {
-      return { valid: false, error: 'Card value must be equal or higher than top card' };
-    }
-    return { valid: true, continueTurn: options.fourOfAKindRule };
-  }
-
-  return { valid: true, continueTurn: false };
+  return { valid: true, continueTurn: finalGroupContinuesTurn };
 }
 
 export function canContinueAfterPlay(hand: Card[], pile: Card[]): boolean {

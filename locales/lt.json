@@ -104,7 +104,7 @@
       "takeCards": "Paimti kortas"
     },
     "history": {
-      "title": "Istorija",
+      "title": "Ėjimų istorija",
       "noMoves": "Dar nėra ėjimų",
       "took": "Paėmė {count}"
     },
@@ -116,7 +116,8 @@
     "mobile": {
       "play": "Žaisti ({count})",
       "take": "Paimti",
-      "pause": "Pristabdyti"
+      "pause": "Pristabdyti",
+      "swipeCards": "Braukite kortoms peržiūrėti"
     },
     "error": {
       "selectCards": "Pasirinkite kortas žaidimui",
@@ -166,7 +167,8 @@
     "title": "Patvirtinti ėjimą",
     "confirm": "Patvirtinti",
     "cancel": "Atšaukti",
-    "areYouSure": "Ar tikrai?"
+    "areYouSure": "Ar tikrai?",
+    "newGame": "Pradėti naują žaidimą? Dabartinis žaidimas bus nutrauktas."
   },
   "leaderboard": {
     "title": "Lyderių lentelė",
@@ -213,7 +215,8 @@
     "empty": "Tuščia",
     "count_one": "{count} korta",
     "count_other": "{count} kortos",
-    "top": "Viršutinė korta: "
+    "top": "Viršutinė korta: ",
+    "tapToTake": "Bakstelėkite krūvą, kad paimtumėte kortas"
   },
   "notFound": {
     "title": "404 Puslapis nerastas",
