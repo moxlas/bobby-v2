@@ -74,6 +74,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
             <div
               key={card.id}
               ref={index === visibleCards.length - 1 ? topCardRef : undefined}
+              data-pile-top={index === visibleCards.length - 1 ? 'true' : undefined}
               className={`absolute transition-all duration-200 ${clickable ? 'hover:-translate-y-2' : ''} scale-[1.05] lg:scale-100`}
               style={{ left: `${offsetX}px`, top: `${offsetY}px`, zIndex: underCards.length + index + 1 }}
             >

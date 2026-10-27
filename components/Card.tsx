@@ -261,6 +261,7 @@ export function Card({ card, onClick, onPointerDown, isSelected, isDragging, dis
     return (
       <div
         className={`${sizeClasses[size]} relative flex items-center justify-center rounded-xl border-2 border-sky-100/80 bg-gradient-to-br from-indigo-600 via-blue-800 to-slate-950 shadow-[0_5px_12px_rgba(15,23,42,0.28)] ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
+        data-card-id={card.id}
         onClick={disabled ? undefined : onClick}
       >
         <div aria-hidden="true" className="absolute inset-[4px] rounded-[9px] border border-sky-100/70" />
@@ -282,6 +283,7 @@ export function Card({ card, onClick, onPointerDown, isSelected, isDragging, dis
   return (
       <div
         className={`${sizeClasses[size]} relative select-none rounded-xl border ${isSelected ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-300'} bg-gradient-to-br from-white via-[#fffefa] to-[#f1eee6] shadow-[0_3px_8px_rgba(15,23,42,0.18)] transition-all duration-200 ${isDragging ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:-translate-y-1 hover:shadow-[0_7px_14px_rgba(15,23,42,0.24)] active:translate-y-0'} ${!disabled && isSelected ? 'hover:-translate-y-1' : ''}`}
+        data-card-id={card.id}
         onClick={disabled ? undefined : onClick}
         onPointerDown={disabled ? undefined : onPointerDown}
     >

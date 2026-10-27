@@ -10,7 +10,7 @@ import { useEffect, useRef } from 'react';
 
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
-function prefersReducedMotion(): boolean {
+export function prefersReducedMotion(): boolean {
   return (
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&

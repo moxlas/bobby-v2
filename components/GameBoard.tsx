@@ -6,6 +6,7 @@ import { Card as PlayingCard } from './Card';
 import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
 import { TakeOptionsPopup } from './TakeOptionsPopup';
+import { CardFlight, type CardFlightRequest } from './CardFlight';
 import { validatePlay, getTakeOptions, getValidMoves } from '../utils/gameLogic';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
 import { animateShake } from '../lib/animations';
@@ -66,6 +67,7 @@ export function GameBoard({
   const [pendingNavigationAction, setPendingNavigationAction] = useState<'newGame' | 'restartGame' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorSequence, setErrorSequence] = useState(0);
+  const [flight, setFlight] = useState<CardFlightRequest | null>(null);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showTakeOptions, setShowTakeOptions] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -77,6 +79,7 @@ export function GameBoard({
   const historyContainerRef = useRef<HTMLDivElement>(null);
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const mobileErrorBannerRef = useRef<HTMLDivElement>(null);
+  const flightSequenceRef = useRef(0);
   const prevPlayerIndexRef = useRef<number | null>(null);
   const finishSoundPlayedRef = useRef(false);
   const cardPointerGestureRef = useRef<CardPointerGesture | null>(null);
@@ -88,6 +91,36 @@ export function GameBoard({
     setError(message);
     if (message) setErrorSequence((sequence) => sequence + 1);
   };
+
+  /** First visible element matching `selector` (each hand card exists in both layouts). */
+  const visibleRect = (selector: string): DOMRect | null => {
+    for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+      if (element.getClientRects().length === 0) continue;
+      return element.getBoundingClientRect();
+    }
+    return null;
+  };
+
+  const pileFlightTarget = () =>
+    visibleRect('[data-pile-top]') ?? visibleRect('[data-pile-drop-zone]');
+
+  /** Fly ghost cards from the hand to the pile (or back) while the real state updates. */
+  const launchCardFlight = (cards: CardType[], direction: 'toPile' | 'toHand') => {
+    const target = direction === 'toPile'
+      ? pileFlightTarget()
+      : visibleRect('[data-hand-drop-zone]');
+    if (!target || cards.length === 0) return;
+
+    const sources = direction === 'toPile'
+      ? cards.map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
+      : cards.map(() => pileFlightTarget());
+    const from = sources.filter((rect): rect is DOMRect => rect !== null);
+    if (from.length === 0) return;
+
+    flightSequenceRef.current += 1;
+    setFlight({ id: flightSequenceRef.current, direction, cards, from, to: target });
+  };
+
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onPlayCardsRef = useRef(onPlayCards);
@@ -485,6 +518,7 @@ export function GameBoard({
       if (validation.valid) {
         playCardSound(selectedCards.length);
         if (validation.continueTurn) playComboSound();
+        launchCardFlight(selectedCards, 'toPile');
       } else {
         showError(validation.error ?? 'invalidMove');
         setShowConfirm(false);
@@ -494,9 +528,11 @@ export function GameBoard({
       onPlayCards(currentPlayer.id, selectedCards, validation.continueTurn || false);
     } else if (pendingAction === 'take3') {
       playTakeSound();
+      launchCardFlight(pile.slice(-takeOptions.take3Count), 'toHand');
       onTakeCards(currentPlayer.id, takeOptions.take3Count);
     } else if (pendingAction === 'takeAll') {
       playTakeSound();
+      launchCardFlight(pile.slice(-takeOptions.takeAllCount), 'toHand');
       onTakeCards(currentPlayer.id, takeOptions.takeAllCount);
     } else if (pendingAction === 'endTurn') {
       playClickSound();
@@ -1004,7 +1040,7 @@ export function GameBoard({
             </span>
             <span className="text-emerald-400">{isHumanTurn ? t('game.mobile.swipeCards') : ''}</span>
           </div>
-          <div className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5 touch-pan-x">
+          <div data-hand-drop-zone="true" className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5 touch-pan-x">
             {currentPlayer.hand.map((card: CardType) => {
               const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
               const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
@@ -1026,6 +1062,7 @@ export function GameBoard({
               return (
                 <button
                   key={card.id}
+                  data-card-id={card.id}
                   type="button"
                   aria-label={getCardDisplayName(card)}
                   aria-pressed={isSelected}
@@ -1139,7 +1176,7 @@ export function GameBoard({
       {/* Desktop: Player Hand at bottom */}
       {shouldShowHand && (
         <div className="hidden lg:block min-h-[300px] bg-emerald-800 border-t border-emerald-600 p-4 flex-shrink-0">
-          <div className="max-w-5xl mx-auto">
+          <div data-hand-drop-zone="true" className="max-w-5xl mx-auto">
             <div className="text-center mb-3">
               <span className="text-emerald-300 text-sm">
                 {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {tPlural('game.hand.hand', currentPlayer.hand.length)}
@@ -1172,6 +1209,9 @@ export function GameBoard({
           onTakeAll={handleTakeAll}
           onCancel={handleCancel}
         />
+      )}
+      {flight && (
+        <CardFlight request={flight} onComplete={() => setFlight(null)} />
       )}
       {draggedCards.length > 0 && dragPreviewPosition && (
         <div
