@@ -273,6 +273,7 @@ export function Card({ card, onClick, onPointerDown, isSelected, isDragging, dis
     );
   }
 
+  const isLg = size === 'lg';
   const cornerValCls = 'text-base';
   const cornerSuitCls = 'text-sm';
   const topCorner = isLg ? 'top-1 left-1.5' : 'top-0.5 left-1';
