@@ -11,6 +11,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
   const { t } = useTranslation();
   const visibleCount = Math.min(3, pile.length);
   const visibleCards = pile.slice(-visibleCount);
+  const underCard = pile.length > 3 ? pile[pile.length - 4] : null;
   const topCard = pile[pile.length - 1];
   const clickable = pile.length > 1 && onTakeClick;
 
@@ -38,11 +39,19 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         }
       } : undefined}
     >
-      <div className={`hidden lg:block mt-0 mb-1 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
+      <div className={`hidden lg:block mt-0 mb-5 px-3 py-1.5 rounded-full text-base whitespace-nowrap ${clickable ? 'bg-amber-600 text-amber-100 hover:bg-amber-500 transition-colors' : 'bg-emerald-700 text-emerald-200'}`}>
         {t(pile.length === 1 ? 'pile.count_one' : 'pile.count_other', { count: pile.length })}
       </div>
 
-      <div className="relative h-[20dvh] max-h-40 w-24 flex items-center justify-center lg:h-40">
+      <div className="relative h-[24dvh] max-h-40 w-24 flex items-center justify-center lg:h-40">
+        {underCard && (
+          <div
+            className="absolute transition-all duration-200 scale-[1.05] lg:scale-100"
+            style={{ left: '0px', top: '4px', zIndex: 0 }}
+          >
+            <Card card={{ ...underCard, faceUp: true }} size="lg" />
+          </div>
+        )}
         {visibleCards.map((card, index) => {
           const totalWidth = (visibleCount - 1) * 28;
           const offsetX = index * 28 - totalWidth / 2;
@@ -51,7 +60,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
           return (
             <div
               key={card.id}
-              className={`absolute transition-all duration-200 ${clickable ? 'hover:-translate-y-2' : ''} scale-[0.9] lg:scale-100`}
+              className={`absolute transition-all duration-200 ${clickable ? 'hover:-translate-y-2' : ''} scale-[1.05] lg:scale-100`}
               style={{ left: `${offsetX}px`, top: `${offsetY}px`, zIndex: index + 1 }}
             >
               <Card card={{ ...card, faceUp: true }} size="lg" />

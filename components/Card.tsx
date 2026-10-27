@@ -50,7 +50,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
   if (v === 9 || v === 10) {
     const rows = v === 9 ? [2, 2, 1, 2, 2] : [2, 1, 2, 2, 1, 2];
     return (
-      <div className={`flex ${isLg ? 'h-[74%] w-12' : 'h-[70%] w-9'} flex-col justify-around ${suitColor}`}>
+      <div className={`flex ${isLg ? 'h-[74%] w-12' : 'h-[70%] w-9'} flex-col items-center justify-around ${suitColor}`}>
         {rows.map((pipCount, ri) => (
           <div key={ri} className={`flex items-center ${pipCount === 1 ? 'justify-center' : 'justify-between'} ${rowW}`}>
             {Array.from({ length: pipCount }, (_, ci) => (
@@ -190,7 +190,7 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
     };
 
     return (
-      <svg viewBox="0 0 60 80" className={`w-[78%] h-[82%] overflow-visible ${color}`} aria-hidden="true">
+      <svg viewBox="0 0 60 80" className={`w-[78%] h-[82%] -translate-x-1 overflow-visible ${color}`} aria-hidden="true">
         <path d={shoulderPaths[suit]} fill="currentColor" stroke={portraitInk} strokeWidth="1.2" strokeLinejoin="round" />
         <path d="M 18 56 L 26 54 L 30 62 L 34 54 L 42 56 L 50 78 L 10 78 Z" fill="#eee4d1" stroke={portraitInk} strokeWidth="1" strokeLinejoin="round" />
         <path d="M 18 57 L 26 56 L 30 63 L 24 77 L 12 77 Z M 42 57 L 34 56 L 30 63 L 36 77 L 48 77 Z" fill="currentColor" />
@@ -273,9 +273,8 @@ export function Card({ card, onClick, onPointerDown, isSelected, isDragging, dis
     );
   }
 
-  const isLg = size === 'lg';
-  const cornerValCls = isLg ? 'text-base' : 'text-sm';
-  const cornerSuitCls = isLg ? 'text-sm' : 'text-xs';
+  const cornerValCls = 'text-base';
+  const cornerSuitCls = 'text-sm';
   const topCorner = isLg ? 'top-1 left-1.5' : 'top-0.5 left-1';
   const btmCorner = isLg ? 'bottom-1 right-1.5' : 'bottom-0.5 right-1';
 

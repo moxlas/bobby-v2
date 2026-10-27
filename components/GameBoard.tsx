@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type PointerEvent as ReactPointerEvent, ty
 import { useTranslation } from '../lib/i18n';
 import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
+import { Card as PlayingCard } from './Card';
 import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
 import { TakeOptionsPopup } from './TakeOptionsPopup';
@@ -664,12 +665,11 @@ export function GameBoard({
   }
 
   const shouldShowHand = currentPlayer && !currentPlayer.hasFinished;
-  const draggedCard = draggingCardId
-    ? currentPlayer?.hand.find((card: CardType) => card.id === draggingCardId)
-    : null;
-  const draggedCardSuit = draggedCard?.suit === 'hearts' ? '♥' : draggedCard?.suit === 'diamonds' ? '♦' : draggedCard?.suit === 'clubs' ? '♣' : '♠';
-  const draggedCardValue = draggedCard?.value === 11 ? 'J' : draggedCard?.value === 12 ? 'Q' : draggedCard?.value === 13 ? 'K' : draggedCard?.value === 14 ? 'A' : draggedCard?.value;
-  const draggedCardIsRed = draggedCard?.suit === 'hearts' || draggedCard?.suit === 'diamonds';
+  const draggedCards = draggingCardId && currentPlayer
+    ? selectedCards.some(card => card.id === draggingCardId)
+      ? selectedCards
+      : currentPlayer.hand.filter((card: CardType) => card.id === draggingCardId)
+    : [];
 
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
@@ -997,8 +997,8 @@ export function GameBoard({
                       : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
                   } ${!isHumanTurn ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
-                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} leading-none`}>{valueStr}</span>
-                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} mt-0.5 text-sm`}>{suitSymbol}</span>
+                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-base leading-none`}>{valueStr}</span>
+                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} mt-0.5 text-lg leading-none`}>{suitSymbol}</span>
                 </button>
               );
             })}
@@ -1129,16 +1129,21 @@ export function GameBoard({
           onCancel={handleCancel}
         />
       )}
-      {draggedCard && dragPreviewPosition && (
+      {draggedCards.length > 0 && dragPreviewPosition && (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-1/2"
+          className="pointer-events-none fixed z-[60] h-24 w-20 -translate-x-1/2 -translate-y-1/2 lg:h-28 lg:w-24"
           style={{ left: dragPreviewPosition.x, top: dragPreviewPosition.y }}
         >
-          <div className={`flex h-24 w-16 flex-col items-center justify-center rounded-xl border-2 border-slate-300 bg-white text-xl font-bold shadow-2xl lg:h-28 lg:w-20 ${draggedCardIsRed ? 'text-red-600' : 'text-slate-900'}`}>
-            <span>{draggedCardValue}</span>
-            <span>{draggedCardSuit}</span>
-          </div>
+          {draggedCards.map((card: CardType, index: number) => (
+            <div
+              key={card.id}
+              className="absolute"
+              style={{ left: `${index * 4}px`, top: `${-index * 3}px`, zIndex: index + 1 }}
+            >
+              <PlayingCard card={{ ...card, faceUp: true }} size="sm" />
+            </div>
+          ))}
         </div>
       )}
       {navigationConfirmDialog}

@@ -153,9 +153,9 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
     <>
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl bg-emerald-800 rounded-xl shadow-2xl overflow-hidden border border-emerald-600">
-        <div className="bg-amber-500 px-6 pt-14 pb-6 text-center relative sm:p-6">
+        <div className="relative flex flex-col items-center gap-3 bg-amber-500 px-6 py-4 text-center sm:block sm:p-6">
             {/* Language selector */}
-            <div className="absolute left-3 top-3 sm:left-4 sm:top-1/2 sm:-translate-y-1/2">
+            <div className="relative sm:absolute sm:left-4 sm:top-1/2 sm:-translate-y-1/2">
               <button
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                 onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 150)}
@@ -185,15 +185,17 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
               )}
             </div>
 
-            <h1 className="text-3xl font-bold text-emerald-900 mb-1">{t('setup.title')}</h1>
-            <p className="text-amber-700 text-sm">{t('setup.subtitle')}</p>
+            <div>
+              <h1 className="mb-1 text-3xl font-bold text-emerald-900">{t('setup.title')}</h1>
+              <p className="text-sm text-amber-700">{t('setup.subtitle')}</p>
+            </div>
 
             <button
               onClick={() => setShowLeaderboard(true)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-emerald-900/20 hover:bg-emerald-900/30 text-emerald-900 font-medium text-sm px-3 py-2 rounded-lg transition-colors"
+              className="relative flex items-center gap-1.5 rounded-lg bg-emerald-900/20 px-3 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-900/30 sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2"
             >
               <Trophy className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('setup.leaderboard')}</span>
+              <span>{t('setup.leaderboard')}</span>
             </button>
           </div>
 
