@@ -219,8 +219,11 @@ function checkAIOnlyLoop(
 }
 
 export function playCards(state: GameState, playerId: number, cards: Card[], continueTurn: boolean = false): GameState {
+  const playerIndex = state.players.findIndex(p => p.id === playerId);
+  if (playerIndex === -1) return state;
+
   const newPlayers = state.players.map(p => ({ ...p, hand: [...p.hand] }));
-  const player = newPlayers[playerId];
+  const player = newPlayers[playerIndex];
 
   if (cards.length === 0) {
     const nextIndex = getNextPlayerIndex(state.currentPlayerIndex, newPlayers);
@@ -360,11 +363,18 @@ export function endTurn(state: GameState): GameState {
 }
 
 export function takeCards(state: GameState, playerId: number, count: number): GameState {
+  const playerIndex = state.players.findIndex(p => p.id === playerId);
+  if (playerIndex === -1) return state;
+
   const newPlayers = state.players.map(p => ({ ...p, hand: [...p.hand] }));
-  const player = newPlayers[playerId];
+  const player = newPlayers[playerIndex];
   const newPile = [...state.pile];
 
-  const cardsToTake = newPile.splice(-count, count);
+  // The bottom card always stays on the pile, even if the caller asks for more.
+  const availableCards = newPile.length - 1;
+  const actualCount = Math.max(0, Math.min(count, availableCards));
+
+  const cardsToTake = newPile.splice(-actualCount, actualCount);
   player.hand = sortHand([...player.hand, ...cardsToTake]);
 
   const move: PlayerMove = {
@@ -414,6 +424,112 @@ export function getTakeOptions(pile: Card[], options: GameOptions): { canTake3: 
 export function pauseGame(state: GameState): GameState {
   if (state.phase !== 'playing') return state;
   return { ...state, phase: 'paused', pausedTime: Date.now() };
+}
+
+/**
+ * A player leaves the game.
+ *
+ * They drop out without claiming a finishing position. If the game continues
+ * they stay out of the rankings; if it ends now they take last place.
+ */
+export function forfeitPlayer(state: GameState, playerId: number): GameState {
+  const playerIndex = state.players.findIndex(p => p.id === playerId);
+  if (playerIndex === -1) return state;
+  if (state.players[playerIndex].hasFinished) return state;
+
+  const newPlayers = state.players.map(p => ({ ...p }));
+  const elapsedTime = state.gameStartTime
+    ? (Date.now() - state.gameStartTime) / 1000 - state.totalPausedTime
+    : 0;
+
+  newPlayers[playerIndex] = {
+    ...newPlayers[playerIndex],
+    hasFinished: true,
+    finishPosition: null,
+    finishTime: elapsedTime,
+  };
+
+  const activePlayers = newPlayers.filter(p => !p.hasFinished);
+  if (activePlayers.length <= 1) {
+    const finishOrder = [...state.finishOrder];
+    if (activePlayers.length === 1) {
+      const winnerPos = finishOrder.length + 1;
+      const winnerIdx = newPlayers.findIndex(p => p.id === activePlayers[0].id);
+      const winner = {
+        ...newPlayers[winnerIdx],
+        hasFinished: true,
+        finishPosition: winnerPos,
+        finishTime: elapsedTime,
+      };
+      newPlayers[winnerIdx] = winner;
+      finishOrder.push(winner);
+    }
+
+    const forfeiter = {
+      ...newPlayers[playerIndex],
+      finishPosition: finishOrder.length + 1,
+    };
+    newPlayers[playerIndex] = forfeiter;
+    finishOrder.push(forfeiter);
+
+    return {
+      ...state,
+      players: newPlayers,
+      phase: 'finished',
+      finishOrder,
+      loser: forfeiter,
+      canContinueTurn: false,
+    };
+  }
+
+  // If the forfeited player was the current player, advance turn.
+  if (state.currentPlayerIndex === playerIndex) {
+    const nextIndex = getNextPlayerIndex(playerIndex, newPlayers);
+    newPlayers.forEach((p, i) => { p.isCurrentTurn = i === nextIndex; });
+    return {
+      ...state,
+      players: newPlayers,
+      currentPlayerIndex: nextIndex,
+      canContinueTurn: false,
+    };
+  }
+
+  return {
+    ...state,
+    players: newPlayers,
+  };
+}
+
+/** End the game immediately, ranking every remaining player behind the finishers. */
+export function finishGame(state: GameState): GameState {
+  const newPlayers = state.players.map(p => ({ ...p }));
+  const finishOrder = [...state.finishOrder];
+  const elapsedTime = state.gameStartTime
+    ? (Date.now() - state.gameStartTime) / 1000 - state.totalPausedTime
+    : 0;
+
+  newPlayers
+    .filter(p => !p.hasFinished)
+    .forEach(p => {
+      const idx = newPlayers.findIndex(np => np.id === p.id);
+      const pos = finishOrder.length + 1;
+      finishOrder.push({ ...p, hasFinished: true, finishPosition: pos, finishTime: elapsedTime });
+      newPlayers[idx] = {
+        ...newPlayers[idx],
+        hasFinished: true,
+        finishPosition: pos,
+        finishTime: elapsedTime,
+      };
+    });
+
+  return {
+    ...state,
+    players: newPlayers,
+    phase: 'finished',
+    finishOrder,
+    loser: finishOrder[finishOrder.length - 1],
+    canContinueTurn: false,
+  };
 }
 
 export function resumeGame(state: GameState): GameState {
