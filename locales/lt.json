@@ -1,4 +1,81 @@
 {
+  "online": {
+    "entry": {
+      "playOnline": "Žaisti internetu",
+      "title": "Žaisti internetu",
+      "subtitle": "Sukurkite kambarį arba prisijunkite su kodu",
+      "nameLabel": "Jūsų vardas",
+      "namePlaceholder": "Įveskite vardą",
+      "create": "Sukurti kambarį",
+      "or": "arba",
+      "codeLabel": "Kambario kodas",
+      "codePlaceholder": "ABC123",
+      "join": "Prisijungti",
+      "hint": "2–8 žaidėjai · DI užpildo tuščias vietas",
+      "back": "Atgal",
+      "nameRequired": "Įveskite vardą, kad galėtumėte tęsti.",
+      "codeInvalid": "Įveskite 6 simbolių kambario kodą.",
+      "unavailable": "Žaidimas internetu dar nesukonfigūruotas. Nustatykite VITE_PARTYKIT_HOST, kad įjungtumėte."
+    },
+    "connecting": {
+      "title": "Jungiamasi…",
+      "body": "Prisijungiama prie kambario. Tai užtruks akimirką."
+    },
+    "unavailable": {
+      "title": "Žaidimas internetu nepasiekiamas",
+      "body": "Ši versija neturi sukonfigūruoto realaus laiko serverio."
+    },
+    "lobby": {
+      "title": "Žaidimo laukiamasis",
+      "hostHint": "Jūs esate šeimininkas. Nustatykite taisykles ir pradėkite žaidimą.",
+      "guestHint": "Prisijungėte. Šeimininkas nustato taisykles ir pradeda žaidimą.",
+      "codeLabel": "Kambario kodas",
+      "copyCode": "Kopijuoti kodą",
+      "copyLink": "Kopijuoti nuorodą",
+      "copied": "Nukopijuota",
+      "shareHint": "Pasidalykite kodu arba nuoroda su draugais.",
+      "reconnecting": "Jungiamasi iš naujo prie kambario…",
+      "seats": "Žaidėjai",
+      "seatCount": "{count}/{max} vietų",
+      "host": "Šeimininkas",
+      "ai": "DI",
+      "you": "Jūs",
+      "offline": "Neprisijungęs",
+      "aiSeats": "DI žaidėjai",
+      "aiSeatsHint": "Užpildykite tuščias vietas DI",
+      "addAI": "Pridėti DI žaidėją",
+      "removeAI": "Pašalinti DI žaidėją",
+      "minSeats": "Norint pradėti reikia bent {count} vietų.",
+      "rules": "Namų taisyklės",
+      "rulesHostHint": "Taisyklių pakeitimai galioja visiems kambaryje.",
+      "rulesGuestHint": "Taisykles gali keisti tik šeimininkas.",
+      "start": "Pradėti žaidimą",
+      "needPlayers": "Reikia bent {count} žaidėjų",
+      "waitingHost": "Laukiama, kol šeimininkas pradės žaidimą…",
+      "leave": "Palikti kambarį",
+      "humans": "Žmonių žaidėjų: {count}"
+    },
+    "error": {
+      "notHost": "Tai gali daryti tik šeimininkas.",
+      "notYourTurn": "Dabar ne jūsų ėjimas.",
+      "invalidMove": "Toks ėjimas neleidžiamas.",
+      "cannotStart": "Nepakanka žaidėjų pradėti.",
+      "roomFull": "Šis kambarys pilnas.",
+      "notInRoom": "Jūsų nebėra šiame kambaryje.",
+      "gameInProgress": "Tas žaidimas jau prasidėjo.",
+      "nameRequired": "Įveskite vardą prieš prisijungdami.",
+      "roomExists": "Toks kambario kodas jau užimtas.",
+      "unknown": "Kažkas nutiko. Bandykite dar kartą.",
+      "dismiss": "Uždaryti"
+    },
+    "closed": {
+      "title": "Kambarys uždarytas",
+      "roomNotFound": "Šis kambarys nebeegzistuoja. Patikrinkite kodą ir bandykite dar kartą.",
+      "roomExpired": "Šis kambarys baigė galioti po dviejų valandų neveiklumo.",
+      "kicked": "Buvote pašalintas iš kambario.",
+      "back": "Atgal į meniu"
+    }
+  },
   "setup": {
     "title": "🃏 Debesėlis",
     "subtitle": "Išskirtinis kortų žaidimas",
@@ -79,6 +156,7 @@
     "sidebar": {
       "players": "Žaidėjai",
       "ai": "DI",
+      "out": "Iš žaidimo",
       "cards_one": "korta",
       "cards_few": "kortos",
       "cards_many": "kortų",
@@ -168,6 +246,7 @@
       "winner": "LAIMĖTOJAS",
       "loser": "PRALAIMĖTOJAS",
       "playAgain": "Žaisti dar kartą",
+      "waitingHost": "Laukiama, kol šeimininkas pradės naują žaidimą…",
       "newGame": "Naujas žaidimas"
     },
     "newGame": {
@@ -178,6 +257,7 @@
     },
     "paused": {
       "title": "Žaidimas pristabdytas",
+      "waitingHost": "Laukiama, kol šeimininkas tęs žaidimą…",
       "resume": "Tęsti žaidimą",
       "gameRules": "Žaidimo taisyklės",
       "forfeit": "Pasiduoti",

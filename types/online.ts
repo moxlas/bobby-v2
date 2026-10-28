@@ -24,6 +24,13 @@ export interface GameStateView extends Omit<GameState, 'players' | 'finishOrder'
 
 export type RoomPhase = 'lobby' | 'playing' | 'finished';
 
+/** What the entry screen hands to the room screen: a code to join, or one to claim. */
+export interface OnlineSession {
+  code: string;
+  create: boolean;
+  name: string;
+}
+
 export interface LobbySeat {
   id: number;
   name: string;
@@ -57,6 +64,7 @@ export type RoomErrorCode =
   | 'notInRoom'
   | 'gameInProgress'
   | 'nameRequired'
+  | 'roomExists'
   | 'unknown';
 
 export type RoomCloseReason = 'roomNotFound' | 'roomExpired' | 'kicked';
@@ -73,6 +81,7 @@ export type ClientMessage =
   | { type: 'pause' }
   | { type: 'resume' }
   | { type: 'forfeit' }
+  | { type: 'finish' }
   | { type: 'restart' }
   | { type: 'leave' };
 

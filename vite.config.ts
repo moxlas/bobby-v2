@@ -13,5 +13,9 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: true,
+    // PartyKit keeps its local durable state here; writing it must not reload the app.
+    watch: {
+      ignored: ["**/.partykit/**"],
+    },
   },
 })

@@ -1,4 +1,81 @@
 {
+  "online": {
+    "entry": {
+      "playOnline": "Play Online",
+      "title": "Play Online",
+      "subtitle": "Create a room or join one with a code",
+      "nameLabel": "Your name",
+      "namePlaceholder": "Enter your name",
+      "create": "Create Room",
+      "or": "or",
+      "codeLabel": "Room code",
+      "codePlaceholder": "ABC123",
+      "join": "Join Room",
+      "hint": "2–8 players · AI fills empty seats",
+      "back": "Back",
+      "nameRequired": "Enter a name before continuing.",
+      "codeInvalid": "Enter a 6-character room code.",
+      "unavailable": "Online play is not configured yet. Set VITE_PARTYKIT_HOST to enable it."
+    },
+    "connecting": {
+      "title": "Connecting…",
+      "body": "Joining the room. This only takes a moment."
+    },
+    "unavailable": {
+      "title": "Online play unavailable",
+      "body": "This build has no realtime server configured."
+    },
+    "lobby": {
+      "title": "Game Lobby",
+      "hostHint": "You are the host. Set the rules, then start the game.",
+      "guestHint": "You are in. The host sets the rules and starts the game.",
+      "codeLabel": "Room code",
+      "copyCode": "Copy code",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "shareHint": "Share the code or link with your friends.",
+      "reconnecting": "Reconnecting to the room…",
+      "seats": "Players",
+      "seatCount": "{count}/{max} seats",
+      "host": "Host",
+      "ai": "AI",
+      "you": "You",
+      "offline": "Offline",
+      "aiSeats": "AI players",
+      "aiSeatsHint": "Fill empty seats with AI",
+      "addAI": "Add AI player",
+      "removeAI": "Remove AI player",
+      "minSeats": "At least {count} seats are needed to start.",
+      "rules": "House rules",
+      "rulesHostHint": "Rule changes apply to everyone in the room.",
+      "rulesGuestHint": "Only the host can change the rules.",
+      "start": "Start Game",
+      "needPlayers": "Need at least {count} players",
+      "waitingHost": "Waiting for the host to start the game…",
+      "leave": "Leave Room",
+      "humans": "Human players: {count}"
+    },
+    "error": {
+      "notHost": "Only the host can do that.",
+      "notYourTurn": "It is not your turn.",
+      "invalidMove": "That move is not allowed.",
+      "cannotStart": "Not enough players to start.",
+      "roomFull": "This room is full.",
+      "notInRoom": "You are no longer in this room.",
+      "gameInProgress": "That game has already started.",
+      "nameRequired": "Enter a name before joining.",
+      "roomExists": "That room code is already taken.",
+      "unknown": "Something went wrong. Please try again.",
+      "dismiss": "Dismiss"
+    },
+    "closed": {
+      "title": "Room closed",
+      "roomNotFound": "This room no longer exists. Check the code and try again.",
+      "roomExpired": "This room expired after two hours of inactivity.",
+      "kicked": "You were removed from the room.",
+      "back": "Back to menu"
+    }
+  },
   "setup": {
     "title": "🃏 The Bobby",
     "subtitle": "A multiplayer card game",
@@ -79,6 +156,7 @@
     "sidebar": {
       "players": "Players",
       "ai": "AI",
+      "out": "Out",
       "cards_one": "card",
       "cards_other": "cards"
     },
@@ -160,6 +238,7 @@
       "winner": "WINNER",
       "loser": "LOSER",
       "playAgain": "Play Again",
+      "waitingHost": "Waiting for the host to start a new game…",
       "newGame": "New Game"
     },
     "newGame": {
@@ -170,6 +249,7 @@
     },
     "paused": {
       "title": "Game Paused",
+      "waitingHost": "Waiting for the host to resume the game…",
       "resume": "Resume Game",
       "gameRules": "Game Rules",
       "forfeit": "Forfeit Game",

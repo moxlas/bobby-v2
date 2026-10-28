@@ -17,6 +17,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["App.tsx", "main.tsx", "components", "utils", "types", "lib"],
+  "include": ["App.tsx", "main.tsx", "components", "utils", "types", "lib", "party"],
   "exclude": ["components/ui", "pages", "hooks"]
 }

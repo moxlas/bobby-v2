@@ -12,6 +12,7 @@ interface PlayerSetup {
 
 interface SetupScreenProps {
   onStartGame: (players: PlayerSetup[], options: GameOptions) => void;
+  onPlayOnline?: () => void;
 }
 
 const AI_DIFFICULTY_VALUES: AIDifficulty[] = ['easy', 'medium', 'hard'];
@@ -45,7 +46,7 @@ interface ToggleProps {
   onToggle: () => void;
 }
 
-function Toggle({ enabled, onToggle }: ToggleProps) {
+export function Toggle({ enabled, onToggle }: ToggleProps) {
   return (
     <button
       onClick={onToggle}
@@ -62,7 +63,7 @@ function Toggle({ enabled, onToggle }: ToggleProps) {
   );
 }
 
-export function SetupScreen({ onStartGame }: SetupScreenProps) {
+export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   const { t, tArray, language, setLanguage } = useTranslation();
   const saved = loadSettings();
   const [playerCount, setPlayerCount] = useState(saved?.players.length || 2);
@@ -466,6 +467,16 @@ export function SetupScreen({ onStartGame }: SetupScreenProps) {
               <Play className="w-5 h-5" />
               {t('setup.startGame')}
             </button>
+
+            {onPlayOnline && (
+              <button
+                onClick={onPlayOnline}
+                className="w-full py-3 text-base font-semibold bg-emerald-700 hover:bg-emerald-600 border border-emerald-400 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <Globe className="w-5 h-5" />
+                {t('online.entry.playOnline')}
+              </button>
+            )}
           </div>
         </div>
       </div>

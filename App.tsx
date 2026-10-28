@@ -2,7 +2,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { SetupScreen } from './components/SetupScreen';
 import { GameBoard } from './components/GameBoard';
 import { DealingAnimation } from './components/DealingAnimation';
+import { OnlineEntry } from './components/OnlineEntry';
+import { OnlineRoom } from './components/OnlineRoom';
 import { Card, GameState, GameOptions } from './types/game';
+import type { OnlineSession } from './types/online';
 import {
   initializeGame,
   playCards,
@@ -15,6 +18,9 @@ import {
   type PlayerSetup,
 } from './utils/gameLogic';
 import { saveGameResults } from './utils/leaderboard';
+import { normalizeRoomCode } from './utils/roomCode';
+import { readJoinCodeFromLocation } from './lib/onlineConfig';
+import { clearActiveRoom, loadActiveRoom, loadOnlineName } from './lib/onlineIdentity';
 import { I18nProvider } from './lib/i18n';
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -27,6 +33,18 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function App() {
+  const [mode, setMode] = useState<'local' | 'online'>(() => (readJoinCodeFromLocation() || loadActiveRoom() ? 'online' : 'local'));
+  const [joinCode, setJoinCode] = useState<string | null>(() => {
+    const code = readJoinCodeFromLocation();
+    return code ? normalizeRoomCode(code) : null;
+  });
+  const [onlineSession, setOnlineSession] = useState<OnlineSession | null>(() => {
+    // A /join link always wins: it opens the entry form pre-filled instead of
+    // silently reusing a seat from this tab's previous room.
+    if (readJoinCodeFromLocation()) return null;
+    const active = loadActiveRoom();
+    return active ? { code: active.code, create: false, name: active.name } : null;
+  });
   const [appPhase, setAppPhase] = useState<'setup' | 'dealing' | 'playing'>('setup');
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [initialPlayers, setInitialPlayers] = useState<PlayerSetup[]>([]);
@@ -115,6 +133,26 @@ function App() {
     setAppPhase('setup');
   }, []);
 
+  const handlePlayOnline = useCallback(() => {
+    setJoinCode(null);
+    setMode('online');
+  }, []);
+
+  const handleEnterOnline = useCallback((session: OnlineSession) => {
+    // Leave the /join/CODE path behind so a reload does not try to rejoin.
+    window.history.replaceState({}, '', '/');
+    setJoinCode(null);
+    setOnlineSession(session);
+  }, []);
+
+  const handleExitOnline = useCallback(() => {
+    clearActiveRoom();
+    window.history.replaceState({}, '', '/');
+    setOnlineSession(null);
+    setJoinCode(null);
+    setMode('local');
+  }, []);
+
   useEffect(() => {
     if (gameState?.options.theme) {
       document.documentElement.dataset.theme = gameState.options.theme;
@@ -123,8 +161,23 @@ function App() {
 
   return (
     <I18nProvider>
-      {appPhase === 'setup' || !gameState ? (
-        <SetupScreen onStartGame={handleStartGame} />
+      {mode === 'online' ? (
+        onlineSession ? (
+          <OnlineRoom
+            key={`${onlineSession.create ? 'create' : 'join'}-${onlineSession.code}`}
+            session={onlineSession}
+            onExit={handleExitOnline}
+          />
+        ) : (
+          <OnlineEntry
+            initialCode={joinCode}
+            defaultName={loadOnlineName()}
+            onEnter={handleEnterOnline}
+            onCancel={handleExitOnline}
+          />
+        )
+      ) : appPhase === 'setup' || !gameState ? (
+        <SetupScreen onStartGame={handleStartGame} onPlayOnline={handlePlayOnline} />
       ) : appPhase === 'dealing' ? (
         (() => {
           const openingPlayerId = gameState.moveHistory[0]?.playerId;

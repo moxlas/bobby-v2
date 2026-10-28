@@ -35,6 +35,8 @@ interface GameBoardProps {
   viewerId?: number | null;
   /** The room server drives AI seats, so online clients must not. */
   runAI?: boolean;
+  /** Only the host may pause, resume or restart. Defaults to true for local play. */
+  hostControls?: boolean;
 }
 
 interface CardPointerGesture {
@@ -163,6 +165,7 @@ export function GameBoard({
   onNewGame,
   viewerId,
   runAI = true,
+  hostControls = true,
 }: GameBoardProps) {
   const { t, tPlural } = useTranslation();
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
@@ -331,6 +334,14 @@ export function GameBoard({
       setElapsedTime(elapsed);
     }
   }, [gameState.phase, gameState.gameStartTime, gameState.pausedTime, gameState.totalPausedTime]);
+
+  useEffect(() => {
+    if (gameState.phase !== 'finished') return;
+    // A reconnected or newly loaded board never saw the running timer, so derive
+    // the total from the finish times the engine recorded.
+    const finishTimes = gameState.finishOrder.map((player) => player.finishTime ?? 0);
+    if (finishTimes.length > 0) setElapsedTime(Math.max(...finishTimes));
+  }, [gameState.phase, gameState.finishOrder]);
 
   useEffect(() => {
     const shouldReset = !gameState.canContinueTurn;
@@ -790,8 +801,8 @@ export function GameBoard({
     setPendingForfeit(null);
     if (mode === 'self' && localHuman) {
       onForfeitPlayer(localHuman.id);
-      // Play continues for the remaining players unless the forfeit ended the game.
-      onResumeGame();
+      // Local play resumes at once; online only the host may resume the room.
+      if (hostControls) onResumeGame();
     } else if (mode === 'opponents') {
       onFinishGame();
     }
@@ -905,16 +916,20 @@ export function GameBoard({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => {
-                playClickSound();
-                onRestartGame();
-              }}
-              className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              {t('game.finished.playAgain')}
-            </button>
+            {hostControls ? (
+              <button
+                onClick={() => {
+                  playClickSound();
+                  onRestartGame();
+                }}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                {t('game.finished.playAgain')}
+              </button>
+            ) : (
+              <p className="flex-1 self-center text-sm text-emerald-300 py-2">{t('game.finished.waitingHost')}</p>
+            )}
             <button
               onClick={requestNewGame}
               className="flex-1 bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
@@ -944,15 +959,19 @@ export function GameBoard({
           </div>
 
           <div className="space-y-3 sm:space-y-4">
-            <button
-              onClick={handleResumeClick}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-base sm:text-lg py-4 sm:py-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
-            >
-              <Play className="w-4 h-4 sm:w-5 sm:h-5" />
-              {t('game.paused.resume')}
-            </button>
+            {hostControls ? (
+              <button
+                onClick={handleResumeClick}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-base sm:text-lg py-4 sm:py-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                {t('game.paused.resume')}
+              </button>
+            ) : (
+              <p className="text-sm sm:text-base text-emerald-300 py-2">{t('game.paused.waitingHost')}</p>
+            )}
 
-            {forfeitMode && (
+            {forfeitMode && (forfeitMode === 'self' || hostControls) && (
               <button
                 onClick={requestForfeit}
                 disabled={forfeitMode === 'blocked'}
@@ -982,13 +1001,15 @@ export function GameBoard({
               {t(mutedState ? 'game.topBar.unmute' : 'game.topBar.mute')}
             </button>
 
-            <button
-              onClick={requestRestartGame}
-              className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              {t('game.paused.restartGame')}
-            </button>
+            {hostControls && (
+              <button
+                onClick={requestRestartGame}
+                className="w-full bg-emerald-600 border border-emerald-400 text-white hover:bg-emerald-500 text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                {t('game.paused.restartGame')}
+              </button>
+            )}
 
             <button
               onClick={requestNewGame}
@@ -1038,13 +1059,15 @@ export function GameBoard({
               <span className="text-white font-mono text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
             </div>
 
-            <button
-              onClick={handlePauseClick}
-              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
-            >
-              <Pause className="w-4 h-4" />
-              {t('game.topBar.pause')}
-            </button>
+            {hostControls && (
+              <button
+                onClick={handlePauseClick}
+                className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
+              >
+                <Pause className="w-4 h-4" />
+                {t('game.topBar.pause')}
+              </button>
+            )}
 
             <button
               onClick={requestNewGame}
@@ -1075,7 +1098,11 @@ export function GameBoard({
               >
                 <span className="min-w-0 truncate font-medium">{player.name}</span>
                 {player.isAI && <span className="flex-shrink-0 rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">{t('game.sidebar.ai')}</span>}
-                <span className="flex-shrink-0 text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.handCount ?? player.hand.length}</span>
+                <span className="flex-shrink-0 text-emerald-300">
+                  {player.hasFinished
+                    ? (player.finishPosition ? `#${player.finishPosition}` : t('game.sidebar.out'))
+                    : player.handCount ?? player.hand.length}
+                </span>
               </div>
             );
           })}
@@ -1112,7 +1139,7 @@ export function GameBoard({
                         <span className="text-amber-400 flex items-center gap-1">
                           {player.finishPosition === 1 ? <Crown className="w-3 h-3" /> :
                            player.finishPosition === gameState.players.length ? <Skull className="w-3 h-3" /> : null}
-                          #{player.finishPosition}
+                          {player.finishPosition ? `#${player.finishPosition}` : t('game.sidebar.out')}
                         </span>
                       ) : (
                         `${player.handCount ?? player.hand.length} ${tPlural('game.sidebar.cards', player.handCount ?? player.hand.length)}`
@@ -1397,13 +1424,15 @@ export function GameBoard({
         </div>
 
         <div className="flex justify-center gap-2">
-          <button
-            onClick={handlePauseClick}
-            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
-          >
-            <Pause className="h-3.5 w-3.5" />
-            {t('game.mobile.pause')}
-          </button>
+          {hostControls && (
+            <button
+              onClick={handlePauseClick}
+              className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+            >
+              <Pause className="h-3.5 w-3.5" />
+              {t('game.mobile.pause')}
+            </button>
+          )}
           <button
             onClick={() => {
               playClickSound();
