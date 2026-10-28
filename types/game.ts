@@ -47,10 +47,15 @@ export type AIDifficulty = 'easy' | 'medium' | 'hard';
 export type ThemeName = 'summer' | 'midnight' | 'autumn';
 export type Language = 'en' | 'lt';
 
-export interface GameOptions {
+/** Rules the host chooses for a room. They change how the game is played. */
+export interface GameRules {
   specialNinesRule: boolean;
   allowTakeAllCards: boolean;
   fourOfAKindRule: boolean;
+}
+
+/** Per-player settings that never affect the rules or other seats. */
+export interface GamePreferences {
   aiDifficulty: AIDifficulty;
   rankedSeating: boolean;
   randomSeating: boolean;
@@ -58,6 +63,8 @@ export interface GameOptions {
   theme: ThemeName;
   language: Language;
 }
+
+export interface GameOptions extends GameRules, GamePreferences {}
 
 export interface GameState {
   phase: GamePhase;
@@ -78,14 +85,22 @@ export interface GameState {
   aiOnlyStartTurn: number | null;
 }
 
-export const DEFAULT_OPTIONS: GameOptions = {
+export const DEFAULT_RULES: GameRules = {
   specialNinesRule: true,
   allowTakeAllCards: true,
   fourOfAKindRule: true,
+};
+
+export const DEFAULT_PREFERENCES: GamePreferences = {
   aiDifficulty: 'medium',
   rankedSeating: false,
   randomSeating: false,
   skipConfirmations: false,
   theme: 'summer',
   language: 'en',
+};
+
+export const DEFAULT_OPTIONS: GameOptions = {
+  ...DEFAULT_RULES,
+  ...DEFAULT_PREFERENCES,
 };

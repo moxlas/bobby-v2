@@ -28,6 +28,13 @@ interface GameBoardProps {
   onFinishGame: () => void;
   onRestartGame: () => void;
   onNewGame: () => void;
+  /**
+   * Seat the board belongs to. Omit it for local hot-seat play, where the board
+   * follows the turn. Pass a seat id (or null for a spectator) online.
+   */
+  viewerId?: number | null;
+  /** The room server drives AI seats, so online clients must not. */
+  runAI?: boolean;
 }
 
 interface CardPointerGesture {
@@ -153,7 +160,9 @@ export function GameBoard({
   onForfeitPlayer,
   onFinishGame,
   onRestartGame,
-  onNewGame
+  onNewGame,
+  viewerId,
+  runAI = true,
 }: GameBoardProps) {
   const { t, tPlural } = useTranslation();
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
@@ -250,23 +259,28 @@ export function GameBoard({
     if (gameState.phase !== 'playing') return;
     const cur = gameState.players[gameState.currentPlayerIndex];
     if (!cur) return;
+    const seated = viewerId === undefined
+      ? cur
+      : gameState.players.find((p: any) => p.id === viewerId);
     if (prevPlayerIndexRef.current === null) {
       prevPlayerIndexRef.current = gameState.currentPlayerIndex;
       return;
     }
     if (prevPlayerIndexRef.current !== gameState.currentPlayerIndex) {
       prevPlayerIndexRef.current = gameState.currentPlayerIndex;
-      if (!cur.isAI && !cur.hasFinished) {
+      if (!cur.isAI && !cur.hasFinished && seated?.id === cur.id) {
         playYourTurnSound();
       }
     }
-  }, [gameState.currentPlayerIndex, gameState.phase]);
+  }, [gameState.currentPlayerIndex, gameState.phase, viewerId]);
 
   // Win / lose sound on game end
   useEffect(() => {
     if (gameState.phase === 'finished' && !finishSoundPlayedRef.current) {
       finishSoundPlayedRef.current = true;
-      const human = gameState.players.find((p: any) => !p.isAI);
+      const human = viewerId === undefined
+        ? gameState.players.find((p: any) => !p.isAI)
+        : gameState.players.find((p: any) => p.id === viewerId && !p.isAI);
       if (!human) return;
       const totalPlayers = gameState.players.length;
       if (human.finishPosition === 1) {
@@ -280,7 +294,7 @@ export function GameBoard({
     if (gameState.phase === 'playing') {
       finishSoundPlayedRef.current = false;
     }
-  }, [gameState.phase]);
+  }, [gameState.phase, viewerId]);
 
   useEffect(() => {
     if (showHistory && historyContainerRef.current) {
@@ -346,11 +360,21 @@ export function GameBoard({
   }, [error, errorSequence]);
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  /** Local play follows the turn; a seated view always shows its own hand. */
+  const viewer = viewerId === undefined
+    ? currentPlayer
+    : viewerId === null
+      ? null
+      : gameState.players.find((p: any) => p.id === viewerId) ?? null;
   const humanPlayers = gameState.players.filter((p: any) => !p.isAI);
   const allHumanPlayersFinished = humanPlayers.length > 0 && humanPlayers.every((p: any) => p.hasFinished);
 
-  /** The local human whose pause-menu forfeit applies (first human in seating order). */
-  const localHuman = humanPlayers[0] ?? null;
+  /** The seat whose pause-menu forfeit applies. */
+  const localHuman = viewerId === undefined
+    ? humanPlayers[0] ?? null
+    : viewer && !viewer.isAI
+      ? viewer
+      : null;
   const humansStillPlaying = humanPlayers.filter((p: any) => !p.hasFinished);
   const aiStillPlaying = gameState.players.filter((p: any) => p.isAI && !p.hasFinished);
   /** self → forfeit; opponents → end the game by forfeiting the AIs; blocked → disabled. */
@@ -364,22 +388,29 @@ export function GameBoard({
           ? 'opponents'
           : null;
 
-  const isHumanTurn = currentPlayer && !currentPlayer.isAI && !currentPlayer.hasFinished && gameState.phase === 'playing';
-  const isPlayerTurn = currentPlayer && !currentPlayer.hasFinished;
-  const handCardsFaceUp = currentPlayer && (!currentPlayer.isAI || allHumanPlayersFinished);
+  const isMyTurn = !!currentPlayer && !!viewer &&
+    currentPlayer.id === viewer.id &&
+    !currentPlayer.isAI &&
+    !currentPlayer.hasFinished &&
+    gameState.phase === 'playing';
+  const showsOwnHand = viewerId !== undefined || isMyTurn;
+  const handCardsFaceUp = !!viewer && (!viewer.isAI || allHumanPlayersFinished);
   const pile = gameState.pile;
   const pileTopCard = pile[pile.length - 1];
   const options: GameOptions = gameState.options;
 
   const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
   const takeOptions = getTakeOptions(pile, options);
-  const validMoves = isPlayerTurn ? getValidMoves(currentPlayer.hand, pile) : { canPlay: false, canTake: false };
+  const validMoves = isMyTurn && viewer ? getValidMoves(viewer.hand, pile) : { canPlay: false, canTake: false };
 
   const isFourNinesStart = gameState.canContinueTurn &&
     isFirstMove &&
-    currentPlayer.hand.filter((c: CardType) => c.value === 9).length === 3;
+    isMyTurn &&
+    !!viewer &&
+    viewer.hand.filter((c: CardType) => c.value === 9).length === 3;
 
   useEffect(() => {
+    if (!runAI) return;
     if (gameState.phase !== 'playing') {
       return;
     }
@@ -477,10 +508,10 @@ export function GameBoard({
       clearTimeout(timeout);
       setIsAIThinking(false);
     };
-  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, launchCardFlight]);
+  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, launchCardFlight, runAI]);
 
   const handleCardSelect = (card: CardType) => {
-    if (!isHumanTurn) return;
+    if (!isMyTurn) return;
 
     const isSelected = selectedCards.find(c => c.id === card.id);
     playCardSelectSound(!isSelected);
@@ -493,7 +524,7 @@ export function GameBoard({
   };
 
   const handleCardPointerDown = (card: CardType, event: ReactPointerEvent<HTMLElement>) => {
-    if (!isHumanTurn || !event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    if (!isMyTurn || !event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
 
     cardPointerGestureRef.current = {
       card,
@@ -974,11 +1005,11 @@ export function GameBoard({
     );
   }
 
-  const shouldShowHand = currentPlayer && !currentPlayer.hasFinished;
-  const draggedCards = draggingCardId && currentPlayer
+  const shouldShowHand = !!viewer && !viewer.hasFinished;
+  const draggedCards = draggingCardId && viewer
     ? selectedCards.some(card => card.id === draggingCardId)
       ? selectedCards
-      : currentPlayer.hand.filter((card: CardType) => card.id === draggingCardId)
+      : viewer.hand.filter((card: CardType) => card.id === draggingCardId)
     : [];
 
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
@@ -1044,7 +1075,7 @@ export function GameBoard({
               >
                 <span className="min-w-0 truncate font-medium">{player.name}</span>
                 {player.isAI && <span className="flex-shrink-0 rounded bg-emerald-900/70 px-1 text-[9px] font-bold text-emerald-300">{t('game.sidebar.ai')}</span>}
-                <span className="flex-shrink-0 text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.hand.length}</span>
+                <span className="flex-shrink-0 text-emerald-300">{player.hasFinished ? `#${player.finishPosition}` : player.handCount ?? player.hand.length}</span>
               </div>
             );
           })}
@@ -1084,7 +1115,7 @@ export function GameBoard({
                           #{player.finishPosition}
                         </span>
                       ) : (
-                        `${player.hand.length} ${tPlural('game.sidebar.cards', player.hand.length)}`
+                        `${player.handCount ?? player.hand.length} ${tPlural('game.sidebar.cards', player.handCount ?? player.hand.length)}`
                       )}
                     </div>
                   </div>
@@ -1108,7 +1139,7 @@ export function GameBoard({
           <div data-pile-drop-zone="true" className="flex min-h-0 items-center justify-center lg:row-start-2">
             <GamePile
               pile={pile}
-              onTakeClick={isHumanTurn && canTakeCards && !showTakeOptions ? handleTakeClick : undefined}
+              onTakeClick={isMyTurn && canTakeCards && !showTakeOptions ? handleTakeClick : undefined}
             />
           </div>
 
@@ -1121,7 +1152,7 @@ export function GameBoard({
           )}
 
           {/* Continue turn banner - 4 Nines Start */}
-          {gameState.canContinueTurn && isHumanTurn && isFourNinesStart && (
+          {gameState.canContinueTurn && isMyTurn && isFourNinesStart && (
             <div className="bg-purple-600 rounded-lg p-4 sm:p-4 border-2 border-purple-400 shadow-lg w-full">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🃏</span>
@@ -1149,7 +1180,7 @@ export function GameBoard({
           )}
 
           {/* Continue turn banner - Regular 4 of a kind */}
-          {gameState.canContinueTurn && isHumanTurn && !isFourNinesStart && (
+          {gameState.canContinueTurn && isMyTurn && !isFourNinesStart && (
             <div className="bg-amber-600 rounded-lg p-4 sm:p-4 border-2 border-amber-400 shadow-lg w-full">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-900" />
@@ -1177,7 +1208,7 @@ export function GameBoard({
           )}
 
           {/* Action buttons - Desktop only */}
-          {isHumanTurn && !showTakeOptions && !gameState.canContinueTurn && (
+          {isMyTurn && !showTakeOptions && !gameState.canContinueTurn && (
             <div className="hidden lg:flex flex-wrap gap-3 justify-center">
               <button
                 onClick={handlePlayClick}
@@ -1251,12 +1282,12 @@ export function GameBoard({
         <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-1.5 pb-2">
           <div className="mb-1 flex items-center justify-between gap-2 text-xs text-emerald-200">
             <span className="font-medium">
-              {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {tPlural('game.hand.hand', currentPlayer.hand.length)}
+              {showsOwnHand ? t('game.hand.your') : t('game.hand.their', { name: viewer.name })} {tPlural('game.hand.hand', viewer.hand.length)}
             </span>
-            <span className="text-emerald-400">{isHumanTurn ? t('game.mobile.swipeCards') : ''}</span>
+            <span className="text-emerald-400">{showsOwnHand ? t('game.mobile.swipeCards') : ''}</span>
           </div>
           <div data-hand-drop-zone="true" className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5 touch-pan-x">
-            {currentPlayer.hand.map((card: CardType) => {
+            {viewer.hand.map((card: CardType) => {
               const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
               const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
               const suitSymbol = card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠';
@@ -1284,12 +1315,12 @@ export function GameBoard({
                   aria-pressed={isSelected}
                   onPointerDown={event => handleCardPointerDown(card, event)}
                   onClick={() => handleCardSelect(card)}
-                  disabled={!isHumanTurn}
+                  disabled={!isMyTurn}
                   className={`relative flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 select-none flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${draggingCardId === card.id ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${
                     isSelected
                       ? 'scale-105 border-amber-400 bg-amber-50 shadow-md'
                       : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
-                  } ${!isHumanTurn ? 'cursor-not-allowed opacity-50' : ''}`}
+                  } ${!isMyTurn ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
                   <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-base leading-none`}>{valueStr}</span>
                   <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} mt-0.5 text-lg leading-none`}>{suitSymbol}</span>
@@ -1323,7 +1354,7 @@ export function GameBoard({
         )}
 
         <div className="mx-auto flex min-h-11 w-full max-w-md gap-2">
-          {showTakeOptions ? null : gameState.canContinueTurn && isHumanTurn ? (
+          {showTakeOptions ? null : gameState.canContinueTurn && isMyTurn ? (
             <div className="w-full rounded-xl border border-amber-400 bg-amber-600 p-2.5 text-center text-emerald-950">
               <p className="mb-2 text-xs font-semibold">
                 {t(isFourNinesStart ? 'game.ninesStart.title' : 'game.combo.title')}
@@ -1344,7 +1375,7 @@ export function GameBoard({
                 </button>
               </div>
             </div>
-          ) : isHumanTurn ? (
+          ) : isMyTurn ? (
             <>
               <button
                 onClick={handlePlayClick}
@@ -1395,16 +1426,16 @@ export function GameBoard({
           <div data-hand-drop-zone="true" className="max-w-5xl mx-auto">
             <div className="text-center mb-3">
               <span className="text-emerald-300 text-sm">
-                {isHumanTurn ? t('game.hand.your') : t('game.hand.their', { name: currentPlayer.name })} {tPlural('game.hand.hand', currentPlayer.hand.length)}
+                {showsOwnHand ? t('game.hand.your') : t('game.hand.their', { name: viewer.name })} {tPlural('game.hand.hand', viewer.hand.length)}
               </span>
             </div>
             <PlayerHand
-              hand={currentPlayer.hand}
+              hand={viewer.hand}
               selectedCards={selectedCards}
               onCardSelect={handleCardSelect}
               onCardPointerDown={handleCardPointerDown}
               draggingCardId={draggingCardId}
-              disabled={!isHumanTurn}
+              disabled={!isMyTurn}
               faceUp={handCardsFaceUp}
             />
           </div>
@@ -1418,7 +1449,7 @@ export function GameBoard({
           onCancel={handleCancel}
         />
       )}
-      {showTakeOptions && isHumanTurn && (
+      {showTakeOptions && isMyTurn && (
         <TakeOptionsPopup
           takeAllCount={takeOptions.takeAllCount}
           onTake3={handleTake3}

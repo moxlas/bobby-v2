@@ -1,17 +1,23 @@
 import { Card, GameState, Player, PlayerMove, GameOptions, PlayError, DEFAULT_OPTIONS } from '../types/game';
-import { createDeck, shuffleDeck, cutDeck, dealCards, findNineOfDiamonds, hasFourOfSameValue, sortHand } from './deckUtils';
+import { createDeck, shuffleDeck, cutDeck, dealCards, findNineOfDiamonds, hasFourOfSameValue, sortHand, type RandomFn } from './deckUtils';
 
 export interface PlayerSetup {
+  /** Stable seat id. Defaults to the seat's position in the list. */
+  id?: number;
   name: string;
   isAI: boolean;
 }
 
-export function initializeGame(playerSetups: PlayerSetup[], options: GameOptions = DEFAULT_OPTIONS): GameState {
-  const deck = cutDeck(shuffleDeck(createDeck()));
+export function initializeGame(
+  playerSetups: PlayerSetup[],
+  options: GameOptions = DEFAULT_OPTIONS,
+  rng: RandomFn = Math.random,
+): GameState {
+  const deck = cutDeck(shuffleDeck(createDeck(), rng), rng);
   const hands = dealCards(deck, playerSetups.length);
 
   const players: Player[] = playerSetups.map((setup, index) => ({
-    id: index,
+    id: setup.id ?? index,
     name: setup.name,
     hand: hands[index],
     isCurrentTurn: false,
@@ -58,7 +64,7 @@ export function initializeGame(playerSetups: PlayerSetup[], options: GameOptions
     moveHistory: [{
       id: '0',
       type: 'play',
-      playerId: startingPlayerIndex,
+      playerId: players[startingPlayerIndex].id,
       playerName: players[startingPlayerIndex].name,
       cards: [{ ...nineOfDiamonds, faceUp: true }],
       timestamp: Date.now(),

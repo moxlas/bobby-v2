@@ -25,19 +25,21 @@ export function createDeck(): Card[] {
   return cards;
 }
 
-export function shuffleDeck(deck: Card[]): Card[] {
+export type RandomFn = () => number;
+
+export function shuffleDeck(deck: Card[], rng: RandomFn = Math.random): Card[] {
   const shuffled = [...deck];
 
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
   return shuffled;
 }
 
-export function cutDeck(deck: Card[]): Card[] {
-  const cutPoint = Math.floor(Math.random() * (deck.length - 1)) + 1;
+export function cutDeck(deck: Card[], rng: RandomFn = Math.random): Card[] {
+  const cutPoint = Math.floor(rng() * (deck.length - 1)) + 1;
   return [...deck.slice(cutPoint), ...deck.slice(0, cutPoint)];
 }
 
