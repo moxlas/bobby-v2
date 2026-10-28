@@ -1,7 +1,18 @@
 const env = (import.meta as any).env ?? {};
 
-/** Room server host, e.g. `bobby-rooms.<subdomain>.workers.dev` in production. */
-export const ROOMS_HOST: string = env.VITE_ROOMS_HOST || (env.DEV ? 'localhost:1999' : '');
+/**
+ * Room server host, e.g. `bobby-rooms.<subdomain>.workers.dev` in production.
+ * Dashes from pasting a URL into a dashboard env field are tolerated: the
+ * protocol and trailing slash are stripped, since the client adds its own.
+ */
+function normalizeHost(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .replace(/^[a-z]+:\/\//i, '')
+    .replace(/\/+$/, '');
+}
+
+export const ROOMS_HOST: string = normalizeHost(env.VITE_ROOMS_HOST) || (env.DEV ? 'localhost:1999' : '');
 
 /** The room server binding name (kebab-cased `Main` in wrangler.jsonc). */
 export const ROOMS_PARTY: string = env.VITE_ROOMS_PARTY || 'main';
