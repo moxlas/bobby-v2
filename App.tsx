@@ -19,7 +19,7 @@ import {
 } from './utils/gameLogic';
 import { saveGameResults } from './utils/leaderboard';
 import { normalizeRoomCode } from './utils/roomCode';
-import { readJoinCodeFromLocation } from './lib/onlineConfig';
+import { readJoinCodeFromLocation, ONLINE_CONFIGURED } from './lib/onlineConfig';
 import { clearActiveRoom, loadActiveRoom, loadOnlineName } from './lib/onlineIdentity';
 import { I18nProvider } from './lib/i18n';
 
@@ -177,7 +177,10 @@ function App() {
           />
         )
       ) : appPhase === 'setup' || !gameState ? (
-        <SetupScreen onStartGame={handleStartGame} onPlayOnline={handlePlayOnline} />
+        <SetupScreen
+          onStartGame={handleStartGame}
+          onPlayOnline={ONLINE_CONFIGURED ? handlePlayOnline : undefined}
+        />
       ) : appPhase === 'dealing' ? (
         (() => {
           const openingPlayerId = gameState.moveHistory[0]?.playerId;
