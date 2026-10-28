@@ -15,7 +15,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
 const LOCALES = ['en', 'lt'];
-const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', '.idea', '.vercel', '.partykit', 'scripts']);
+const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', '.idea', '.vercel', '.wrangler', 'scripts']);
 
 const flatten = (value, prefix = '', out = new Map()) => {
   for (const [key, child] of Object.entries(value)) {

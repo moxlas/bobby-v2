@@ -15,7 +15,7 @@
       "back": "Atgal",
       "nameRequired": "Įveskite vardą, kad galėtumėte tęsti.",
       "codeInvalid": "Įveskite 6 simbolių kambario kodą.",
-      "unavailable": "Žaidimas internetu dar nesukonfigūruotas. Nustatykite VITE_PARTYKIT_HOST, kad įjungtumėte."
+      "unavailable": "Žaidimas internetu dar nesukonfigūruotas. Nustatykite VITE_ROOMS_HOST, kad įjungtumėte."
     },
     "connecting": {
       "title": "Jungiamasi…",

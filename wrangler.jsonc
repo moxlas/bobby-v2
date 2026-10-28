@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bobby-rooms",
+  "main": "party/worker.ts",
+  "compatibility_date": "2026-09-01",
+  "durable_objects": {
+    "bindings": [{ "name": "Main", "class_name": "BobbyRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["BobbyRoom"] }]
+}

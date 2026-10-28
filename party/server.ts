@@ -1,4 +1,4 @@
-import type * as Party from 'partykit/server';
+import { Server, type Connection } from 'partyserver';
 import { DEFAULT_OPTIONS, type GameRules, type GameState } from '../types/game';
 import {
   MAX_ROOM_SEATS,
@@ -71,17 +71,19 @@ function isFirstMoveOfGame(game: GameState): boolean {
   return pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
 }
 
+export interface Env {
+  Main: DurableObjectNamespace<BobbyRoom>;
+}
+
 /**
- * One PartyKit room per code. The server is the only writer of the game state:
- * clients send intents, every seat receives its own redacted view.
+ * One PartyServer room per code. The server is the only writer of the game
+ * state: clients send intents, every seat receives its own redacted view.
  */
-export default class BobbyRoom implements Party.Server {
+export class BobbyRoom extends Server<Env> {
   private state: StoredRoom | null = null;
   private loaded = false;
   private aiTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly graceTimers = new Map<number, ReturnType<typeof setTimeout>>();
-
-  constructor(readonly room: Party.Room) {}
 
   async onStart(): Promise<void> {
     await this.load();
@@ -107,7 +109,7 @@ export default class BobbyRoom implements Party.Server {
     await this.load();
   }
 
-  async onMessage(message: string | ArrayBuffer | ArrayBufferView, sender: Party.Connection): Promise<void> {
+  async onMessage(sender: Connection, message: string | ArrayBuffer | ArrayBufferView): Promise<void> {
     await this.load();
 
     if (typeof message !== 'string') return;
@@ -173,7 +175,7 @@ export default class BobbyRoom implements Party.Server {
     }
   }
 
-  async onClose(connection: Party.Connection): Promise<void> {
+  async onClose(connection: Connection): Promise<void> {
     await this.load();
 
     const seatId = this.seatIdFor(connection);
@@ -191,13 +193,13 @@ export default class BobbyRoom implements Party.Server {
   }
 
   async onAlarm(): Promise<void> {
-    // Alarms cannot read room.id, so only storage and sockets are touched here.
+    // The TTL alarm only needs storage and sockets; it never inspects the game.
     this.loaded = true;
-    for (const connection of this.room.getConnections()) {
+    for (const connection of this.getConnections()) {
       this.send(connection, { type: 'closed', reason: 'roomExpired' });
       connection.close(1000, 'roomExpired');
     }
-    await this.room.storage.deleteAll();
+    await this.ctx.storage.deleteAll();
     this.state = null;
   }
 
@@ -209,17 +211,17 @@ export default class BobbyRoom implements Party.Server {
     if (this.loaded) return;
     this.loaded = true;
 
-    const stored = await this.room.storage.get<StoredRoom>(STORAGE_KEY);
+    const stored = await this.ctx.storage.get<StoredRoom>(STORAGE_KEY);
     if (stored && stored.seats) {
       this.state = stored;
     }
   }
 
   private async handleHello(
-    connection: Party.Connection,
+    connection: Connection,
     message: Extract<ClientMessage, { type: 'hello' }>,
   ): Promise<void> {
-    if (!isValidRoomCode(this.room.id)) {
+    if (!isValidRoomCode(this.name)) {
       connection.close(1000, 'roomNotFound');
       return;
     }
@@ -296,11 +298,11 @@ export default class BobbyRoom implements Party.Server {
     await this.claimSeat(connection, seat, name);
   }
 
-  private async claimSeat(connection: Party.Connection, seat: RoomSeat, name: string): Promise<void> {
+  private async claimSeat(connection: Connection, seat: RoomSeat, name: string): Promise<void> {
     if (!this.state) return;
 
     // One live socket per seat: a reconnect replaces an old tab.
-    for (const other of this.room.getConnections()) {
+    for (const other of this.getConnections()) {
       if (other.id === connection.id) continue;
       if (this.seatIdFor(other) === seat.id) {
         other.close(1000, 'replaced');
@@ -566,7 +568,7 @@ export default class BobbyRoom implements Party.Server {
 
     this.state.seats = this.state.seats.filter(s => s.id !== seat.id);
 
-    for (const connection of this.room.getConnections()) {
+    for (const connection of this.getConnections()) {
       if (this.seatIdFor(connection) === seat.id) {
         connection.close(1000, 'left');
       }
@@ -725,7 +727,7 @@ export default class BobbyRoom implements Party.Server {
   private buildRoomView(viewerId: number): RoomView {
     const state = this.state!;
     return {
-      code: this.room.id,
+      code: this.name,
       phase: state.phase,
       hostId: state.seats.find(s => s.isHost)?.id ?? -1,
       seats: state.seats.map(seat => ({
@@ -747,7 +749,7 @@ export default class BobbyRoom implements Party.Server {
   private broadcastAll(): void {
     if (!this.state) return;
 
-    for (const connection of this.room.getConnections()) {
+    for (const connection of this.getConnections()) {
       const seatId = this.seatIdFor(connection);
       if (seatId === null) continue;
 
@@ -764,7 +766,7 @@ export default class BobbyRoom implements Party.Server {
     }
   }
 
-  private send(connection: Party.Connection, message: ServerMessage): void {
+  private send(connection: Connection, message: ServerMessage): void {
     try {
       connection.send(JSON.stringify(message));
     } catch {
@@ -773,26 +775,26 @@ export default class BobbyRoom implements Party.Server {
   }
 
   private sendError(seat: RoomSeat, code: RoomErrorCode): void {
-    for (const connection of this.room.getConnections()) {
+    for (const connection of this.getConnections()) {
       if (this.seatIdFor(connection) === seat.id) {
         this.send(connection, { type: 'error', code });
       }
     }
   }
 
-  private seatFor(connection: Party.Connection): RoomSeat | null {
+  private seatFor(connection: Connection): RoomSeat | null {
     const state = connection.state as ConnectionSeat | null;
     if (!state || typeof state.seatId !== 'number' || !this.state) return null;
     return this.state.seats.find(seat => seat.id === state.seatId) ?? null;
   }
 
-  private seatIdFor(connection: Party.Connection): number | null {
+  private seatIdFor(connection: Connection): number | null {
     const state = connection.state as ConnectionSeat | null;
     return state && typeof state.seatId === 'number' ? state.seatId : null;
   }
 
   private hasOtherConnection(seatId: number, exceptConnectionId: string): boolean {
-    for (const connection of this.room.getConnections()) {
+    for (const connection of this.getConnections()) {
       if (connection.id === exceptConnectionId) continue;
       if (this.seatIdFor(connection) === seatId) return true;
     }
@@ -810,8 +812,8 @@ export default class BobbyRoom implements Party.Server {
 
   private async save(): Promise<void> {
     if (!this.state) return;
-    await this.room.storage.put(STORAGE_KEY, this.state);
-    await this.room.storage.setAlarm(Date.now() + ROOM_TTL_MS);
+    await this.ctx.storage.put(STORAGE_KEY, this.state);
+    await this.ctx.storage.setAlarm(Date.now() + ROOM_TTL_MS);
   }
 
   private lowestFreeSeatId(): number {
@@ -834,7 +836,7 @@ export default class BobbyRoom implements Party.Server {
   }
 
   private async destroy(): Promise<void> {
-    for (const connection of this.room.getConnections()) {
+    for (const connection of this.getConnections()) {
       this.send(connection, { type: 'closed', reason: 'roomNotFound' as RoomCloseReason });
       connection.close(1000, 'roomClosed');
     }
@@ -842,6 +844,6 @@ export default class BobbyRoom implements Party.Server {
     for (const seatId of this.graceTimers.keys()) this.clearGrace(seatId);
     this.state = null;
     this.loaded = true;
-    await this.room.storage.deleteAll();
+    await this.ctx.storage.deleteAll();
   }
 }

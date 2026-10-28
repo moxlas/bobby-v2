@@ -15,7 +15,7 @@
       "back": "Back",
       "nameRequired": "Enter a name before continuing.",
       "codeInvalid": "Enter a 6-character room code.",
-      "unavailable": "Online play is not configured yet. Set VITE_PARTYKIT_HOST to enable it."
+      "unavailable": "Online play is not configured yet. Set VITE_ROOMS_HOST to enable it."
     },
     "connecting": {
       "title": "Connecting…",

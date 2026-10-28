@@ -9,7 +9,7 @@ import type {
   ServerMessage,
 } from '../types/online';
 import { clearRoomToken, loadRoomToken, saveRoomToken } from './onlineIdentity';
-import { ONLINE_CONFIGURED, PARTYKIT_HOST, PARTYKIT_PARTY } from './onlineConfig';
+import { ONLINE_CONFIGURED, ROOMS_HOST, ROOMS_PARTY } from './onlineConfig';
 
 export type OnlineStatus = 'connecting' | 'connected' | 'closed' | 'unavailable';
 
@@ -74,8 +74,8 @@ export function useOnlineRoom({ code, create, name, onCodeTaken }: UseOnlineRoom
     setGame(null);
 
     const socket = new PartySocket({
-      host: PARTYKIT_HOST,
-      party: PARTYKIT_PARTY,
+      host: ROOMS_HOST,
+      party: ROOMS_PARTY,
       room: code,
       protocol: window.location.protocol === 'https:' ? 'wss' : 'ws',
     });
