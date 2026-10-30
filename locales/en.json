@@ -239,7 +239,8 @@
       "loser": "LOSER",
       "playAgain": "Play Again",
       "waitingHost": "Waiting for the host to start a new game…",
-      "newGame": "New Game"
+      "newGame": "New Game",
+      "left": "Left"
     },
     "newGame": {
       "confirm": "Start a new game? Your current progress will be lost."
@@ -257,6 +258,11 @@
       "finishGame": "Finish The Game",
       "restartGame": "Restart Game",
       "newGame": "New Game"
+    },
+    "menu": {
+      "title": "Menu",
+      "close": "Close menu",
+      "hostOnlyPause": "The game keeps running while this menu is open. Only the host can pause the room."
     }
   },
   "confirmPopup": {
@@ -291,6 +297,7 @@
     "cardsEach_other": "{count} cards each",
     "ai": "AI",
     "you": "You",
+    "player": "Player",
     "gameStarting": "Game starting..."
   },
   "card": {

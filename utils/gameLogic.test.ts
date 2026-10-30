@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_OPTIONS, type Card } from '../types/game';
-import { initializeGame, takeCards } from './gameLogic';
+import { initializeGame, offersTakeChoice, takeCards } from './gameLogic';
 
 function card(id: string, value: Card['value'] = 9): Card {
   return { id, suit: 'hearts', value, faceUp: true };
@@ -82,5 +82,26 @@ describe('takeCards', () => {
     );
 
     expect(takeCards(state, 99, 3)).toBe(state);
+  });
+});
+
+describe('offersTakeChoice', () => {
+  const pileOf = (length: number) =>
+    Array.from({ length }, (_, index) => card(`pile-${index}`));
+
+  it('hides the 3-or-all choice when the pile has four or fewer cards', () => {
+    for (let length = 1; length <= 4; length++) {
+      expect(offersTakeChoice(pileOf(length), DEFAULT_OPTIONS)).toBe(false);
+    }
+  });
+
+  it('offers the choice once taking all differs from taking three', () => {
+    expect(offersTakeChoice(pileOf(5), DEFAULT_OPTIONS)).toBe(true);
+    expect(offersTakeChoice(pileOf(8), DEFAULT_OPTIONS)).toBe(true);
+  });
+
+  it('stays quiet when take-all is disabled by the rules', () => {
+    const options = { ...DEFAULT_OPTIONS, allowTakeAllCards: false };
+    expect(offersTakeChoice(pileOf(8), options)).toBe(false);
   });
 });

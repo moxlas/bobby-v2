@@ -79,6 +79,30 @@ describe('toGameStateView', () => {
     expect(view.players.map(p => p.handCount)).toEqual([2, 3, 1]);
   });
 
+  it('reveals only the active hand to a seat that has already finished', () => {
+    const state = threeSeatState();
+    state.players[0].hasFinished = true;
+    state.currentPlayerIndex = 1;
+
+    const view = toGameStateView(state, 0);
+
+    expect(view.players[1].hand.map(c => c.id)).toEqual(['bob-1', 'bob-2', 'bob-3']);
+    expect(view.players[2].hand).toEqual([]);
+    expect(view.players.map(p => p.handCount)).toEqual([2, 3, 1]);
+  });
+
+  it('keeps every other hand hidden once the game is finished', () => {
+    const state = threeSeatState();
+    state.phase = 'finished';
+    state.players[0].hasFinished = true;
+    state.currentPlayerIndex = 1;
+
+    const view = toGameStateView(state, 0);
+
+    expect(view.players[1].hand).toEqual([]);
+    expect(view.players[2].hand).toEqual([]);
+  });
+
   it('copies cards so mutating the view cannot mutate the game', () => {
     const state = threeSeatState();
     const view = toGameStateView(state, 0);

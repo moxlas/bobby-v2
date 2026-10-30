@@ -427,6 +427,18 @@ export function getTakeOptions(pile: Card[], options: GameOptions): { canTake3: 
   };
 }
 
+/**
+ * True only when taking three and taking all would differ.
+ *
+ * With four or fewer cards on the pile (three takeable above the 9♦) both
+ * choices are the same action, so the popup would ask a question with one
+ * answer. Kept beside `getTakeOptions` so the engine and the board agree.
+ */
+export function offersTakeChoice(pile: Card[], options: GameOptions): boolean {
+  const { canTake3, canTakeAll, take3Count, takeAllCount } = getTakeOptions(pile, options);
+  return canTake3 && canTakeAll && take3Count < takeAllCount;
+}
+
 export function pauseGame(state: GameState): GameState {
   if (state.phase !== 'playing') return state;
   return { ...state, phase: 'paused', pausedTime: Date.now() };

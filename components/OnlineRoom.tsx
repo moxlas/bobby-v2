@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, ArrowLeft, X } from 'lucide-react';
 import { useTranslation } from '../lib/i18n';
 import { useOnlineRoom } from '../lib/useOnlineRoom';
 import { clearRoomToken, saveActiveRoom } from '../lib/onlineIdentity';
 import { generateRoomCode } from '../utils/roomCode';
+import { loadSettings } from '../utils/settings';
 import { OnlineLobby } from './OnlineLobby';
+import { DealingAnimation } from './DealingAnimation';
 import { GameBoard } from './GameBoard';
 import type { Card } from '../types/game';
 import type { OnlineSession } from '../types/online';
@@ -33,6 +35,44 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
     name: session.name,
     onCodeTaken: handleCodeTaken,
   });
+
+  /**
+   * Quick Play is a personal preference, not a room rule, so it never travels
+   * to the server. Merge the locally saved option into this seat's view.
+   */
+  const [skipConfirmations] = useState(() => loadSettings()?.options.skipConfirmations ?? false);
+
+  /**
+   * Show the shuffle/deal animation once per fresh game. `gameStartTime` is the
+   * identity of a deal, so a reconnect or any later update never replays it.
+   */
+  const [dealing, setDealing] = useState(false);
+  const dealtGameStartRef = useRef<number | null>(null);
+
+  const gameStartTime = game?.gameStartTime ?? null;
+  const dealTurnNumber = game?.turnNumber;
+  const dealPileLength = game?.pile.length;
+  const dealPhase = game?.phase;
+  useEffect(() => {
+    if (gameStartTime === null || gameStartTime === 0) return;
+    if (dealtGameStartRef.current === gameStartTime) return;
+    if (dealPhase !== 'playing') return;
+
+    // A reconnect into a running game is not a deal: mark it as seen silently.
+    dealtGameStartRef.current = gameStartTime;
+    if (dealTurnNumber !== 1 || dealPileLength !== 1) return;
+
+    setDealing(true);
+  }, [gameStartTime, dealTurnNumber, dealPileLength, dealPhase]);
+
+  const handleDealComplete = useCallback(() => setDealing(false), []);
+
+  /** Seats that left the room keep their ranking line, marked with a badge. */
+  const leftPlayerIds = useMemo(() => {
+    if (!game) return [];
+    const seated = new Set(room?.seats.map(seat => seat.id) ?? []);
+    return game.players.filter(player => !seated.has(player.id)).map(player => player.id);
+  }, [game?.players, room?.seats]);
 
   useEffect(() => {
     if (!error) return;
@@ -116,6 +156,28 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
   }
 
   const isHost = room.hostId === room.youId;
+
+  // Apply this seat's Quick Play preference without touching the shared rules.
+  const boardGame = skipConfirmations && !game.options.skipConfirmations
+    ? { ...game, options: { ...game.options, skipConfirmations: true } }
+    : game;
+
+  if (dealing) {
+    const openingPlayerId = game.moveHistory[0]?.playerId;
+    return (
+      <DealingAnimation
+        players={game.players.map(player => ({
+          id: player.id,
+          name: player.name,
+          isAI: player.isAI,
+          isYou: player.id === youId,
+          cardCount: (player.handCount ?? player.hand.length) + (player.id === openingPlayerId ? 1 : 0),
+        }))}
+        onComplete={handleDealComplete}
+      />
+    );
+  }
+
   const errorBanner = error && error !== 'roomExists' ? (
     <div className="fixed left-1/2 top-2 z-50 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 items-center gap-2 rounded-lg border border-red-400 bg-red-600 px-3 py-2 text-sm text-white shadow-lg">
       <AlertCircle className="h-4 w-4 shrink-0" />
@@ -135,10 +197,11 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
     <>
       {errorBanner}
       <GameBoard
-        gameState={game}
+        gameState={boardGame}
         viewerId={youId}
         runAI={false}
         hostControls={isHost}
+        leftPlayerIds={leftPlayerIds}
         onPlayCards={(_playerId: number, cards: Card[]) => send({ type: 'playCards', cards, continueTurn: false })}
         onTakeCards={(_playerId: number, count: number) => send({ type: 'takeCards', count })}
         onEndTurn={() => send({ type: 'endTurn' })}

@@ -185,8 +185,11 @@ function App() {
         (() => {
           const openingPlayerId = gameState.moveHistory[0]?.playerId;
           const playerInfos = gameState.players.map(p => ({
+            id: p.id,
             name: p.name,
             isAI: p.isAI,
+            // Local play is hot-seat, so every human at this screen is "you".
+            isYou: !p.isAI,
             cardCount: p.hand.length + (p.id === openingPlayerId ? 1 : 0),
           }));
           return <DealingAnimation players={playerInfos} onComplete={handleDealingComplete} />;

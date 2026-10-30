@@ -247,7 +247,8 @@
       "loser": "PRALAIMĖTOJAS",
       "playAgain": "Žaisti dar kartą",
       "waitingHost": "Laukiama, kol šeimininkas pradės naują žaidimą…",
-      "newGame": "Naujas žaidimas"
+      "newGame": "Naujas žaidimas",
+      "left": "Išėjo"
     },
     "newGame": {
       "confirm": "Pradėti naują žaidimą? Dabartinė pažanga bus prarasta."
@@ -265,6 +266,11 @@
       "finishGame": "Baigti žaidimą",
       "restartGame": "Pradėti iš naujo",
       "newGame": "Naujas žaidimas"
+    },
+    "menu": {
+      "title": "Meniu",
+      "close": "Uždaryti meniu",
+      "hostOnlyPause": "Žaidimas tęsiasi, kol šis meniu atidarytas. Tik šeimininkas gali pristabdyti kambarį."
     }
   },
   "confirmPopup": {
@@ -305,6 +311,7 @@
     "cardsEach_other": "po {count} kortų",
     "ai": "DI",
     "you": "Tu",
+    "player": "Žaidėjas",
     "gameStarting": "Žaidimas prasideda..."
   },
   "card": {

@@ -1,10 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { playCardSound } from '../utils/sounds';
+import { prefersReducedMotion } from '../lib/animations';
 import { useTranslation } from '../lib/i18n';
 
 interface PlayerInfo {
+  /** Stable seat id. Lets the online room mark the local seat. */
+  id?: number;
   name: string;
   isAI: boolean;
+  /** True for the seat looking at the screen. */
+  isYou?: boolean;
   cardCount: number;
 }
 
@@ -16,6 +21,7 @@ interface DealingAnimationProps {
 const VISUAL_CARDS = 6;
 const CARD_STAGGER_MS = 110;
 const COMPLETE_EXTRA_MS = 900;
+const REDUCED_TOTAL_MS = 600;
 
 function getPlayerStagger(playerCount: number): number {
   const totalCardTime = VISUAL_CARDS * CARD_STAGGER_MS;
@@ -28,6 +34,7 @@ function getPlayerStagger(playerCount: number): number {
 export function DealingAnimation({ players, onComplete }: DealingAnimationProps) {
   const { t, tPlural } = useTranslation();
   const calledRef = useRef(false);
+  const reduced = prefersReducedMotion();
 
   const playerStagger = getPlayerStagger(players.length);
   const totalDuration =
@@ -38,25 +45,37 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    players.forEach((_, pi) => {
-      for (let ci = 0; ci < VISUAL_CARDS; ci++) {
-        const delay = pi * playerStagger + ci * CARD_STAGGER_MS;
-        timers.push(setTimeout(() => playCardSound(), delay));
-      }
-    });
+    if (!reduced) {
+      players.forEach((_, pi) => {
+        for (let ci = 0; ci < VISUAL_CARDS; ci++) {
+          const delay = pi * playerStagger + ci * CARD_STAGGER_MS;
+          timers.push(setTimeout(() => playCardSound(), delay));
+        }
+      });
+    }
 
     const completeTimer = setTimeout(() => {
       if (!calledRef.current) {
         calledRef.current = true;
         onComplete();
       }
-    }, totalDuration);
+    }, reduced ? REDUCED_TOTAL_MS : totalDuration);
 
     return () => {
       timers.forEach(clearTimeout);
       clearTimeout(completeTimer);
     };
   }, []);
+
+  /** Card/row entrances collapse to a plain render when motion is reduced. */
+  const enter = (name: string, durationMs: number, delayMs: number) =>
+    reduced
+      ? undefined
+      : {
+          animation: `${name} ${durationMs}ms ${name === 'dealCard' ? 'cubic-bezier(0.22, 0.61, 0.36, 1)' : 'ease-out'} both`,
+          animationDelay: `${delayMs}ms`,
+          opacity: 0,
+        };
 
   return (
     <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
@@ -86,7 +105,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
         <div className="text-center mb-8">
           <div
             className="text-5xl mb-3 inline-block"
-            style={{ animation: 'deckPulse 0.7s ease-in-out infinite' }}
+            style={reduced ? undefined : { animation: 'deckPulse 0.7s ease-in-out infinite' }}
           >
             🃏
           </div>
@@ -104,13 +123,9 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
             const rowDelay = pi * playerStagger;
             return (
               <div
-                key={pi}
+                key={player.id ?? pi}
                 className="bg-emerald-800/80 border border-emerald-600 rounded-xl px-4 py-3 flex items-center gap-4"
-                style={{
-                  animation: `playerRowIn 250ms ease-out both`,
-                  animationDelay: `${rowDelay}ms`,
-                  opacity: 0,
-                }}
+                style={enter('playerRowIn', 250, rowDelay)}
               >
                 {/* Player name */}
                 <div className="w-28 flex-shrink-0">
@@ -118,7 +133,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
                     {player.name}
                   </div>
                   <div className="text-xs text-emerald-400">
-                    {player.isAI ? t('dealing.ai') : t('dealing.you')} · {player.cardCount} {tPlural('game.sidebar.cards', player.cardCount)}
+                    {player.isAI ? t('dealing.ai') : player.isYou ? t('dealing.you') : t('dealing.player')} · {player.cardCount} {tPlural('game.sidebar.cards', player.cardCount)}
                   </div>
                 </div>
 
@@ -132,9 +147,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
                         className="w-7 h-10 rounded-md border border-emerald-400/60 flex-shrink-0 relative overflow-hidden"
                         style={{
                           background: 'linear-gradient(135deg, #1a5c35 0%, #0f3d22 50%, #1a5c35 100%)',
-                          animation: `dealCard 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both`,
-                          animationDelay: `${cardDelay}ms`,
-                          opacity: 0,
+                          ...enter('dealCard', 220, cardDelay),
                         }}
                       >
                         {/* Card back pattern */}
@@ -152,11 +165,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
                   {player.cardCount > VISUAL_CARDS && (
                     <div
                       className="flex items-center justify-center text-emerald-400 text-xs font-medium flex-shrink-0 px-1"
-                      style={{
-                        animation: `dealCard 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both`,
-                        animationDelay: `${rowDelay + VISUAL_CARDS * CARD_STAGGER_MS}ms`,
-                        opacity: 0,
-                      }}
+                      style={enter('dealCard', 220, rowDelay + VISUAL_CARDS * CARD_STAGGER_MS)}
                     >
                       +{player.cardCount - VISUAL_CARDS}
                     </div>
@@ -166,11 +175,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
                 {/* Done indicator */}
                 <div
                   className="w-5 h-5 rounded-full bg-emerald-500 flex-shrink-0 flex items-center justify-center"
-                  style={{
-                    animation: `dealCard 200ms ease-out both`,
-                    animationDelay: `${rowDelay + VISUAL_CARDS * CARD_STAGGER_MS + 40}ms`,
-                    opacity: 0,
-                  }}
+                  style={enter('dealCard', 200, rowDelay + VISUAL_CARDS * CARD_STAGGER_MS + 40)}
                 >
                   <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -184,11 +189,15 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
         {/* Footer */}
         <div
           className="text-center mt-6 text-emerald-300 text-sm"
-          style={{
-            animation: 'shimmer 1s ease-in-out infinite',
-            animationDelay: `${(players.length - 1) * playerStagger + VISUAL_CARDS * CARD_STAGGER_MS + 100}ms`,
-            opacity: 0,
-          }}
+          style={
+            reduced
+              ? undefined
+              : {
+                  animation: 'shimmer 1s ease-in-out infinite',
+                  animationDelay: `${(players.length - 1) * playerStagger + VISUAL_CARDS * CARD_STAGGER_MS + 100}ms`,
+                  opacity: 0,
+                }
+          }
         >
           {t('dealing.gameStarting')}
         </div>

@@ -7,15 +7,15 @@ import { GamePile } from './GamePile';
 import { ConfirmPopup } from './ConfirmPopup';
 import { TakeOptionsPopup } from './TakeOptionsPopup';
 import { CardFlight, type CardFlightRequest } from './CardFlight';
-import { validatePlay, getTakeOptions, getValidMoves, orderCardsForPlay } from '../utils/gameLogic';
+import { validatePlay, getTakeOptions, offersTakeChoice, getValidMoves, orderCardsForPlay } from '../utils/gameLogic';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
-import { animateShake } from '../lib/animations';
+import { animatePopIn, animateShake } from '../lib/animations';
 import {
   initAudio, setMuted, isMuted,
   playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
-import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X, Menu } from 'lucide-react';
 
 interface GameBoardProps {
   gameState: any;
@@ -37,6 +37,11 @@ interface GameBoardProps {
   runAI?: boolean;
   /** Only the host may pause, resume or restart. Defaults to true for local play. */
   hostControls?: boolean;
+  /**
+   * Seats that left the room while the endgame screen was up. Their name keeps
+   * its final ranking, but gets a "left" mark so the rest of the table knows.
+   */
+  leftPlayerIds?: number[];
 }
 
 interface CardPointerGesture {
@@ -166,6 +171,7 @@ export function GameBoard({
   viewerId,
   runAI = true,
   hostControls = true,
+  leftPlayerIds = [],
 }: GameBoardProps) {
   const { t, tPlural } = useTranslation();
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
@@ -178,6 +184,7 @@ export function GameBoard({
   const [flight, setFlight] = useState<CardFlightRequest | null>(null);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showTakeOptions, setShowTakeOptions] = useState(false);
+  const [showPlayerMenu, setShowPlayerMenu] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showHistory, setShowHistory] = useState(true);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
@@ -185,6 +192,7 @@ export function GameBoard({
   const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(null);
   const [mutedState, setMutedState] = useState(() => isMuted());
   const historyContainerRef = useRef<HTMLDivElement>(null);
+  const playerMenuRef = useRef<HTMLDivElement>(null);
   const errorBannerRef = useRef<HTMLDivElement>(null);
   const mobileErrorBannerRef = useRef<HTMLDivElement>(null);
   const flightSequenceRef = useRef(0);
@@ -370,6 +378,10 @@ export function GameBoard({
     animateShake(mobileErrorBannerRef.current);
   }, [error, errorSequence]);
 
+  useEffect(() => {
+    if (showPlayerMenu) animatePopIn(playerMenuRef.current);
+  }, [showPlayerMenu]);
+
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   /** Local play follows the turn; a seated view always shows its own hand. */
   const viewer = viewerId === undefined
@@ -404,14 +416,34 @@ export function GameBoard({
     !currentPlayer.isAI &&
     !currentPlayer.hasFinished &&
     gameState.phase === 'playing';
-  const showsOwnHand = viewerId !== undefined || isMyTurn;
-  const handCardsFaceUp = !!viewer && (!viewer.isAI || allHumanPlayersFinished);
+  /**
+   * A seat that already finished keeps watching the game. While the rest of the
+   * table plays, the active player's hand is laid out in the dock instead.
+   */
+  const spectatingHand = !!viewer?.hasFinished &&
+    (gameState.phase === 'playing' || gameState.phase === 'paused') &&
+    !!currentPlayer &&
+    !currentPlayer.hasFinished;
+  /** The hand the dock shows: the viewer's own, or the active player's while spectating. */
+  const handOwner = spectatingHand ? currentPlayer : viewer;
+  const showsOwnHand = !spectatingHand && (viewerId !== undefined || isMyTurn);
+  const handCardsFaceUp = !!handOwner && (!handOwner.isAI || allHumanPlayersFinished || spectatingHand);
+  /**
+   * Online the room server drives the AI seats, so the local thinking flag never
+   * flips: derive it from the turn instead so the table still shows the AI at work.
+   */
+  const aiThinking = isAIThinking || (!runAI && gameState.phase === 'playing' && !!currentPlayer?.isAI);
   const pile = gameState.pile;
   const pileTopCard = pile[pile.length - 1];
   const options: GameOptions = gameState.options;
 
   const isFirstMove = pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
   const takeOptions = getTakeOptions(pile, options);
+  /**
+   * Only ask "3 or all?" when the answers differ. With four or fewer cards on
+   * the pile the 3-card take is the whole pile, so the choice would be a no-op.
+   */
+  const takeChoiceAvailable = offersTakeChoice(pile, options);
   const validMoves = isMyTurn && viewer ? getValidMoves(viewer.hand, pile) : { canPlay: false, canTake: false };
 
   const isFourNinesStart = gameState.canContinueTurn &&
@@ -520,6 +552,67 @@ export function GameBoard({
       setIsAIThinking(false);
     };
   }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, launchCardFlight, runAI]);
+
+  /**
+   * Remote moves land without any local gesture, so ghost the new top card in
+   * from whoever played it. A take removes the old top instead of covering it,
+   * which is how the two are told apart without leaving the public state.
+   */
+  const previousTopCardRef = useRef<string | null>(gameState.pile[gameState.pile.length - 1]?.id ?? null);
+  const previousPileLengthRef = useRef(gameState.pile.length);
+  useEffect(() => {
+    const pile = gameState.pile;
+    const topCard = pile[pile.length - 1];
+    const previousTopId = previousTopCardRef.current;
+    const previousLength = previousPileLengthRef.current;
+    previousTopCardRef.current = topCard?.id ?? null;
+    previousPileLengthRef.current = pile.length;
+
+    if (runAI || gameState.phase !== 'playing') return;
+
+    // The turn has already advanced by the time the update lands, so the actor
+    // is taken from the move that caused this change rather than the turn seat.
+    const lastMove = gameState.moveHistory[gameState.moveHistory.length - 1];
+    const actorId = lastMove?.playerId ?? gameState.players[gameState.currentPlayerIndex]?.id;
+    const actor = gameState.players.find((player: any) => player.id === actorId);
+    if (!actor || actor.id === viewerId) return;
+
+    const seat = visibleElement(`[data-seat-id="${actor.id}"]`);
+    if (!seat) return;
+
+    // A pickup shrinks the pile: fly the taken cards from the pile to that seat.
+    if (lastMove?.type === 'take' && pile.length < previousLength) {
+      const from = pileFlightTarget();
+      if (!from || lastMove.cards.length === 0) return;
+
+      flightSequenceRef.current += 1;
+      setFlight({
+        id: flightSequenceRef.current,
+        direction: 'toHand',
+        cards: lastMove.cards,
+        from: lastMove.cards.map(() => from),
+        to: seat.getBoundingClientRect(),
+        faceUp: false,
+      });
+      return;
+    }
+
+    if (!topCard || !previousTopId || topCard.id === previousTopId) return;
+    if (!pile.some((card: CardType) => card.id === previousTopId)) return;
+
+    const to = pileFlightTarget();
+    if (!to) return;
+
+    flightSequenceRef.current += 1;
+    setFlight({
+      id: flightSequenceRef.current,
+      direction: 'toPile',
+      cards: [topCard],
+      from: [seat.getBoundingClientRect()],
+      to,
+      faceUp: false,
+    });
+  }, [gameState.pile, gameState.currentPlayerIndex, gameState.moveHistory, gameState.phase, runAI, viewerId]);
 
   const handleCardSelect = (card: CardType) => {
     if (!isMyTurn) return;
@@ -688,7 +781,7 @@ export function GameBoard({
     playClickSound();
     showError(null);
     clearGestureClickSuppression();
-    if (takeOptions.canTake3 && takeOptions.canTakeAll) {
+    if (takeChoiceAvailable) {
       setShowTakeOptions(true);
     } else if (takeOptions.canTakeAll) {
       if (options.skipConfirmations) {
@@ -778,6 +871,21 @@ export function GameBoard({
     onPauseGame();
   };
 
+  /**
+   * Non-hosts get the same menu the paused screen offers, but opening it never
+   * stops the game: only the host can put the room on hold.
+   */
+  const openPlayerMenu = () => {
+    playClickSound();
+    clearGestureClickSuppression();
+    setShowPlayerMenu(true);
+  };
+
+  const closePlayerMenu = () => {
+    playClickSound();
+    setShowPlayerMenu(false);
+  };
+
   const handleResumeClick = () => {
     playClickSound();
     onResumeGame();
@@ -786,6 +894,7 @@ export function GameBoard({
   const handleNavigationConfirm = () => {
     const action = pendingNavigationAction;
     setPendingNavigationAction(null);
+    setShowPlayerMenu(false);
     if (action === 'newGame') onNewGame();
     if (action === 'restartGame') onRestartGame();
   };
@@ -799,6 +908,7 @@ export function GameBoard({
   const handleForfeitConfirm = () => {
     const mode = pendingForfeit;
     setPendingForfeit(null);
+    setShowPlayerMenu(false);
     if (mode === 'self' && localHuman) {
       onForfeitPlayer(localHuman.id);
       // Local play resumes at once; online only the host may resume the room.
@@ -824,6 +934,83 @@ export function GameBoard({
       onConfirm={handleNavigationConfirm}
       onCancel={() => setPendingNavigationAction(null)}
     />
+  );
+
+  /**
+   * The pause menu for everyone who cannot pause. The game keeps running behind
+   * it, so a guest can still forfeit or leave without stopping the table.
+   */
+  const playerMenuDialog = showPlayerMenu && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-900/80 p-4">
+      <div
+        ref={playerMenuRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="player-menu-title"
+        className="w-full max-w-sm rounded-2xl border border-emerald-600 bg-emerald-800 p-6 shadow-2xl touch-manipulation"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 id="player-menu-title" className="flex items-center gap-2 text-lg font-bold text-amber-300">
+            <Menu className="w-4 h-4" />
+            {t('game.menu.title')}
+          </h2>
+          <button
+            type="button"
+            onClick={closePlayerMenu}
+            aria-label={t('game.menu.close')}
+            className="rounded-lg p-2 text-emerald-200 transition-colors hover:bg-emerald-700 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <p className="mb-4 rounded-lg border border-emerald-600 bg-emerald-900/50 px-3 py-2 text-xs text-emerald-300">
+          {t('game.menu.hostOnlyPause')}
+        </p>
+
+        <div className="space-y-3">
+          {forfeitMode === 'self' && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowPlayerMenu(false);
+                requestForfeit();
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-400 bg-red-600 py-3 text-sm font-bold text-white transition-colors hover:bg-red-500"
+            >
+              <Flag className="w-4 h-4" />
+              {t('game.paused.forfeit')}
+            </button>
+          )}
+
+          <button
+            type="button"
+            aria-pressed={!mutedState}
+            onClick={() => {
+              const next = !mutedState;
+              setMutedState(next);
+              setMuted(next);
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 py-3 text-sm text-emerald-100 transition-colors hover:bg-emerald-600"
+          >
+            {mutedState ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {t(mutedState ? 'game.topBar.unmute' : 'game.topBar.mute')}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowPlayerMenu(false);
+              requestNewGame();
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 py-3 text-sm text-emerald-100 transition-colors hover:bg-emerald-600"
+          >
+            <Home className="w-4 h-4" />
+            {t('game.paused.newGame')}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   const moveHistoryEntries = gameState.moveHistory.length === 0 ? (
@@ -905,6 +1092,11 @@ export function GameBoard({
                   )}
                   {index === 0 && (
                     <span className="text-xs font-bold flex items-center gap-1"><Crown className="w-3 h-3" /> {t('game.finished.winner')}</span>
+                  )}
+                  {leftPlayerIds.includes(player.id) && (
+                    <span className="rounded bg-black/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                      {t('game.finished.left')}
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-1 text-xs sm:text-sm">
@@ -1026,7 +1218,7 @@ export function GameBoard({
     );
   }
 
-  const shouldShowHand = !!viewer && !viewer.hasFinished;
+  const shouldShowHand = !!handOwner && (spectatingHand || !handOwner.hasFinished);
   const draggedCards = draggingCardId && viewer
     ? selectedCards.some(card => card.id === draggingCardId)
       ? selectedCards
@@ -1059,15 +1251,13 @@ export function GameBoard({
               <span className="text-white font-mono text-sm sm:text-lg">{formatTime(elapsedTime)}</span>
             </div>
 
-            {hostControls && (
-              <button
-                onClick={handlePauseClick}
-                className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
-              >
-                <Pause className="w-4 h-4" />
-                {t('game.topBar.pause')}
-              </button>
-            )}
+            <button
+              onClick={hostControls ? handlePauseClick : openPlayerMenu}
+              className="bg-emerald-700 border border-emerald-500 text-emerald-100 hover:bg-emerald-600 hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
+            >
+              {hostControls ? <Pause className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {t(hostControls ? 'game.topBar.pause' : 'game.menu.title')}
+            </button>
 
             <button
               onClick={requestNewGame}
@@ -1090,6 +1280,7 @@ export function GameBoard({
             return (
               <div
                 key={player.id}
+                data-seat-id={player.id}
                 className={`flex min-w-[88px] max-w-[112px] flex-1 basis-24 items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[11px] ${
                   isCurrent
                     ? 'border-amber-400 bg-amber-500/20 text-amber-200'
@@ -1117,6 +1308,7 @@ export function GameBoard({
             return (
               <div
                 key={player.id}
+                data-seat-id={player.id}
                 className={`flex-shrink-0 rounded-lg p-2 border transition-all ${
                   isCurrent
                     ? 'border-amber-400 bg-amber-500/10'
@@ -1159,7 +1351,7 @@ export function GameBoard({
               <span className="text-emerald-300 text-xs sm:text-sm">{t('game.center.currentTurn')}</span>
               <span className="text-amber-300 font-bold text-sm sm:text-lg">{currentPlayer?.name}</span>
               {currentPlayer?.isAI && <span className="text-[10px] sm:text-xs text-emerald-400">({t('game.sidebar.ai')})</span>}
-              {isAIThinking && <span className="text-amber-400 text-xs sm:text-sm animate-pulse">{t('game.center.thinking')}</span>}
+              {aiThinking && <span className="text-amber-400 text-xs sm:text-sm animate-pulse">{t('game.center.thinking')}</span>}
             </div>
           </div>
 
@@ -1299,7 +1491,7 @@ export function GameBoard({
             <span>{t('game.center.currentTurn')}</span>
             <span className="font-bold text-amber-300">{currentPlayer.name}</span>
             {currentPlayer.isAI && <span className="text-[10px] text-emerald-400">({t('game.sidebar.ai')})</span>}
-            {isAIThinking && <span className="animate-pulse text-amber-400">{t('game.center.thinking')}</span>}
+            {aiThinking && <span className="animate-pulse text-amber-400">{t('game.center.thinking')}</span>}
           </div>
         </div>
       )}
@@ -1309,12 +1501,12 @@ export function GameBoard({
         <div className="lg:hidden flex-shrink-0 border-t border-emerald-600 bg-emerald-800 px-2 pt-1.5 pb-2">
           <div className="mb-1 flex items-center justify-between gap-2 text-xs text-emerald-200">
             <span className="font-medium">
-              {showsOwnHand ? t('game.hand.your') : t('game.hand.their', { name: viewer.name })} {tPlural('game.hand.hand', viewer.hand.length)}
+              {showsOwnHand ? t('game.hand.your') : t('game.hand.their', { name: handOwner.name })} {tPlural('game.hand.hand', handOwner.hand.length)}
             </span>
             <span className="text-emerald-400">{showsOwnHand ? t('game.mobile.swipeCards') : ''}</span>
           </div>
           <div data-hand-drop-zone="true" className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5 touch-pan-x">
-            {viewer.hand.map((card: CardType) => {
+            {handOwner.hand.map((card: CardType) => {
               const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
               const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
               const suitSymbol = card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠';
@@ -1424,15 +1616,13 @@ export function GameBoard({
         </div>
 
         <div className="flex justify-center gap-2">
-          {hostControls && (
-            <button
-              onClick={handlePauseClick}
-              className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
-            >
-              <Pause className="h-3.5 w-3.5" />
-              {t('game.mobile.pause')}
-            </button>
-          )}
+          <button
+            onClick={hostControls ? handlePauseClick : openPlayerMenu}
+            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700 px-4 py-2 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-600"
+          >
+            {hostControls ? <Pause className="h-3.5 w-3.5" /> : <Menu className="h-3.5 w-3.5" />}
+            {t(hostControls ? 'game.mobile.pause' : 'game.menu.title')}
+          </button>
           <button
             onClick={() => {
               playClickSound();
@@ -1455,11 +1645,11 @@ export function GameBoard({
           <div data-hand-drop-zone="true" className="max-w-5xl mx-auto">
             <div className="text-center mb-3">
               <span className="text-emerald-300 text-sm">
-                {showsOwnHand ? t('game.hand.your') : t('game.hand.their', { name: viewer.name })} {tPlural('game.hand.hand', viewer.hand.length)}
+                {showsOwnHand ? t('game.hand.your') : t('game.hand.their', { name: handOwner.name })} {tPlural('game.hand.hand', handOwner.hand.length)}
               </span>
             </div>
             <PlayerHand
-              hand={viewer.hand}
+              hand={handOwner.hand}
               selectedCards={selectedCards}
               onCardSelect={handleCardSelect}
               onCardPointerDown={handleCardPointerDown}
@@ -1507,6 +1697,8 @@ export function GameBoard({
         </div>
       )}
       {navigationConfirmDialog}
+      {forfeitConfirmDialog}
+      {playerMenuDialog}
       {showMobileHistory && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 lg:hidden"
