@@ -549,8 +549,14 @@ export class BobbyRoom extends Server<Env> {
       this.sendError(seat, 'notHost');
       return;
     }
-    if (this.state.phase !== 'finished' || !this.state.game) return;
+    if (!this.state.game) return;
 
+    // The restart button lives on the pause screen, so a paused game is just as
+    // restartable as a finished one; anything else (setup) has nothing to deal.
+    const phase = this.state.game.phase;
+    if (phase !== 'playing' && phase !== 'paused' && phase !== 'finished') return;
+
+    this.clearAITimer();
     this.dealNewGame();
     await this.commitGame();
   }
