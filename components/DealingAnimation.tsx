@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { playCardSound } from '../utils/sounds';
 import { prefersReducedMotion } from '../lib/animations';
 import { useTranslation } from '../lib/i18n';
@@ -35,10 +35,15 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
   const { t, tPlural } = useTranslation();
   const calledRef = useRef(false);
   const reduced = prefersReducedMotion();
+  /**
+   * Freeze the hand sizes at deal time. Online the server keeps playing while
+   * this screen is up, so live counts would drop a card mid-shuffle.
+   */
+  const [dealtPlayers] = useState(players);
 
-  const playerStagger = getPlayerStagger(players.length);
+  const playerStagger = getPlayerStagger(dealtPlayers.length);
   const totalDuration =
-    (players.length - 1) * playerStagger +
+    (dealtPlayers.length - 1) * playerStagger +
     VISUAL_CARDS * CARD_STAGGER_MS +
     COMPLETE_EXTRA_MS;
 
@@ -46,7 +51,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     if (!reduced) {
-      players.forEach((_, pi) => {
+      dealtPlayers.forEach((_, pi) => {
         for (let ci = 0; ci < VISUAL_CARDS; ci++) {
           const delay = pi * playerStagger + ci * CARD_STAGGER_MS;
           timers.push(setTimeout(() => playCardSound(), delay));
@@ -113,13 +118,13 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
             {t('dealing.title')}
           </h2>
           <p className="text-emerald-400 text-sm mt-1">
-            {tPlural('dealing.players', players.length)} · {tPlural('dealing.cardsEach', players[0]?.cardCount ?? 0)}
+            {tPlural('dealing.players', dealtPlayers.length)} · {tPlural('dealing.cardsEach', dealtPlayers[0]?.cardCount ?? 0)}
           </p>
         </div>
 
         {/* Player rows */}
         <div className="space-y-3">
-          {players.map((player, pi) => {
+          {dealtPlayers.map((player, pi) => {
             const rowDelay = pi * playerStagger;
             return (
               <div
@@ -194,7 +199,7 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
               ? undefined
               : {
                   animation: 'shimmer 1s ease-in-out infinite',
-                  animationDelay: `${(players.length - 1) * playerStagger + VISUAL_CARDS * CARD_STAGGER_MS + 100}ms`,
+                  animationDelay: `${(dealtPlayers.length - 1) * playerStagger + VISUAL_CARDS * CARD_STAGGER_MS + 100}ms`,
                   opacity: 0,
                 }
           }

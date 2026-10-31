@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { useTranslation } from '../lib/i18n';
 import { Card as CardType, GameOptions, PlayerMove } from '../types/game';
 import { PlayerHand } from './PlayerHand';
@@ -9,7 +9,7 @@ import { TakeOptionsPopup } from './TakeOptionsPopup';
 import { CardFlight, type CardFlightRequest } from './CardFlight';
 import { validatePlay, getTakeOptions, offersTakeChoice, getValidMoves, orderCardsForPlay } from '../utils/gameLogic';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
-import { animatePopIn, animateShake } from '../lib/animations';
+import { animatePopIn, animateShake, useHandArrivals } from '../lib/animations';
 import {
   initAudio, setMuted, isMuted,
   playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
@@ -158,7 +158,7 @@ function handLeftTarget(): DOMRect | null {
 }
 
 export function GameBoard({
-  gameState,
+  gameState: liveGameState,
   onPlayCards,
   onTakeCards,
   onEndTurn,
@@ -174,6 +174,16 @@ export function GameBoard({
   leftPlayerIds = [],
 }: GameBoardProps) {
   const { t, tPlural } = useTranslation();
+  /**
+   * The board draws from a copy of the parent state that is allowed to lag
+   * behind. A play or pickup keeps the acting player's turn on screen while the
+   * ghost cards fly, then the waiting state is shown: the animation finishes
+   * before the turn ends.
+   */
+  const [gameState, setGameState] = useState<any>(liveGameState);
+  const pendingStateRef = useRef<any>(null);
+  const lastAnimatedMoveRef = useRef<string | null>(null);
+  const flightActiveRef = useRef(false);
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
@@ -208,38 +218,31 @@ export function GameBoard({
     if (message) setErrorSequence((sequence) => sequence + 1);
   };
 
+  /** Start a ghost-card flight. The board state waits until it lands. */
+  const startFlight = useCallback((request: Omit<CardFlightRequest, 'id'>) => {
+    flightSequenceRef.current += 1;
+    flightActiveRef.current = true;
+    setFlight({ ...request, id: flightSequenceRef.current });
+  }, []);
+
+  /** Abort a flight and drop whatever state was waiting behind it. */
+  const cancelFlight = useCallback(() => {
+    flightActiveRef.current = false;
+    pendingStateRef.current = null;
+    setFlight(null);
+  }, []);
+
   /**
-   * Fly ghost cards between the hand and the pile (or back) while the real state updates.
-   *
-   * Face-up ghosts start at the actual card slot. Face-down ghosts start at a random
-   * point in the hand so the starting position cannot reveal which card left the hand.
+   * The flight landed: reveal the state that was waiting behind it. This is
+   * what keeps the acting player's turn on screen until the cards arrive.
    */
-  const launchCardFlight = useCallback(
-    (cards: CardType[], direction: 'toPile' | 'toHand', faceUp = true) => {
-      if (cards.length === 0) return;
-      const to = direction === 'toPile' ? pileFlightTarget() : handLeftTarget();
-      if (!to) return;
-
-      let from: DOMRect[];
-      if (direction === 'toHand') {
-        const pileRect = pileFlightTarget();
-        if (!pileRect) return;
-        from = cards.map(() => pileRect);
-      } else if (faceUp) {
-        // Real slots: the played card leaves exactly where it sat in the hand.
-        from = cards
-          .map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
-          .filter((rect): rect is DOMRect => rect !== null);
-      } else {
-        from = randomizedHandRects(cards.length);
-      }
-      if (from.length === 0) return;
-
-      flightSequenceRef.current += 1;
-      setFlight({ id: flightSequenceRef.current, direction, cards, from, to, faceUp });
-    },
-    [],
-  );
+  const handleFlightComplete = useCallback(() => {
+    flightActiveRef.current = false;
+    const pending = pendingStateRef.current;
+    pendingStateRef.current = null;
+    setFlight(null);
+    if (pending) setGameState(pending);
+  }, []);
 
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -415,7 +418,9 @@ export function GameBoard({
     currentPlayer.id === viewer.id &&
     !currentPlayer.isAI &&
     !currentPlayer.hasFinished &&
-    gameState.phase === 'playing';
+    gameState.phase === 'playing' &&
+    // Ignore taps while this seat's own cards are still flying.
+    !flight;
   /**
    * A seat that already finished keeps watching the game. While the rest of the
    * table plays, the active player's hand is laid out in the dock instead.
@@ -428,6 +433,118 @@ export function GameBoard({
   const handOwner = spectatingHand ? currentPlayer : viewer;
   const showsOwnHand = !spectatingHand && (viewerId !== undefined || isMyTurn);
   const handCardsFaceUp = !!handOwner && (!handOwner.isAI || allHumanPlayersFinished || spectatingHand);
+
+  /** New cards slide into the mobile dock when a pickup fills the hand. */
+  const mobileHandRef = useHandArrivals<HTMLDivElement>(handOwner?.hand ?? [], handOwner?.id ?? null);
+
+  /**
+   * Hold the previous frame while a move animates.
+   *
+   * The parent (or the room server) may already have advanced the game, but the
+   * board keeps drawing the acting player's turn until the ghost cards land.
+   * That way a play or pickup is always shown before the turn ends, and the
+   * taken cards visibly fill the hand afterwards. The pending state is applied
+   * by `handleFlightComplete`.
+   */
+  useLayoutEffect(() => {
+    if (liveGameState === gameState) return;
+
+    const restart = liveGameState.gameStartTime !== gameState.gameStartTime;
+    const shownMoves = gameState.moveHistory as PlayerMove[];
+    const liveMoves = liveGameState.moveHistory as PlayerMove[];
+    const lastMove = liveMoves[liveMoves.length - 1];
+    const grew = liveMoves.length > shownMoves.length;
+
+    // Restarts and phase changes (pause/finish) take over the screen at once.
+    if (restart || liveGameState.phase !== 'playing') {
+      cancelFlight();
+      setGameState(liveGameState);
+      return;
+    }
+
+    // Rule/seat/version updates can arrive mid-flight; show them when it lands.
+    if (!grew || !lastMove || lastMove.cards.length === 0) {
+      if (flightActiveRef.current) {
+        pendingStateRef.current = liveGameState;
+      } else {
+        setGameState(liveGameState);
+      }
+      return;
+    }
+
+    const moveKey = `${liveGameState.gameStartTime}:${liveMoves.length}`;
+    if (lastAnimatedMoveRef.current === moveKey) {
+      // Already handed off (or reduced motion); settle the display now.
+      setGameState(liveGameState);
+      return;
+    }
+
+    if (flightActiveRef.current) {
+      // A flight is on screen; jump to the newest state once it lands.
+      pendingStateRef.current = liveGameState;
+      return;
+    }
+
+    const actor = gameState.players.find((p: any) => p.id === lastMove.playerId);
+    if (!actor) {
+      setGameState(liveGameState);
+      return;
+    }
+
+    // The dock shows the actor's own hand (self) or the hand being spectated.
+    const actorHandShown = !!handOwner && handOwner.id === actor.id;
+    const canSeeActorHand = actorHandShown && handCardsFaceUp;
+    const seatRect = visibleElement(`[data-seat-id="${actor.id}"]`)?.getBoundingClientRect() ?? null;
+    let request: Omit<CardFlightRequest, 'id'> | null = null;
+
+    if (lastMove.type === 'take') {
+      const from = pileFlightTarget();
+      // While spectating, the taken cards land in the revealed hand, not the seat.
+      const to = actorHandShown ? handLeftTarget() : seatRect;
+      if (from && to) {
+        request = {
+          direction: 'toHand',
+          cards: lastMove.cards,
+          from: lastMove.cards.map(() => from),
+          to,
+          faceUp: actorHandShown,
+        };
+      }
+    } else {
+      const to = pileFlightTarget();
+      if (to) {
+        let from: DOMRect[] = [];
+        if (canSeeActorHand) {
+          // Real slots: the played card leaves exactly where it sat in the hand.
+          from = lastMove.cards
+            .map(card => visibleRect(`[data-card-id="${CSS.escape(card.id)}"]`))
+            .filter((rect): rect is DOMRect => rect !== null);
+        } else if (actorHandShown) {
+          // Face-down AI hand: never reveal which slot the card came from.
+          from = randomizedHandRects(lastMove.cards.length);
+        }
+        if (from.length === 0 && seatRect) from = lastMove.cards.map(() => seatRect);
+        if (from.length > 0) {
+          request = {
+            direction: 'toPile',
+            cards: lastMove.cards,
+            from,
+            to,
+            faceUp: canSeeActorHand,
+          };
+        }
+      }
+    }
+
+    lastAnimatedMoveRef.current = moveKey;
+    if (!request) {
+      setGameState(liveGameState);
+      return;
+    }
+
+    pendingStateRef.current = liveGameState;
+    startFlight(request);
+  }, [liveGameState, gameState, handOwner, handCardsFaceUp, startFlight, cancelFlight]);
   /**
    * Online the room server drives the AI seats, so the local thinking flag never
    * flips: derive it from the turn instead so the table still shows the AI at work.
@@ -507,18 +624,12 @@ export function GameBoard({
         if (validation.valid) {
           playCardSound(aiMove.cards.length);
           if (validation.continueTurn) playComboSound();
-          // Only hide the origin while the AI hand is face down.
-          const humansAllFinished = state.players
-            .filter((p: any) => !p.isAI)
-            .every((p: any) => p.hasFinished);
-          launchCardFlight(aiMove.cards, 'toPile', humansAllFinished);
           onPlayCardsRef.current(player.id, aiMove.cards, validation.continueTurn || false);
         } else {
           const takeOpts = getTakeOptions(pile, state.options);
           const count = takeOpts.canTake3 ? takeOpts.take3Count : takeOpts.takeAllCount;
           if (count > 0) {
             playTakeSound();
-            launchCardFlight(state.pile.slice(-count), 'toHand');
             onTakeCardsRef.current(player.id, count);
           } else {
             onPlayCardsRef.current(player.id, [], false);
@@ -532,7 +643,6 @@ export function GameBoard({
 
         if (count > 0) {
           playTakeSound();
-          launchCardFlight(state.pile.slice(-count), 'toHand');
           onTakeCardsRef.current(player.id, count);
         } else {
           onPlayCardsRef.current(player.id, [], false);
@@ -551,68 +661,7 @@ export function GameBoard({
       clearTimeout(timeout);
       setIsAIThinking(false);
     };
-  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, launchCardFlight, runAI]);
-
-  /**
-   * Remote moves land without any local gesture, so ghost the new top card in
-   * from whoever played it. A take removes the old top instead of covering it,
-   * which is how the two are told apart without leaving the public state.
-   */
-  const previousTopCardRef = useRef<string | null>(gameState.pile[gameState.pile.length - 1]?.id ?? null);
-  const previousPileLengthRef = useRef(gameState.pile.length);
-  useEffect(() => {
-    const pile = gameState.pile;
-    const topCard = pile[pile.length - 1];
-    const previousTopId = previousTopCardRef.current;
-    const previousLength = previousPileLengthRef.current;
-    previousTopCardRef.current = topCard?.id ?? null;
-    previousPileLengthRef.current = pile.length;
-
-    if (runAI || gameState.phase !== 'playing') return;
-
-    // The turn has already advanced by the time the update lands, so the actor
-    // is taken from the move that caused this change rather than the turn seat.
-    const lastMove = gameState.moveHistory[gameState.moveHistory.length - 1];
-    const actorId = lastMove?.playerId ?? gameState.players[gameState.currentPlayerIndex]?.id;
-    const actor = gameState.players.find((player: any) => player.id === actorId);
-    if (!actor || actor.id === viewerId) return;
-
-    const seat = visibleElement(`[data-seat-id="${actor.id}"]`);
-    if (!seat) return;
-
-    // A pickup shrinks the pile: fly the taken cards from the pile to that seat.
-    if (lastMove?.type === 'take' && pile.length < previousLength) {
-      const from = pileFlightTarget();
-      if (!from || lastMove.cards.length === 0) return;
-
-      flightSequenceRef.current += 1;
-      setFlight({
-        id: flightSequenceRef.current,
-        direction: 'toHand',
-        cards: lastMove.cards,
-        from: lastMove.cards.map(() => from),
-        to: seat.getBoundingClientRect(),
-        faceUp: false,
-      });
-      return;
-    }
-
-    if (!topCard || !previousTopId || topCard.id === previousTopId) return;
-    if (!pile.some((card: CardType) => card.id === previousTopId)) return;
-
-    const to = pileFlightTarget();
-    if (!to) return;
-
-    flightSequenceRef.current += 1;
-    setFlight({
-      id: flightSequenceRef.current,
-      direction: 'toPile',
-      cards: [topCard],
-      from: [seat.getBoundingClientRect()],
-      to,
-      faceUp: false,
-    });
-  }, [gameState.pile, gameState.currentPlayerIndex, gameState.moveHistory, gameState.phase, runAI, viewerId]);
+  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, runAI]);
 
   const handleCardSelect = (card: CardType) => {
     if (!isMyTurn) return;
@@ -740,7 +789,6 @@ export function GameBoard({
     }
     playCardSound(orderedCards.length);
     if (validation.continueTurn) playComboSound();
-    launchCardFlight(orderedCards, 'toPile');
     onPlayCards(currentPlayer.id, orderedCards, validation.continueTurn || false);
     setSelectedCards([]);
     return true;
@@ -750,7 +798,6 @@ export function GameBoard({
   const applyTake = (action: 'take3' | 'takeAll') => {
     const count = action === 'take3' ? takeOptions.take3Count : takeOptions.takeAllCount;
     playTakeSound();
-    launchCardFlight(pile.slice(-count), 'toHand');
     onTakeCards(currentPlayer.id, count);
   };
 
@@ -1224,6 +1271,10 @@ export function GameBoard({
       ? selectedCards
       : viewer.hand.filter((card: CardType) => card.id === draggingCardId)
     : [];
+  /** Played cards stay in the dock until the state lands; hide them under the ghost. */
+  const hiddenCardIds = flight?.direction === 'toPile'
+    ? new Set<string>(flight.cards.map(card => card.id))
+    : null;
 
   const canTakeCards = validMoves.canTake && !gameState.canContinueTurn;
 
@@ -1505,12 +1556,13 @@ export function GameBoard({
             </span>
             <span className="text-emerald-400">{showsOwnHand ? t('game.mobile.swipeCards') : ''}</span>
           </div>
-          <div data-hand-drop-zone="true" className="flex flex-nowrap justify-start gap-1.5 overflow-x-auto pb-0.5 touch-pan-x">
+          <div ref={mobileHandRef} data-hand-drop-zone="true" className="flex flex-nowrap justify-start gap-2 overflow-x-auto pb-0.5 touch-pan-x">
             {handOwner.hand.map((card: CardType) => {
               const isSelected = handCardsFaceUp && selectedCards.some(c => c.id === card.id);
               const valueStr = card.value === 11 ? 'J' : card.value === 12 ? 'Q' : card.value === 13 ? 'K' : card.value === 14 ? 'A' : card.value.toString();
               const suitSymbol = card.suit === 'hearts' ? '♥' : card.suit === 'diamonds' ? '♦' : card.suit === 'clubs' ? '♣' : '♠';
               const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
+              const hidden = hiddenCardIds?.has(card.id) ?? false;
 
               if (!handCardsFaceUp) {
                 return (
@@ -1518,9 +1570,10 @@ export function GameBoard({
                     key={card.id}
                     data-card-id={card.id}
                     aria-hidden="true"
-                    className="flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 items-center justify-center rounded-lg border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
+                    style={hidden ? { visibility: 'hidden' } : undefined}
+                    className="flex aspect-[3/4] w-[18vw] max-w-[4.5rem] flex-shrink-0 items-center justify-center rounded-xl border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
                   >
-                    <div className="h-11 w-8 rounded border border-blue-300 bg-blue-500" />
+                    <div className="h-[52%] w-[46%] rounded border border-blue-300 bg-blue-500" />
                   </div>
                 );
               }
@@ -1532,17 +1585,18 @@ export function GameBoard({
                   type="button"
                   aria-label={getCardDisplayName(card)}
                   aria-pressed={isSelected}
+                  style={hidden ? { visibility: 'hidden' } : undefined}
                   onPointerDown={event => handleCardPointerDown(card, event)}
                   onClick={() => handleCardSelect(card)}
                   disabled={!isMyTurn}
-                  className={`relative flex aspect-[3/4] w-[12vw] max-w-12 flex-shrink-0 select-none flex-col items-center justify-center rounded-lg border-2 text-sm font-bold shadow-sm transition-all ${draggingCardId === card.id ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${
+                  className={`relative flex aspect-[3/4] w-[18vw] max-w-[4.5rem] flex-shrink-0 select-none flex-col items-center justify-center rounded-xl border-2 font-bold shadow-sm transition-all ${draggingCardId === card.id ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${
                     isSelected
                       ? 'scale-105 border-amber-400 bg-amber-50 shadow-md'
                       : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'
                   } ${!isMyTurn ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
-                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-base leading-none`}>{valueStr}</span>
-                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} mt-0.5 text-lg leading-none`}>{suitSymbol}</span>
+                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} text-xl leading-none`}>{valueStr}</span>
+                  <span className={`${isRed ? 'text-red-600' : 'text-slate-900'} mt-1 text-2xl leading-none`}>{suitSymbol}</span>
                 </button>
               );
             })}
@@ -1656,6 +1710,8 @@ export function GameBoard({
               draggingCardId={draggingCardId}
               disabled={!isMyTurn}
               faceUp={handCardsFaceUp}
+              hiddenCardIds={hiddenCardIds}
+              ownerId={handOwner.id}
             />
           </div>
         </div>
@@ -1677,7 +1733,7 @@ export function GameBoard({
         />
       )}
       {flight && (
-        <CardFlight request={flight} onComplete={() => setFlight(null)} />
+        <CardFlight request={flight} onComplete={handleFlightComplete} />
       )}
       {draggedCards.length > 0 && dragPreviewPosition && (
         <div

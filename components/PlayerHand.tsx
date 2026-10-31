@@ -2,6 +2,7 @@ import { Card as CardType } from '../types/game';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Card } from './Card';
 import { sortHand } from '../utils/deckUtils';
+import { useHandArrivals } from '../lib/animations';
 
 interface PlayerHandProps {
   hand: CardType[];
@@ -11,13 +12,28 @@ interface PlayerHandProps {
   draggingCardId?: string;
   disabled?: boolean;
   faceUp?: boolean;
+  /** Cards currently flying as ghosts; keep their slots but hide the faces. */
+  hiddenCardIds?: Set<string> | null;
+  /** Seat whose hand this is; stops arrivals from replaying on hand swaps. */
+  ownerId?: number | null;
 }
 
-export function PlayerHand({ hand, selectedCards, onCardSelect, onCardPointerDown, draggingCardId, disabled, faceUp = true }: PlayerHandProps) {
+export function PlayerHand({
+  hand,
+  selectedCards,
+  onCardSelect,
+  onCardPointerDown,
+  draggingCardId,
+  disabled,
+  faceUp = true,
+  hiddenCardIds,
+  ownerId,
+}: PlayerHandProps) {
   const sortedHand = sortHand(hand);
+  const handRef = useHandArrivals<HTMLDivElement>(hand, ownerId);
 
   return (
-    <div className="flex flex-wrap gap-2 justify-center max-w-5xl mx-auto">
+    <div ref={handRef} className="flex flex-wrap gap-2 justify-center max-w-5xl mx-auto">
       {sortedHand.map((card) => (
         <Card
           key={card.id}
@@ -27,6 +43,7 @@ export function PlayerHand({ hand, selectedCards, onCardSelect, onCardPointerDow
           isSelected={faceUp && selectedCards.some(c => c.id === card.id)}
           isDragging={draggingCardId === card.id}
           disabled={disabled || !faceUp}
+          hidden={hiddenCardIds?.has(card.id) ?? false}
           size="md"
         />
       ))}

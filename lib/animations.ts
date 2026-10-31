@@ -6,7 +6,7 @@
  * properties where the element already has a Tailwind transform, so the class
  * transform keeps composing instead of being overwritten.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -81,6 +81,65 @@ export function usePileLand(cardId: string | undefined) {
     if (!cardId) return;
     animatePileLand(ref.current);
   }, [cardId]);
+
+  return ref;
+}
+
+/**
+ * Ref for a hand container; cards that appear after the first render slide in,
+ * so a pickup visibly fills the hand instead of popping into it.
+ *
+ * `ownerKey` resolves to the seat whose hand is on screen. When it changes the
+ * new hand is adopted silently: swapping from one player's hand to the next
+ * must not look like a full-hand pickup.
+ */
+export function useHandArrivals<T extends HTMLElement = HTMLDivElement>(
+  cards: Array<{ id: string }>,
+  ownerKey?: string | number | null,
+) {
+  const ref = useRef<T>(null);
+  const seenRef = useRef<Set<string> | null>(null);
+  const ownerRef = useRef<string | number | null | undefined>(ownerKey);
+  const cardKey = cards.map(card => card.id).join('|');
+
+  useLayoutEffect(() => {
+    const ids = cards.map(card => card.id);
+
+    if (seenRef.current === null || ownerRef.current !== ownerKey) {
+      ownerRef.current = ownerKey;
+      seenRef.current = new Set(ids);
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      seenRef.current = new Set(ids);
+      return;
+    }
+
+    const nodes = new Map<string, HTMLElement>();
+    ref.current?.querySelectorAll<HTMLElement>('[data-card-id]').forEach(node => {
+      const id = node.dataset.cardId;
+      if (id) nodes.set(id, node);
+    });
+
+    let index = 0;
+    for (const id of ids) {
+      if (seenRef.current.has(id)) continue;
+      const node = nodes.get(id);
+      if (!node) continue;
+      node.animate(
+        [
+          { opacity: 0, transform: 'translateY(18px) scale(0.82)' },
+          { opacity: 1, transform: 'translateY(0) scale(1)' },
+        ],
+        { duration: 260, delay: index * 45, easing: EASE_OUT },
+      );
+      index += 1;
+    }
+
+    seenRef.current = new Set(ids);
+    // cardKey identifies the hand; the array itself is rebuilt every render.
+  }, [cardKey, ownerKey]);
 
   return ref;
 }
