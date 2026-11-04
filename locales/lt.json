@@ -262,9 +262,7 @@
       "resume": "Tęsti žaidimą",
       "quickPlay": {
         "title": "Greitas žaidimas",
-        "on": "Įjungta",
-        "off": "Išjungta",
-        "desc": "Praleidžiamas ėjimo patvirtinimas. Imant kortas vis tiek bus rodomas pasirinkimas imti 3 arba visas."
+        "desc": "Praleidžiamas patvirtinimas. Imant kortas vis tiek klausiama 3 arba visų."
       },
       "gameRules": "Žaidimo taisyklės",
       "forfeit": "Pasiduoti",

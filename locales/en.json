@@ -254,9 +254,7 @@
       "resume": "Resume Game",
       "quickPlay": {
         "title": "Quick Play",
-        "on": "On",
-        "off": "Off",
-        "desc": "Skip the move confirmation. Starting a pickup still asks between 3 cards or all cards."
+        "desc": "Skip the confirmation step. Pickups still ask 3 or all."
       },
       "gameRules": "Game Rules",
       "forfeit": "Forfeit Game",

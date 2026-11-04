@@ -1091,35 +1091,47 @@ export function GameBoard({
    * Quick Play is a personal preference, not a room rule. It is offered both on
    * the paused screen and in the guest menu, since a guest cannot pause.
    */
+  const quickPlayOn = !!gameState.options.skipConfirmations;
   const quickPlayControl = onSetQuickPlay ? (
-    <div className="rounded-lg border border-emerald-600 bg-emerald-900/40 p-3">
-      <button
-        type="button"
-        aria-pressed={!!gameState.options.skipConfirmations}
-        onClick={() => {
-          playClickSound();
-          onSetQuickPlay(!gameState.options.skipConfirmations);
-        }}
-        className="flex w-full items-center justify-between gap-3 text-left"
+    <button
+      type="button"
+      role="switch"
+      aria-checked={quickPlayOn}
+      aria-label={t('game.paused.quickPlay.title')}
+      onClick={() => {
+        playClickSound();
+        onSetQuickPlay(!quickPlayOn);
+      }}
+      className="flex w-full items-center gap-3 rounded-xl border border-emerald-600/60 bg-emerald-900/40 px-3 py-3 text-left transition-colors hover:border-emerald-500 hover:bg-emerald-900/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800"
+    >
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+          quickPlayOn ? 'bg-amber-400/20 text-amber-300' : 'bg-emerald-800 text-emerald-300'
+        }`}
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-emerald-100 sm:text-base">
-          <Zap className="w-4 h-4 text-amber-300" />
+        <Zap className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-emerald-50">
           {t('game.paused.quickPlay.title')}
         </span>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-            gameState.options.skipConfirmations
-              ? 'bg-amber-400 text-emerald-900'
-              : 'bg-emerald-950 text-emerald-300'
-          }`}
-        >
-          {t(gameState.options.skipConfirmations ? 'game.paused.quickPlay.on' : 'game.paused.quickPlay.off')}
+        <span className="mt-0.5 block text-balance text-xs leading-snug text-emerald-300/80">
+          {t('game.paused.quickPlay.desc')}
         </span>
-      </button>
-      <p className="mt-2 text-left text-xs leading-snug text-emerald-300/80">
-        {t('game.paused.quickPlay.desc')}
-      </p>
-    </div>
+      </span>
+      <span
+        aria-hidden="true"
+        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 ${
+          quickPlayOn ? 'bg-amber-400' : 'bg-emerald-700'
+        }`}
+      >
+        <span
+          className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            quickPlayOn ? 'translate-x-6' : 'translate-x-0'
+          }`}
+        />
+      </span>
+    </button>
   ) : null;
 
   /**
