@@ -1151,7 +1151,7 @@ export function GameBoard({
         </div>
 
         <p className="mb-4 rounded-lg border border-emerald-600 bg-emerald-900/50 px-3 py-2 text-xs text-emerald-300">
-          {t('game.menu.hostOnlyPause')}
+          {t(gameState.phase === 'paused' ? 'game.paused.waitingHost' : 'game.menu.hostOnlyPause')}
         </p>
 
         <div className="space-y-3">
@@ -1324,7 +1324,7 @@ export function GameBoard({
     );
   }
 
-  if (gameState.phase === 'paused') {
+  if (gameState.phase === 'paused' && hostControls) {
     return (
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
         <div className="max-h-[100dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-emerald-600 bg-emerald-800 p-6 text-center shadow-2xl sm:p-8">
@@ -1464,6 +1464,14 @@ export function GameBoard({
           </div>
         </div>
       </div>
+
+      {/* Guests keep the table and their hand on screen while the host has the game paused. */}
+      {gameState.phase === 'paused' && !hostControls && (
+        <div className="flex flex-shrink-0 items-center justify-center gap-2 border-b border-amber-400/40 bg-amber-500/15 px-3 py-2 text-center text-xs text-amber-200 sm:text-sm">
+          <Pause className="w-4 h-4 shrink-0" />
+          <span>{t('game.paused.waitingHost')}</span>
+        </div>
+      )}
 
       {/* Main game area */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
