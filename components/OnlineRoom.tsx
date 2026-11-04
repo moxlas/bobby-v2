@@ -4,7 +4,7 @@ import { useTranslation } from '../lib/i18n';
 import { useOnlineRoom } from '../lib/useOnlineRoom';
 import { clearRoomToken, saveActiveRoom } from '../lib/onlineIdentity';
 import { generateRoomCode } from '../utils/roomCode';
-import { loadSettings } from '../utils/settings';
+import { loadSettings, saveSkipConfirmations } from '../utils/settings';
 import { OnlineLobby } from './OnlineLobby';
 import { DealingAnimation } from './DealingAnimation';
 import { GameBoard } from './GameBoard';
@@ -40,7 +40,12 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
    * Quick Play is a personal preference, not a room rule, so it never travels
    * to the server. Merge the locally saved option into this seat's view.
    */
-  const [skipConfirmations] = useState(() => loadSettings()?.options.skipConfirmations ?? false);
+  const [skipConfirmations, setSkipConfirmations] = useState(() => loadSettings()?.options.skipConfirmations ?? false);
+
+  const handleSetQuickPlay = useCallback((value: boolean) => {
+    setSkipConfirmations(value);
+    saveSkipConfirmations(value);
+  }, []);
 
   /**
    * Show the shuffle/deal animation once per fresh game. `gameStartTime` is the
@@ -211,6 +216,7 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
         onFinishGame={() => send({ type: 'finish' })}
         onRestartGame={() => send({ type: 'restart' })}
         onNewGame={leaveAndExit}
+        onSetQuickPlay={handleSetQuickPlay}
       />
     </>
   );

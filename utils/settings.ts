@@ -1,4 +1,4 @@
-import { GameOptions } from '../types/game';
+import { DEFAULT_OPTIONS, GameOptions } from '../types/game';
 
 const STORAGE_KEY = 'bobby-settings';
 
@@ -26,6 +26,19 @@ export function saveSettings(players: PlayerSetup[], options: GameOptions): void
   const data: SettingsData = { players, options };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // storage full or unavailable
+  }
+}
+
+/**
+ * Quick Play is a personal preference. Persist it from wherever it is toggled
+ * (the pause menu, including online rooms) without touching the other options.
+ */
+export function saveSkipConfirmations(value: boolean): void {
+  const saved = loadSettings();
+  try {
+    saveSettings(saved?.players ?? [], { ...(saved?.options ?? DEFAULT_OPTIONS), skipConfirmations: value });
   } catch {
     // storage full or unavailable
   }

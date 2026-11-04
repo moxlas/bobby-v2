@@ -18,6 +18,7 @@ import {
   type PlayerSetup,
 } from './utils/gameLogic';
 import { saveGameResults } from './utils/leaderboard';
+import { saveSkipConfirmations } from './utils/settings';
 import { normalizeRoomCode } from './utils/roomCode';
 import { readJoinCodeFromLocation, ONLINE_CONFIGURED } from './lib/onlineConfig';
 import { clearActiveRoom, loadActiveRoom, loadOnlineName } from './lib/onlineIdentity';
@@ -104,6 +105,17 @@ function App() {
 
   const handleFinishGame = useCallback(() => {
     setGameState(prev => (prev ? finishGame(prev) : prev));
+  }, []);
+
+  /** Quick Play is togglable from the pause menu and remembered for next time. */
+  const handleSetQuickPlay = useCallback((value: boolean) => {
+    setGameState(prev => (
+      prev ? { ...prev, options: { ...prev.options, skipConfirmations: value } } : prev
+    ));
+    if (gameOptionsRef.current) {
+      gameOptionsRef.current = { ...gameOptionsRef.current, skipConfirmations: value };
+    }
+    saveSkipConfirmations(value);
   }, []);
 
   const handleRestartGame = useCallback(() => {
@@ -206,6 +218,7 @@ function App() {
           onFinishGame={handleFinishGame}
           onRestartGame={handleRestartGame}
           onNewGame={handleNewGame}
+          onSetQuickPlay={handleSetQuickPlay}
         />
       )}
     </I18nProvider>

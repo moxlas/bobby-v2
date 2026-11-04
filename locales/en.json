@@ -252,6 +252,12 @@
       "title": "Game Paused",
       "waitingHost": "Waiting for the host to resume the game…",
       "resume": "Resume Game",
+      "quickPlay": {
+        "title": "Quick Play",
+        "on": "On",
+        "off": "Off",
+        "desc": "Skip the move confirmation. Starting a pickup still asks between 3 cards or all cards."
+      },
       "gameRules": "Game Rules",
       "forfeit": "Forfeit Game",
       "forfeitOpponents": "Make Opponents Forfeit",

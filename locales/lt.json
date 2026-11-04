@@ -260,6 +260,12 @@
       "title": "Žaidimas pristabdytas",
       "waitingHost": "Laukiama, kol šeimininkas tęs žaidimą…",
       "resume": "Tęsti žaidimą",
+      "quickPlay": {
+        "title": "Greitas žaidimas",
+        "on": "Įjungta",
+        "off": "Išjungta",
+        "desc": "Praleidžiamas ėjimo patvirtinimas. Imant kortas vis tiek bus rodomas pasirinkimas imti 3 arba visas."
+      },
       "gameRules": "Žaidimo taisyklės",
       "forfeit": "Pasiduoti",
       "forfeitOpponents": "Priversti priešininkus pasiduoti",

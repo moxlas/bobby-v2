@@ -8,6 +8,7 @@ import { ConfirmPopup } from './ConfirmPopup';
 import { TakeOptionsPopup } from './TakeOptionsPopup';
 import { CardFlight, type CardFlightRequest } from './CardFlight';
 import { validatePlay, getTakeOptions, offersTakeChoice, getValidMoves, orderCardsForPlay } from '../utils/gameLogic';
+import { sortHand } from '../utils/deckUtils';
 import { getAIMove, getAIDelay } from '../utils/aiLogic';
 import { animatePopIn, animateShake, useHandArrivals } from '../lib/animations';
 import {
@@ -28,6 +29,8 @@ interface GameBoardProps {
   onFinishGame: () => void;
   onRestartGame: () => void;
   onNewGame: () => void;
+  /** Toggle Quick Play (skip move confirmations) from the pause menu. */
+  onSetQuickPlay?: (value: boolean) => void;
   /**
    * Seat the board belongs to. Omit it for local hot-seat play, where the board
    * follows the turn. Pass a seat id (or null for a spectator) online.
@@ -157,6 +160,40 @@ function handLeftTarget(): DOMRect | null {
   );
 }
 
+/** How long a pickup stays on the actor's hand before the turn advances. */
+const TAKE_REVEAL_BASE_MS = 320;
+const TAKE_REVEAL_STAGGER_MS = 45;
+const TAKE_REVEAL_MAX_MS = 760;
+
+interface TakeLanding {
+  /** State that shows the taken cards already sitting in the actor's hand. */
+  preview: any;
+  /** Time to let the new cards slide in before the turn advances. */
+  settleMs: number;
+}
+
+/**
+ * Apply a pickup to the displayed state without advancing the turn.
+ *
+ * The real state is held back until the ghost cards land, so this gives the
+ * table a frame where the taken cards are visibly part of the acting hand.
+ */
+function withTakenCards(state: any, actorId: number, cards: CardType[]): any {
+  const takenIds = new Set(cards.map(card => card.id));
+  return {
+    ...state,
+    pile: state.pile.filter((card: CardType) => !takenIds.has(card.id)),
+    players: state.players.map((player: any) => {
+      if (player.id !== actorId) return player;
+      return {
+        ...player,
+        hand: sortHand([...player.hand, ...cards.map(card => ({ ...card }))]),
+        handCount: player.handCount === undefined ? undefined : player.handCount + cards.length,
+      };
+    }),
+  };
+}
+
 export function GameBoard({
   gameState: liveGameState,
   onPlayCards,
@@ -168,6 +205,7 @@ export function GameBoard({
   onFinishGame,
   onRestartGame,
   onNewGame,
+  onSetQuickPlay,
   viewerId,
   runAI = true,
   hostControls = true,
@@ -184,6 +222,11 @@ export function GameBoard({
   const pendingStateRef = useRef<any>(null);
   const lastAnimatedMoveRef = useRef<string | null>(null);
   const flightActiveRef = useRef(false);
+  const landingRef = useRef<TakeLanding | null>(null);
+  const settleCommitRef = useRef<any>(null);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealActiveRef = useRef(false);
+  const [revealing, setRevealing] = useState(false);
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<'play' | 'take3' | 'takeAll' | 'endTurn' | null>(null);
@@ -225,23 +268,61 @@ export function GameBoard({
     setFlight({ ...request, id: flightSequenceRef.current });
   }, []);
 
+  /** Cancel the post-pickup hand reveal and drop its pending commit. */
+  const cancelReveal = useCallback(() => {
+    if (settleTimerRef.current) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    settleCommitRef.current = null;
+    revealActiveRef.current = false;
+    setRevealing(false);
+  }, []);
+
   /** Abort a flight and drop whatever state was waiting behind it. */
   const cancelFlight = useCallback(() => {
     flightActiveRef.current = false;
     pendingStateRef.current = null;
+    landingRef.current = null;
+    cancelReveal();
     setFlight(null);
-  }, []);
+  }, [cancelReveal]);
 
   /**
-   * The flight landed: reveal the state that was waiting behind it. This is
-   * what keeps the acting player's turn on screen until the cards arrive.
+   * The flight landed. A pickup first plays out in the acting hand: the taken
+   * cards sit in that hand (face up or down like the rest of it) while they
+   * slide in, and only then does the turn advance. Plays commit immediately.
    */
   const handleFlightComplete = useCallback(() => {
     flightActiveRef.current = false;
     const pending = pendingStateRef.current;
     pendingStateRef.current = null;
+    const landing = landingRef.current;
+    landingRef.current = null;
     setFlight(null);
-    if (pending) setGameState(pending);
+    if (!pending) return;
+
+    if (landing) {
+      settleCommitRef.current = pending;
+      revealActiveRef.current = true;
+      setRevealing(true);
+      setGameState(landing.preview);
+      settleTimerRef.current = setTimeout(() => {
+        settleTimerRef.current = null;
+        const commit = settleCommitRef.current;
+        settleCommitRef.current = null;
+        revealActiveRef.current = false;
+        setRevealing(false);
+        if (commit) setGameState(commit);
+      }, landing.settleMs);
+      return;
+    }
+
+    setGameState(pending);
+  }, []);
+
+  useEffect(() => () => {
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
   }, []);
 
   const suppressGestureClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -419,8 +500,9 @@ export function GameBoard({
     !currentPlayer.isAI &&
     !currentPlayer.hasFinished &&
     gameState.phase === 'playing' &&
-    // Ignore taps while this seat's own cards are still flying.
-    !flight;
+    // Ignore taps while this seat's own cards are still flying or settling.
+    !flight &&
+    !revealing;
   /**
    * A seat that already finished keeps watching the game. While the rest of the
    * table plays, the active player's hand is laid out in the dock instead.
@@ -462,6 +544,12 @@ export function GameBoard({
       return;
     }
 
+    // While the pickup reveal plays out, only remember the newest state.
+    if (revealActiveRef.current) {
+      pendingStateRef.current = liveGameState;
+      return;
+    }
+
     // Rule/seat/version updates can arrive mid-flight; show them when it lands.
     if (!grew || !lastMove || lastMove.cards.length === 0) {
       if (flightActiveRef.current) {
@@ -496,6 +584,7 @@ export function GameBoard({
     const canSeeActorHand = actorHandShown && handCardsFaceUp;
     const seatRect = visibleElement(`[data-seat-id="${actor.id}"]`)?.getBoundingClientRect() ?? null;
     let request: Omit<CardFlightRequest, 'id'> | null = null;
+    let landing: TakeLanding | null = null;
 
     if (lastMove.type === 'take') {
       const from = pileFlightTarget();
@@ -507,8 +596,19 @@ export function GameBoard({
           cards: lastMove.cards,
           from: lastMove.cards.map(() => from),
           to,
-          faceUp: actorHandShown,
+          // A face-down hand gets face-down ghosts, and the real cards follow.
+          faceUp: canSeeActorHand,
         };
+        if (actorHandShown) {
+          const count = lastMove.cards.length;
+          landing = {
+            preview: withTakenCards(gameState, actor.id, lastMove.cards),
+            settleMs: Math.min(
+              TAKE_REVEAL_MAX_MS,
+              TAKE_REVEAL_BASE_MS + Math.max(0, count - 1) * TAKE_REVEAL_STAGGER_MS,
+            ),
+          };
+        }
       }
     } else {
       const to = pileFlightTarget();
@@ -538,11 +638,13 @@ export function GameBoard({
 
     lastAnimatedMoveRef.current = moveKey;
     if (!request) {
+      landingRef.current = null;
       setGameState(liveGameState);
       return;
     }
 
     pendingStateRef.current = liveGameState;
+    landingRef.current = landing;
     startFlight(request);
   }, [liveGameState, gameState, handOwner, handCardsFaceUp, startFlight, cancelFlight]);
   /**
@@ -571,6 +673,8 @@ export function GameBoard({
 
   useEffect(() => {
     if (!runAI) return;
+    // Let the current action finish flying/settling before the AI thinks again.
+    if (flight || revealing) return;
     if (gameState.phase !== 'playing') {
       return;
     }
@@ -661,7 +765,7 @@ export function GameBoard({
       clearTimeout(timeout);
       setIsAIThinking(false);
     };
-  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, runAI]);
+  }, [gameState.currentPlayerIndex, gameState.phase, gameState.players, gameState.canContinueTurn, flight, revealing, runAI]);
 
   const handleCardSelect = (card: CardType) => {
     if (!isMyTurn) return;
@@ -984,6 +1088,41 @@ export function GameBoard({
   );
 
   /**
+   * Quick Play is a personal preference, not a room rule. It is offered both on
+   * the paused screen and in the guest menu, since a guest cannot pause.
+   */
+  const quickPlayControl = onSetQuickPlay ? (
+    <div className="rounded-lg border border-emerald-600 bg-emerald-900/40 p-3">
+      <button
+        type="button"
+        aria-pressed={!!gameState.options.skipConfirmations}
+        onClick={() => {
+          playClickSound();
+          onSetQuickPlay(!gameState.options.skipConfirmations);
+        }}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium text-emerald-100 sm:text-base">
+          <Zap className="w-4 h-4 text-amber-300" />
+          {t('game.paused.quickPlay.title')}
+        </span>
+        <span
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+            gameState.options.skipConfirmations
+              ? 'bg-amber-400 text-emerald-900'
+              : 'bg-emerald-950 text-emerald-300'
+          }`}
+        >
+          {t(gameState.options.skipConfirmations ? 'game.paused.quickPlay.on' : 'game.paused.quickPlay.off')}
+        </span>
+      </button>
+      <p className="mt-2 text-left text-xs leading-snug text-emerald-300/80">
+        {t('game.paused.quickPlay.desc')}
+      </p>
+    </div>
+  ) : null;
+
+  /**
    * The pause menu for everyone who cannot pause. The game keeps running behind
    * it, so a guest can still forfeit or leave without stopping the table.
    */
@@ -1016,6 +1155,8 @@ export function GameBoard({
         </p>
 
         <div className="space-y-3">
+          {quickPlayControl}
+
           {forfeitMode === 'self' && (
             <button
               type="button"
@@ -1186,7 +1327,7 @@ export function GameBoard({
   if (gameState.phase === 'paused') {
     return (
       <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
-        <div className="bg-emerald-800 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border border-emerald-600">
+        <div className="max-h-[100dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-emerald-600 bg-emerald-800 p-6 text-center shadow-2xl sm:p-8">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-amber-300" />
             <h2 className="text-2xl sm:text-3xl font-bold text-amber-300">{t('game.paused.title')}</h2>
@@ -1209,6 +1350,8 @@ export function GameBoard({
             ) : (
               <p className="text-sm sm:text-base text-emerald-300 py-2">{t('game.paused.waitingHost')}</p>
             )}
+
+            {quickPlayControl}
 
             {forfeitMode && (forfeitMode === 'self' || hostControls) && (
               <button
