@@ -16,7 +16,14 @@ import {
   playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
-import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X, Menu } from 'lucide-react';
+import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X, Menu, Eye, UserPlus } from 'lucide-react';
+
+interface SpectatorInfo {
+  id: number;
+  name: string;
+  isConnected: boolean;
+  joinedAt: number;
+}
 
 interface GameBoardProps {
   gameState: any;
@@ -45,6 +52,16 @@ interface GameBoardProps {
    * its final ranking, but gets a "left" mark so the rest of the table knows.
    */
   leftPlayerIds?: number[];
+  /** Online room code, shown on the pause and endgame screens. */
+  roomCode?: string;
+  /** People watching a running game. */
+  spectators?: SpectatorInfo[];
+  /** True when this viewer is watching rather than seated. */
+  spectating?: boolean;
+  /** The spectator's own id, used to label their name. */
+  spectatorId?: number | null;
+  /** Players who joined after the game ended, shown below the final rankings. */
+  joinedPlayers?: { id: number; name: string }[];
 }
 
 interface CardPointerGesture {
@@ -210,6 +227,11 @@ export function GameBoard({
   runAI = true,
   hostControls = true,
   leftPlayerIds = [],
+  roomCode,
+  spectators = [],
+  spectating = false,
+  spectatorId = null,
+  joinedPlayers = [],
 }: GameBoardProps) {
   const { t, tPlural } = useTranslation();
   /**
@@ -1092,6 +1114,14 @@ export function GameBoard({
    * the paused screen and in the guest menu, since a guest cannot pause.
    */
   const quickPlayOn = !!gameState.options.skipConfirmations;
+  const roomCodeBlock = roomCode ? (
+    <div className="flex items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-emerald-900/50 px-3 py-2">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-emerald-400">
+        {t('game.roomCode.label')}
+      </span>
+      <span className="font-mono text-base font-bold tracking-[0.25em] text-amber-300">{roomCode}</span>
+    </div>
+  ) : null;
   const quickPlayControl = onSetQuickPlay ? (
     <button
       type="button"
@@ -1163,8 +1193,10 @@ export function GameBoard({
         </div>
 
         <p className="mb-4 rounded-lg border border-emerald-600 bg-emerald-900/50 px-3 py-2 text-xs text-emerald-300">
-          {t(gameState.phase === 'paused' ? 'game.paused.waitingHost' : 'game.menu.hostOnlyPause')}
+          {t(spectating ? 'game.menu.spectatorNote' : gameState.phase === 'paused' ? 'game.paused.waitingHost' : 'game.menu.hostOnlyPause')}
         </p>
+
+        {roomCodeBlock && <div className="mb-3">{roomCodeBlock}</div>}
 
         <div className="space-y-3">
           {quickPlayControl}
@@ -1272,6 +1304,8 @@ export function GameBoard({
             <span className="text-emerald-200 text-base sm:text-lg">{t('game.finished.totalTime', { time: formatTime(elapsedTime) })}</span>
           </div>
 
+          {roomCodeBlock && <div className="mb-4 sm:mb-6">{roomCodeBlock}</div>}
+
           <div className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
             <h3 className="text-sm sm:text-base text-emerald-200 font-semibold">{t('game.finished.rankings')}</h3>
             {gameState.finishOrder.map((player: any, index: number) => (
@@ -1305,6 +1339,20 @@ export function GameBoard({
                 </div>
               </div>
             ))}
+
+            {joinedPlayers.length > 0 && (
+              <div className="mt-3 space-y-2 border-t border-emerald-600/70 pt-3">
+                {joinedPlayers.map((player) => (
+                  <div
+                    key={`joined-${player.id}`}
+                    className="flex items-center gap-2 rounded-lg bg-emerald-700/50 p-2 text-left text-sm text-emerald-200 sm:p-3"
+                  >
+                    <UserPlus className="w-3.5 h-3.5 shrink-0 text-emerald-300" />
+                    <span className="truncate">{t('game.finished.joined', { name: player.name })}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -1349,6 +1397,8 @@ export function GameBoard({
             <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />
             <span className="text-emerald-200 text-xl sm:text-2xl font-mono">{formatTime(elapsedTime)}</span>
           </div>
+
+          {roomCodeBlock && <div className="mb-6 sm:mb-8">{roomCodeBlock}</div>}
 
           <div className="space-y-3 sm:space-y-4">
             {hostControls ? (
@@ -1485,6 +1535,13 @@ export function GameBoard({
         </div>
       )}
 
+      {spectating && (
+        <div className="flex flex-shrink-0 items-center justify-center gap-2 border-b border-sky-400/40 bg-sky-500/15 px-3 py-2 text-center text-xs text-sky-200 sm:text-sm">
+          <Eye className="w-4 h-4 shrink-0" />
+          <span>{t('game.spectating')}</span>
+        </div>
+      )}
+
       {/* Main game area */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-2 sm:gap-4 px-2 pt-2 pb-2 sm:p-4 max-w-screen-2xl mx-auto w-full overflow-hidden">
         {/* Mobile: compact player seats above the table */}
@@ -1511,6 +1568,20 @@ export function GameBoard({
               </div>
             );
           })}
+
+          {spectators.length > 0 && (
+            <div className="flex basis-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-1 text-[10px] text-emerald-300">
+              <span className="flex items-center gap-1 font-medium uppercase tracking-wide text-emerald-400">
+                <Eye className="h-3 w-3" />
+                {t('game.sidebar.spectators')}
+              </span>
+              {spectators.map((spectator) => (
+                <span key={spectator.id} className="max-w-[7rem] truncate">
+                  {spectator.name}{spectator.id === spectatorId ? ` (${t('online.lobby.you')})` : ''}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Left sidebar - Players (Desktop) */}
@@ -1556,6 +1627,28 @@ export function GameBoard({
               </div>
             );
           })}
+
+          {spectators.length > 0 && (
+            <div className="mt-1 flex-shrink-0 rounded-lg border border-emerald-700 bg-emerald-900/40 p-2">
+              <div className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-emerald-400">
+                <Eye className="h-3 w-3" />
+                {t('game.sidebar.spectators')}
+              </div>
+              <div className="space-y-1">
+                {spectators.map((spectator) => (
+                  <div key={spectator.id} className="flex items-center gap-1.5 text-xs text-emerald-200">
+                    <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${spectator.isConnected ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                    <span className="min-w-0 truncate">{spectator.name}</span>
+                    {spectator.id === spectatorId && (
+                      <span className="rounded bg-emerald-500 px-1 py-0.5 text-[9px] font-bold text-white">
+                        {t('online.lobby.you')}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Center - Pile and actions */}

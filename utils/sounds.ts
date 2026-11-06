@@ -279,6 +279,22 @@ export function playYourTurnSound() {
   } catch { /* unavailable */ }
 }
 
+export function playPlayerJoinSound() {
+  if (muted) return;
+  try {
+    const ac = getAudioContext();
+    const now = ac.currentTime;
+
+    // A soft two-note "welcome" chime: a rounded knock, then a rising fifth
+    // with a short shimmer so it stands apart from turn and combo cues.
+    playNoise(now, 0.07, 0.03, 1400, 'bandpass', 0.7);
+    playTone(392, 'sine', now + 0.01, 0.16, 0.045, 0.04, 0.7, 1100);
+    playTone(523.25, 'triangle', now + 0.11, 0.2, 0.045, 0.03, 0.66, 3000);
+    playTone(783.99, 'triangle', now + 0.22, 0.34, 0.05, 0.04, 0.62, 4200);
+    playTone(1567.98, 'sine', now + 0.23, 0.22, 0.014, 0.03, 0.78, 6500);
+  } catch { /* unavailable */ }
+}
+
 export function playClickSound() {
   if (muted) return;
   try {

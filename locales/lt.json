@@ -62,6 +62,7 @@
       "cannotStart": "Nepakanka žaidėjų pradėti.",
       "roomFull": "Šis kambarys pilnas.",
       "notInRoom": "Jūsų nebėra šiame kambaryje.",
+      "spectating": "Jūs stebite šį žaidimą.",
       "gameInProgress": "Tas žaidimas jau prasidėjo.",
       "nameRequired": "Įveskite vardą prieš prisijungdami.",
       "roomExists": "Toks kambario kodas jau užimtas.",
@@ -153,8 +154,12 @@
       "mute": "Išjungti garsą",
       "newGame": "Naujas žaidimas"
     },
+    "roomCode": {
+      "label": "Kambario kodas"
+    },
     "sidebar": {
       "players": "Žaidėjai",
+      "spectators": "Stebėtojai",
       "ai": "DI",
       "out": "Iš žaidimo",
       "cards_one": "korta",
@@ -166,6 +171,7 @@
       "currentTurn": "Dabartinis ėjimas:",
       "thinking": "Galvoja..."
     },
+    "spectating": "Stebite šį žaidimą",
     "ninesStart": {
       "title": "Laiminga pradžia!",
       "text": "Turite visus keturis 9-etus! Meskite juos dabar arba pasilikite vėliau.",
@@ -248,7 +254,8 @@
       "playAgain": "Žaisti dar kartą",
       "waitingHost": "Laukiama, kol šeimininkas pradės naują žaidimą…",
       "newGame": "Naujas žaidimas",
-      "left": "Išėjo"
+      "left": "Išėjo",
+      "joined": "prisijungė {name}"
     },
     "newGame": {
       "confirm": "Pradėti naują žaidimą? Dabartinė pažanga bus prarasta."
@@ -274,7 +281,8 @@
     "menu": {
       "title": "Meniu",
       "close": "Uždaryti meniu",
-      "hostOnlyPause": "Žaidimas tęsiasi, kol šis meniu atidarytas. Tik šeimininkas gali pristabdyti kambarį."
+      "hostOnlyPause": "Žaidimas tęsiasi, kol šis meniu atidarytas. Tik šeimininkas gali pristabdyti kambarį.",
+      "spectatorNote": "Jūs stebite žaidimą. Žaidimas tęsiasi; stalą keisti gali tik žaidėjai."
     }
   },
   "confirmPopup": {

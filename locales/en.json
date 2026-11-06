@@ -62,6 +62,7 @@
       "cannotStart": "Not enough players to start.",
       "roomFull": "This room is full.",
       "notInRoom": "You are no longer in this room.",
+      "spectating": "You are spectating this game.",
       "gameInProgress": "That game has already started.",
       "nameRequired": "Enter a name before joining.",
       "roomExists": "That room code is already taken.",
@@ -153,8 +154,12 @@
       "mute": "Mute",
       "newGame": "New Game"
     },
+    "roomCode": {
+      "label": "Room code"
+    },
     "sidebar": {
       "players": "Players",
+      "spectators": "Spectators",
       "ai": "AI",
       "out": "Out",
       "cards_one": "card",
@@ -164,6 +169,7 @@
       "currentTurn": "Current Turn:",
       "thinking": "Thinking..."
     },
+    "spectating": "Spectating — watching this game.",
     "ninesStart": {
       "title": "Lucky Start!",
       "text": "You have all 4 nines! Play them now or save them for later.",
@@ -240,7 +246,8 @@
       "playAgain": "Play Again",
       "waitingHost": "Waiting for the host to start a new game…",
       "newGame": "New Game",
-      "left": "Left"
+      "left": "Left",
+      "joined": "joined {name}"
     },
     "newGame": {
       "confirm": "Start a new game? Your current progress will be lost."
@@ -266,7 +273,8 @@
     "menu": {
       "title": "Menu",
       "close": "Close menu",
-      "hostOnlyPause": "The game keeps running while this menu is open. Only the host can pause the room."
+      "hostOnlyPause": "The game keeps running while this menu is open. Only the host can pause the room.",
+      "spectatorNote": "You are spectating. The game keeps running; only players can change the table."
     }
   },
   "confirmPopup": {

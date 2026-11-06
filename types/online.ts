@@ -39,11 +39,21 @@ export interface LobbySeat {
   isConnected: boolean;
 }
 
+/** Someone watching a running game without a seat at the table. */
+export interface SpectatorView {
+  id: number;
+  name: string;
+  isConnected: boolean;
+  joinedAt: number;
+}
+
 export interface RoomView {
   code: string;
   phase: RoomPhase;
   hostId: number;
   seats: LobbySeat[];
+  /** People watching a game in progress; empty in the lobby. */
+  spectators: SpectatorView[];
   rules: GameRules;
   /** The room's AI seats always run at this difficulty. */
   aiDifficulty: AIDifficulty;
@@ -51,6 +61,8 @@ export interface RoomView {
   maxSeats: number;
   /** Seat id of the viewer, or null before joining and for spectators. */
   youId: number | null;
+  /** Spectator id of the viewer, or null for seated players. */
+  spectatorId: number | null;
   /** Increases on every authoritative update so stale messages can be dropped. */
   version: number;
 }
@@ -62,6 +74,7 @@ export type RoomErrorCode =
   | 'cannotStart'
   | 'roomFull'
   | 'notInRoom'
+  | 'spectating'
   | 'gameInProgress'
   | 'nameRequired'
   | 'roomExists'

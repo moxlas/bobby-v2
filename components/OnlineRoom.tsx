@@ -5,6 +5,7 @@ import { useOnlineRoom } from '../lib/useOnlineRoom';
 import { clearRoomToken, saveActiveRoom } from '../lib/onlineIdentity';
 import { generateRoomCode } from '../utils/roomCode';
 import { loadSettings, saveSkipConfirmations } from '../utils/settings';
+import { playPlayerJoinSound } from '../utils/sounds';
 import { OnlineLobby } from './OnlineLobby';
 import { DealingAnimation } from './DealingAnimation';
 import { GameBoard } from './GameBoard';
@@ -79,6 +80,15 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
     return game.players.filter(player => !seated.has(player.id)).map(player => player.id);
   }, [game?.players, room?.seats]);
 
+  /** Players who arrived after the game ended and are waiting for the next one. */
+  const joinedPlayers = useMemo(() => {
+    if (!game || !room || room.phase !== 'finished') return [];
+    const playingIds = new Set(game.players.map(player => player.id));
+    return room.seats
+      .filter(seat => !seat.isAI && !playingIds.has(seat.id))
+      .map(seat => ({ id: seat.id, name: seat.name }));
+  }, [game?.players, room?.seats, room?.phase]);
+
   useEffect(() => {
     if (!error) return;
     const timeout = window.setTimeout(clearError, 4000);
@@ -91,6 +101,32 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
     // initial claim does not try to join a code the room never accepted.
     if (roomCode) saveActiveRoom(roomCode, session.name);
   }, [roomCode, session.name]);
+
+  /**
+   * Announce arrivals with a short chime. The first snapshot already contains
+   * everyone (including this tab), so it only becomes the baseline.
+   */
+  const knownParticipantsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!room) {
+      knownParticipantsRef.current = null;
+      return;
+    }
+
+    const participants = new Set<string>();
+    for (const seat of room.seats) {
+      if (!seat.isAI) participants.add(seat.name);
+    }
+    for (const spectator of room.spectators ?? []) {
+      participants.add(spectator.name);
+    }
+
+    const known = knownParticipantsRef.current;
+    if (known && [...participants].some(key => !known.has(key))) {
+      playPlayerJoinSound();
+    }
+    knownParticipantsRef.current = participants;
+  }, [room]);
 
   const leaveAndExit = useCallback(() => {
     clearRoomToken(code);
@@ -207,6 +243,11 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
         runAI={false}
         hostControls={isHost}
         leftPlayerIds={leftPlayerIds}
+        roomCode={room.code}
+        spectators={room.spectators ?? []}
+        spectating={room.spectatorId != null}
+        spectatorId={room.spectatorId ?? null}
+        joinedPlayers={joinedPlayers}
         onPlayCards={(_playerId: number, cards: Card[]) => send({ type: 'playCards', cards, continueTurn: false })}
         onTakeCards={(_playerId: number, count: number) => send({ type: 'takeCards', count })}
         onEndTurn={() => send({ type: 'endTurn' })}

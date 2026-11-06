@@ -29,6 +29,7 @@ import { isValidRoomCode } from '../utils/roomCode';
 
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 const RECONNECT_GRACE_MS = 60 * 1000;
+const MAX_SPECTATORS = 8;
 const AI_DIFFICULTY = 'medium' as const;
 const STORAGE_KEY = 'room';
 
@@ -41,9 +42,18 @@ interface RoomSeat {
   isConnected: boolean;
 }
 
+interface RoomSpectator {
+  id: number;
+  name: string;
+  token: string;
+  isConnected: boolean;
+  joinedAt: number;
+}
+
 interface StoredRoom {
   phase: RoomPhase;
   seats: RoomSeat[];
+  spectators: RoomSpectator[];
   game: GameState | null;
   rules: GameRules;
   createdAt: number;
@@ -51,7 +61,8 @@ interface StoredRoom {
 }
 
 interface ConnectionSeat {
-  seatId: number;
+  seatId?: number;
+  spectatorId?: number;
 }
 
 function sanitizeName(name: unknown): string {
@@ -91,10 +102,12 @@ export class BobbyRoom extends Server<Env> {
     if (!this.state) return;
 
     // A fresh process has no live sockets, so every seat starts offline until
-    // its owner reconnects with the session token.
+    // its owner reconnects with the session token. Spectators are ephemeral and
+    // cannot reclaim a socket after a restart, so drop them.
     for (const seat of this.state.seats) {
       seat.isConnected = false;
     }
+    this.state.spectators = [];
 
     if (this.state.game?.phase === 'playing') {
       this.scheduleAI();
@@ -128,7 +141,20 @@ export class BobbyRoom extends Server<Env> {
     }
 
     const seat = this.seatFor(sender);
-    if (!seat || !this.state) {
+    if (!seat) {
+      const spectator = this.spectatorFor(sender);
+      if (spectator) {
+        if (parsed.type === 'leave') {
+          await this.handleSpectatorLeave(spectator);
+        } else {
+          this.send(sender, { type: 'error', code: 'spectating' });
+        }
+        return;
+      }
+      this.send(sender, { type: 'error', code: 'notInRoom' });
+      return;
+    }
+    if (!this.state) {
       this.send(sender, { type: 'error', code: 'notInRoom' });
       return;
     }
@@ -177,9 +203,20 @@ export class BobbyRoom extends Server<Env> {
 
   async onClose(connection: Connection): Promise<void> {
     await this.load();
+    if (!this.state) return;
 
     const seatId = this.seatIdFor(connection);
-    if (seatId === null || !this.state) return;
+    if (seatId === null) {
+      // Spectators are cheap to replace; a refresh simply joins again.
+      const spectatorId = this.spectatorIdFor(connection);
+      if (spectatorId === null) return;
+      if (this.hasOtherSpectatorConnection(spectatorId, connection.id)) return;
+      this.state.spectators = this.state.spectators.filter(s => s.id !== spectatorId);
+      this.state.version++;
+      await this.save();
+      this.broadcastAll();
+      return;
+    }
     if (this.hasOtherConnection(seatId, connection.id)) return;
 
     const seat = this.state.seats.find(s => s.id === seatId);
@@ -214,6 +251,8 @@ export class BobbyRoom extends Server<Env> {
     const stored = await this.ctx.storage.get<StoredRoom>(STORAGE_KEY);
     if (stored && stored.seats) {
       this.state = stored;
+      // Rooms persisted before spectators existed need the new list.
+      if (!Array.isArray(this.state.spectators)) this.state.spectators = [];
     }
   }
 
@@ -242,6 +281,15 @@ export class BobbyRoom extends Server<Env> {
       return;
     }
 
+    const existingSpectator = token && this.state
+      ? this.state.spectators.find(spectator => spectator.token === token)
+      : undefined;
+
+    if (existingSpectator) {
+      await this.claimSpectator(connection, existingSpectator, name);
+      return;
+    }
+
     if (message.create) {
       if (this.state && this.state.seats.length > 0) {
         this.send(connection, { type: 'error', code: 'roomExists' });
@@ -251,6 +299,7 @@ export class BobbyRoom extends Server<Env> {
       this.state = {
         phase: 'lobby',
         seats: [],
+        spectators: [],
         game: null,
         rules: sanitizeRules(DEFAULT_OPTIONS),
         createdAt: Date.now(),
@@ -275,8 +324,24 @@ export class BobbyRoom extends Server<Env> {
       return;
     }
 
-    if (this.state.phase !== 'lobby') {
-      this.send(connection, { type: 'error', code: 'gameInProgress' });
+    // A running (or paused) game accepts watchers; the finished screen accepts
+    // new players so they can be dealt into the next round.
+    if (this.state.phase === 'playing') {
+      if (this.state.spectators.length >= MAX_SPECTATORS) {
+        this.send(connection, { type: 'error', code: 'roomFull' });
+        return;
+      }
+
+      const spectator: RoomSpectator = {
+        id: this.lowestFreeSpectatorId(),
+        name,
+        token: crypto.randomUUID(),
+        isConnected: true,
+        joinedAt: Date.now(),
+      };
+      this.state.spectators.push(spectator);
+      this.state.spectators.sort((a, b) => a.id - b.id);
+      await this.claimSpectator(connection, spectator, name);
       return;
     }
 
@@ -322,8 +387,40 @@ export class BobbyRoom extends Server<Env> {
       type: 'welcome',
       token: seat.token,
       youId: seat.id,
-      room: this.buildRoomView(seat.id),
+      room: this.buildRoomView(seat.id, null),
       game: this.state.game ? toGameStateView(this.state.game, seat.id) : null,
+    });
+    this.broadcastAll();
+  }
+
+  private async claimSpectator(
+    connection: Connection,
+    spectator: RoomSpectator,
+    name: string,
+  ): Promise<void> {
+    if (!this.state) return;
+
+    for (const other of this.getConnections()) {
+      if (other.id === connection.id) continue;
+      if (this.spectatorIdFor(other) === spectator.id) {
+        other.close(1000, 'replaced');
+      }
+    }
+
+    spectator.isConnected = true;
+    if (name && name !== spectator.name) spectator.name = name;
+    spectator.name = sanitizeName(spectator.name) || spectator.name;
+    connection.setState({ spectatorId: spectator.id } satisfies ConnectionSeat);
+
+    this.state.version++;
+    await this.save();
+
+    this.send(connection, {
+      type: 'welcome',
+      token: spectator.token,
+      youId: null,
+      room: this.buildRoomView(null, spectator.id),
+      game: this.state.game ? toGameStateView(this.state.game, null) : null,
     });
     this.broadcastAll();
   }
@@ -595,12 +692,36 @@ export class BobbyRoom extends Server<Env> {
     if (game) this.scheduleAI();
   }
 
+  private async handleSpectatorLeave(spectator: RoomSpectator): Promise<void> {
+    if (!this.state) return;
+
+    this.state.spectators = this.state.spectators.filter(s => s.id !== spectator.id);
+
+    for (const connection of this.getConnections()) {
+      if (this.spectatorIdFor(connection) === spectator.id) {
+        connection.close(1000, 'left');
+      }
+    }
+
+    if (this.state.seats.filter(s => !s.isAI).length === 0) {
+      await this.destroy();
+      return;
+    }
+
+    this.state.version++;
+    await this.save();
+    this.broadcastAll();
+  }
+
   // ---------------------------------------------------------------------------
   // Game flow
   // ---------------------------------------------------------------------------
 
   private dealNewGame(): void {
     if (!this.state) return;
+
+    // Anyone who watched the previous game takes an open seat for the next one.
+    this.promoteSpectatorsToSeats();
 
     const setups = this.state.seats
       .slice()
@@ -613,6 +734,33 @@ export class BobbyRoom extends Server<Env> {
       aiDifficulty: AI_DIFFICULTY,
     });
     this.state.phase = 'playing';
+  }
+
+  private promoteSpectatorsToSeats(): void {
+    if (!this.state || this.state.spectators.length === 0) return;
+
+    for (const spectator of [...this.state.spectators]) {
+      if (this.state.seats.length >= MAX_ROOM_SEATS) break;
+
+      const seat: RoomSeat = {
+        id: this.lowestFreeSeatId(),
+        name: spectator.name,
+        token: spectator.token,
+        isAI: false,
+        isHost: false,
+        isConnected: spectator.isConnected,
+      };
+      this.state.seats.push(seat);
+      this.state.spectators = this.state.spectators.filter(s => s.id !== spectator.id);
+
+      for (const connection of this.getConnections()) {
+        if (this.spectatorIdFor(connection) === spectator.id) {
+          connection.setState({ seatId: seat.id } satisfies ConnectionSeat);
+        }
+      }
+    }
+
+    this.state.seats.sort((a, b) => a.id - b.id);
   }
 
   private async commitGame(): Promise<void> {
@@ -730,7 +878,7 @@ export class BobbyRoom extends Server<Env> {
   // Views and messaging
   // ---------------------------------------------------------------------------
 
-  private buildRoomView(viewerId: number): RoomView {
+  private buildRoomView(viewerId: number | null, spectatorId: number | null): RoomView {
     const state = this.state!;
     return {
       code: this.name,
@@ -743,11 +891,18 @@ export class BobbyRoom extends Server<Env> {
         isHost: seat.isHost,
         isConnected: seat.isConnected,
       })),
+      spectators: state.spectators.map(spectator => ({
+        id: spectator.id,
+        name: spectator.name,
+        isConnected: spectator.isConnected,
+        joinedAt: spectator.joinedAt,
+      })),
       rules: { ...state.rules },
       aiDifficulty: AI_DIFFICULTY,
       minSeats: MIN_ROOM_SEATS,
       maxSeats: MAX_ROOM_SEATS,
       youId: viewerId,
+      spectatorId,
       version: state.version,
     };
   }
@@ -757,9 +912,10 @@ export class BobbyRoom extends Server<Env> {
 
     for (const connection of this.getConnections()) {
       const seatId = this.seatIdFor(connection);
-      if (seatId === null) continue;
+      const spectatorId = this.spectatorIdFor(connection);
+      if (seatId === null && spectatorId === null) continue;
 
-      const room = this.buildRoomView(seatId);
+      const room = this.buildRoomView(seatId, spectatorId);
       const game: GameStateView | null = this.state.game
         ? toGameStateView(this.state.game, seatId)
         : null;
@@ -794,15 +950,34 @@ export class BobbyRoom extends Server<Env> {
     return this.state.seats.find(seat => seat.id === state.seatId) ?? null;
   }
 
+  private spectatorFor(connection: Connection): RoomSpectator | null {
+    const state = connection.state as ConnectionSeat | null;
+    if (!state || typeof state.spectatorId !== 'number' || !this.state) return null;
+    return this.state.spectators.find(spectator => spectator.id === state.spectatorId) ?? null;
+  }
+
   private seatIdFor(connection: Connection): number | null {
     const state = connection.state as ConnectionSeat | null;
     return state && typeof state.seatId === 'number' ? state.seatId : null;
+  }
+
+  private spectatorIdFor(connection: Connection): number | null {
+    const state = connection.state as ConnectionSeat | null;
+    return state && typeof state.spectatorId === 'number' ? state.spectatorId : null;
   }
 
   private hasOtherConnection(seatId: number, exceptConnectionId: string): boolean {
     for (const connection of this.getConnections()) {
       if (connection.id === exceptConnectionId) continue;
       if (this.seatIdFor(connection) === seatId) return true;
+    }
+    return false;
+  }
+
+  private hasOtherSpectatorConnection(spectatorId: number, exceptConnectionId: string): boolean {
+    for (const connection of this.getConnections()) {
+      if (connection.id === exceptConnectionId) continue;
+      if (this.spectatorIdFor(connection) === spectatorId) return true;
     }
     return false;
   }
@@ -825,6 +1000,14 @@ export class BobbyRoom extends Server<Env> {
   private lowestFreeSeatId(): number {
     const used = new Set(this.state?.seats.map(seat => seat.id) ?? []);
     for (let id = 0; id < MAX_ROOM_SEATS; id++) {
+      if (!used.has(id)) return id;
+    }
+    return 0;
+  }
+
+  private lowestFreeSpectatorId(): number {
+    const used = new Set(this.state?.spectators.map(spectator => spectator.id) ?? []);
+    for (let id = 0; id < MAX_SPECTATORS; id++) {
       if (!used.has(id)) return id;
     }
     return 0;
