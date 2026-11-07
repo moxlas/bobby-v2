@@ -435,17 +435,6 @@ export function GameBoard({
   }, [gameState.moveHistory, showHistory]);
 
   useEffect(() => {
-    if (!showMobileHistory) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setShowMobileHistory(false);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showMobileHistory]);
-
-  useEffect(() => {
     if (gameState.phase === 'playing') {
       const interval = setInterval(() => {
         if (gameStateRef.current.gameStartTime) {
@@ -1307,6 +1296,76 @@ export function GameBoard({
     }
     return '';
   };
+
+  /**
+   * Keyboard shortcuts for the board:
+   * - Escape dismisses the topmost popup, or opens the pause (host) / player menu.
+   * - Enter confirms an open confirmation dialog.
+   * Text inputs and modifier shortcuts are left to the browser.
+   */
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat) return;
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+      const active = document.activeElement;
+      if (active instanceof HTMLElement &&
+        active.closest('input, textarea, select, [contenteditable="true"]')) {
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        if (showConfirm) {
+          event.preventDefault();
+          handleConfirm();
+        } else if (pendingNavigationAction) {
+          event.preventDefault();
+          handleNavigationConfirm();
+        } else if (pendingForfeit) {
+          event.preventDefault();
+          handleForfeitConfirm();
+        }
+        return;
+      }
+
+      if (event.key !== 'Escape') return;
+
+      if (showConfirm) {
+        event.preventDefault();
+        handleCancel();
+      } else if (pendingNavigationAction) {
+        event.preventDefault();
+        setPendingNavigationAction(null);
+      } else if (pendingForfeit) {
+        event.preventDefault();
+        setPendingForfeit(null);
+      } else if (showTakeOptions) {
+        event.preventDefault();
+        handleCancel();
+      } else if (showMobileHistory) {
+        event.preventDefault();
+        setShowMobileHistory(false);
+      } else if (showPlayerMenu) {
+        event.preventDefault();
+        closePlayerMenu();
+      } else if (gameState.phase === 'paused' && hostControls) {
+        event.preventDefault();
+        handleResumeClick();
+      } else if (gameState.phase === 'playing') {
+        event.preventDefault();
+        if (hostControls) handlePauseClick();
+        else openPlayerMenu();
+      }
+    };
+
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [
+    showConfirm, pendingNavigationAction, pendingForfeit, showTakeOptions,
+    showMobileHistory, showPlayerMenu, gameState.phase, hostControls,
+    handleConfirm, handleCancel, handleNavigationConfirm, handleForfeitConfirm,
+    closePlayerMenu, handleResumeClick, handlePauseClick, openPlayerMenu,
+  ]);
 
   if (gameState.phase === 'finished') {
     return (
