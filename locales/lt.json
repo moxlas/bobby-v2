@@ -222,6 +222,8 @@
       "ninesOnDiamonds": "Ant devynetės būgnų galima dėti 1, 3 arba 4 devynetes",
       "nineOnNine": "Ant kitų devynetų galima dėti tik vieną devynetę",
       "groupSize": "Žaiskite vieną kortą arba tiksliai 4 vienodos vertės kortas",
+      "fourOfAKindOff": "Ketvertuko taisyklė išjungta - negalima žaisti 4 kortų vienu metu",
+      "comboChain": "Kitos kortos gali būti pridedamos tik po ketvertuko",
       "valueTooLow": "Kortos vertė turi būti lygi arba didesnė už ankstesnę kortą"
     },
     "confirm": {

@@ -41,6 +41,8 @@ export type PlayError =
   | 'ninesOnDiamonds'
   | 'nineOnNine'
   | 'groupSize'
+  | 'fourOfAKindOff'
+  | 'comboChain'
   | 'valueTooLow';
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard';

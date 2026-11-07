@@ -129,6 +129,7 @@ export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, 
     }
 
     const group = orderedCards.slice(index, groupEnd);
+    const isFinalGroup = groupEnd === orderedCards.length;
     const value = group[0].value;
     const isOpeningNineGroup = startsOnNineOfDiamonds && index === 0 && value === 9;
     let groupContinuesTurn = false;
@@ -152,17 +153,26 @@ export function validatePlay(cards: Card[], pile: Card[], isFirstMove: boolean, 
         return { valid: false, error: 'groupSize' };
       }
     } else if (group.length === 4) {
-      if (isOpeningNineGroup && value === 9 && !options.specialNinesRule) {
+      const openingFourNines = isOpeningNineGroup && value === 9;
+      if (openingFourNines && !options.specialNinesRule) {
         return { valid: false, error: 'specialNinesOff' };
+      }
+      if (!openingFourNines && !options.fourOfAKindRule) {
+        return { valid: false, error: 'fourOfAKindOff' };
       }
       if (value < topCard.value) {
         return { valid: false, error: 'valueTooLow' };
       }
-      groupContinuesTurn = isOpeningNineGroup && value === 9
-        ? true
-        : options.fourOfAKindRule;
+      groupContinuesTurn = openingFourNines ? true : options.fourOfAKindRule;
     } else if (value < topCard.value) {
       return { valid: false, error: 'valueTooLow' };
+    }
+
+    // Several groups in one play are only legal while the previous group keeps
+    // the turn alive (a 4 of a kind, or the opening 3/4 nines). A lone card must
+    // be the last group, so 9 + 10 can never be played together.
+    if (!isFinalGroup && !groupContinuesTurn) {
+      return { valid: false, error: 'comboChain' };
     }
 
     topCard = group[group.length - 1];
