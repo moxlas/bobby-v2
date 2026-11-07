@@ -255,7 +255,10 @@
       "waitingHost": "Laukiama, kol šeimininkas pradės naują žaidimą…",
       "newGame": "Naujas žaidimas",
       "left": "Išėjo",
-      "joined": "prisijungė {name}"
+      "joined": "prisijungė {name}",
+      "aiSeats": "DI žaidėjai kitam žaidimui",
+      "aiSeatsHint": "Pašalinkite DI, kad atsirastų vietos draugams.",
+      "needPlayers": "Kitam žaidimui reikia bent {count} žaidėjų"
     },
     "newGame": {
       "confirm": "Pradėti naują žaidimą? Dabartinė pažanga bus prarasta."

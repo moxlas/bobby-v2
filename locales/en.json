@@ -247,7 +247,10 @@
       "waitingHost": "Waiting for the host to start a new game…",
       "newGame": "New Game",
       "left": "Left",
-      "joined": "joined {name}"
+      "joined": "joined {name}",
+      "aiSeats": "AI players for the next game",
+      "aiSeatsHint": "Remove AI to make room for friends.",
+      "needPlayers": "Need at least {count} players for the next game"
     },
     "newGame": {
       "confirm": "Start a new game? Your current progress will be lost."

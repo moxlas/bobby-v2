@@ -438,7 +438,13 @@ export class BobbyRoom extends Server<Env> {
   }
 
   private async handleSetAICount(seat: RoomSeat, count: number): Promise<void> {
-    if (!this.state || !seat.isHost || this.state.phase !== 'lobby') {
+    // Between games the host can clear AI seats so friends who joined the
+    // finished table can take them in the next round.
+    if (
+      !this.state ||
+      !seat.isHost ||
+      (this.state.phase !== 'lobby' && this.state.phase !== 'finished')
+    ) {
       this.sendError(seat, seat.isHost ? 'gameInProgress' : 'notHost');
       return;
     }
@@ -652,6 +658,12 @@ export class BobbyRoom extends Server<Env> {
     // restartable as a finished one; anything else (setup) has nothing to deal.
     const phase = this.state.game.phase;
     if (phase !== 'playing' && phase !== 'paused' && phase !== 'finished') return;
+
+    // AI seats can be removed on the finished screen, so re-check the seat count.
+    if (this.state.seats.length < MIN_ROOM_SEATS) {
+      this.sendError(seat, 'cannotStart');
+      return;
+    }
 
     this.clearAITimer();
     this.dealNewGame();

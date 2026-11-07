@@ -16,7 +16,7 @@ import {
   playCardSound, playCardSelectSound, playCardPickupSound, playTakeSound, playComboSound,
   playWinSound, playLoseSound, playYourTurnSound, playClickSound,
 } from '../utils/sounds';
-import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X, Menu, Eye, UserPlus } from 'lucide-react';
+import { ArrowRight, Clock, RotateCcw, Home, AlertCircle, Pause, Play, Flag, Zap, History, ChevronDown, ChevronUp, Crown, Skull, Volume2, VolumeX, X, Menu, Eye, UserPlus, Minus, Plus } from 'lucide-react';
 
 interface SpectatorInfo {
   id: number;
@@ -62,6 +62,16 @@ interface GameBoardProps {
   spectatorId?: number | null;
   /** Players who joined after the game ended, shown below the final rankings. */
   joinedPlayers?: { id: number; name: string }[];
+  /** AI seats currently reserved for the next round, shown to the host. */
+  aiSeatCount?: number;
+  /** Whether another AI seat can still be added. */
+  canAddAI?: boolean;
+  /** False when clearing AI left too few seats to start another game. */
+  canPlayAgain?: boolean;
+  /** Minimum seats needed to start another game. */
+  minSeats?: number;
+  /** Host-only AI seat adjustment between games. */
+  onSetAICount?: (count: number) => void;
 }
 
 interface CardPointerGesture {
@@ -232,6 +242,11 @@ export function GameBoard({
   spectating = false,
   spectatorId = null,
   joinedPlayers = [],
+  aiSeatCount = 0,
+  canAddAI = false,
+  canPlayAgain = true,
+  minSeats = 2,
+  onSetAICount,
 }: GameBoardProps) {
   const { t, tPlural } = useTranslation();
   /**
@@ -1355,6 +1370,42 @@ export function GameBoard({
             )}
           </div>
 
+          {hostControls && onSetAICount && (
+            <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-emerald-600 bg-emerald-900/40 p-3 text-left sm:mb-8">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-white">{t('game.finished.aiSeats')}</div>
+                <div className="text-xs text-emerald-400">{t('game.finished.aiSeatsHint')}</div>
+              </div>
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    onSetAICount(Math.max(0, aiSeatCount - 1));
+                  }}
+                  disabled={aiSeatCount <= 0}
+                  aria-label={t('online.lobby.removeAI')}
+                  className="rounded-lg border border-emerald-500 bg-emerald-700 p-1.5 text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="w-6 text-center font-mono text-lg font-bold text-amber-300">{aiSeatCount}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    onSetAICount(aiSeatCount + 1);
+                  }}
+                  disabled={!canAddAI}
+                  aria-label={t('online.lobby.addAI')}
+                  className="rounded-lg border border-emerald-500 bg-emerald-700 p-1.5 text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3">
             {hostControls ? (
               <button
@@ -1362,10 +1413,13 @@ export function GameBoard({
                   playClickSound();
                   onRestartGame();
                 }}
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                disabled={!canPlayAgain}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-emerald-900 font-bold text-sm sm:text-base py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RotateCcw className="w-4 h-4" />
-                {t('game.finished.playAgain')}
+                {canPlayAgain
+                  ? t('game.finished.playAgain')
+                  : t('game.finished.needPlayers', { count: minSeats })}
               </button>
             ) : (
               <p className="flex-1 self-center text-sm text-emerald-300 py-2">{t('game.finished.waitingHost')}</p>

@@ -73,11 +73,17 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
 
   const handleDealComplete = useCallback(() => setDealing(false), []);
 
-  /** Seats that left the room keep their ranking line, marked with a badge. */
+  /**
+   * Human seats that left the room keep their ranking line, marked with a
+   * badge. Removed AI seats are not marked: their final result stays, but the
+   * host deliberately cleared the seat for the next round.
+   */
   const leftPlayerIds = useMemo(() => {
     if (!game) return [];
     const seated = new Set(room?.seats.map(seat => seat.id) ?? []);
-    return game.players.filter(player => !seated.has(player.id)).map(player => player.id);
+    return game.players
+      .filter(player => !player.isAI && !seated.has(player.id))
+      .map(player => player.id);
   }, [game?.players, room?.seats]);
 
   /** Players who arrived after the game ended and are waiting for the next one. */
@@ -197,6 +203,9 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
   }
 
   const isHost = room.hostId === room.youId;
+  const aiSeatCount = room.seats.filter(seat => seat.isAI).length;
+  const canAddAI = room.seats.length < room.maxSeats;
+  const canPlayAgain = room.seats.length >= room.minSeats;
 
   // Apply this seat's Quick Play preference without touching the shared rules.
   const boardGame = skipConfirmations && !game.options.skipConfirmations
@@ -248,6 +257,11 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
         spectating={room.spectatorId != null}
         spectatorId={room.spectatorId ?? null}
         joinedPlayers={joinedPlayers}
+        aiSeatCount={aiSeatCount}
+        canAddAI={canAddAI}
+        canPlayAgain={canPlayAgain}
+        minSeats={room.minSeats}
+        onSetAICount={isHost ? (count: number) => send({ type: 'setAICount', count }) : undefined}
         onPlayCards={(_playerId: number, cards: Card[]) => send({ type: 'playCards', cards, continueTurn: false })}
         onTakeCards={(_playerId: number, count: number) => send({ type: 'takeCards', count })}
         onEndTurn={() => send({ type: 'endTurn' })}
