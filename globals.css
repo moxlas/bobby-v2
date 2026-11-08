@@ -51,3 +51,26 @@ body,
   --color-amber-800: #9a3412;
   --color-amber-900: #7c2d12;
 }
+
+[data-theme="ocean"] {
+  --color-emerald-50: #dbeafe;
+  --color-emerald-100: #bfdbfe;
+  --color-emerald-200: #93c5fd;
+  --color-emerald-300: #60a5fa;
+  --color-emerald-400: #3b82f6;
+  --color-emerald-500: #2563eb;
+  --color-emerald-600: #1d4ed8;
+  --color-emerald-700: #1e40af;
+  --color-emerald-800: #1e3a8a;
+  --color-emerald-900: #172554;
+  --color-amber-50: #f0fdfa;
+  --color-amber-100: #ccfbf1;
+  --color-amber-200: #99f6e4;
+  --color-amber-300: #5eead4;
+  --color-amber-400: #2dd4bf;
+  --color-amber-500: #14b8a6;
+  --color-amber-600: #0d9488;
+  --color-amber-700: #0f766e;
+  --color-amber-800: #115e59;
+  --color-amber-900: #134e4a;
+}

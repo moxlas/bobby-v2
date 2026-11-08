@@ -88,6 +88,11 @@
     "human": "Žmogus",
     "ai": "DI",
     "gameOptions": "Žaidimo nustatymai",
+    "options": {
+      "cards": "Kortų taisyklės",
+      "seating": "Išdėstymas",
+      "general": "Bendri"
+    },
     "gameRules": "Žaidimo taisyklės",
     "startGame": "Pradėti žaidimą",
     "errorNoHuman": "Reikalingas bent vienas žmogus žaidėjas!",
@@ -122,7 +127,8 @@
       "title": "Tema",
       "summer": { "label": "Vasara", "desc": "Smaragdas ir gintaras" },
       "midnight": { "label": "Vidurnaktis", "desc": "Uola ir mėlyna" },
-      "autumn": { "label": "Ruduo", "desc": "Akmuo ir oranžinė" }
+      "autumn": { "label": "Ruduo", "desc": "Akmuo ir oranžinė" },
+      "ocean": { "label": "Vandenynas", "desc": "Mėlyna ir žalia" }
     },
     "aiDifficulty": {
       "title": "DI sudėtingumas",

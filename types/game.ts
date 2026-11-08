@@ -46,7 +46,7 @@ export type PlayError =
   | 'valueTooLow';
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard';
-export type ThemeName = 'summer' | 'midnight' | 'autumn';
+export type ThemeName = 'summer' | 'midnight' | 'autumn' | 'ocean';
 export type Language = 'en' | 'lt';
 
 /** Rules the host chooses for a room. They change how the game is played. */

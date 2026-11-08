@@ -88,6 +88,11 @@
     "human": "Human",
     "ai": "AI",
     "gameOptions": "Game Options",
+    "options": {
+      "cards": "Card Rules",
+      "seating": "Seating",
+      "general": "General"
+    },
     "gameRules": "Game Rules",
     "startGame": "Start Game",
     "errorNoHuman": "At least one human player is required!",
@@ -122,7 +127,8 @@
       "title": "Theme",
       "summer": { "label": "Summer", "desc": "Emerald & amber" },
       "midnight": { "label": "Midnight", "desc": "Slate & cyan" },
-      "autumn": { "label": "Autumn", "desc": "Stone & orange" }
+      "autumn": { "label": "Autumn", "desc": "Stone & orange" },
+      "ocean": { "label": "Ocean", "desc": "Blue & teal" }
     },
     "aiDifficulty": {
       "title": "AI Difficulty",

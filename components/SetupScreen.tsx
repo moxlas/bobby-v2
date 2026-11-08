@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName, Language } from '../types/game';
-import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Trophy, Globe } from 'lucide-react';
+import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
 import { useTranslation, LANGUAGES } from '../lib/i18n';
@@ -16,6 +16,8 @@ interface SetupScreenProps {
 }
 
 const AI_DIFFICULTY_VALUES: AIDifficulty[] = ['easy', 'medium', 'hard'];
+
+type OptionsTab = 'cards' | 'seating' | 'general';
 
 function LanguageFlag({ language }: { language: Language }) {
   const flagClass = 'h-4 w-7 shrink-0 overflow-hidden rounded-[3px] shadow-sm';
@@ -63,6 +65,29 @@ export function Toggle({ enabled, onToggle }: ToggleProps) {
   );
 }
 
+interface OptionRowProps {
+  icon?: ReactNode;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+}
+
+function OptionRow({ icon, title, description, enabled, onToggle }: OptionRowProps) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-0.5">
+          {icon}
+          <span className="text-white font-medium text-sm">{title}</span>
+        </div>
+        <p className="text-emerald-400 text-xs leading-relaxed">{description}</p>
+      </div>
+      <Toggle enabled={enabled} onToggle={onToggle} />
+    </div>
+  );
+}
+
 export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   const { t, tArray, language, setLanguage } = useTranslation();
   const saved = loadSettings();
@@ -75,6 +100,7 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   );
   const [showRules, setShowRules] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [activeOptionsTab, setActiveOptionsTab] = useState<OptionsTab>('cards');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -278,10 +304,11 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
             </div>
 
             {/* Game Options */}
-            <div>
+            <div className="overflow-hidden rounded-xl border border-emerald-600 bg-emerald-700/30">
               <button
                 onClick={() => setShowOptions(!showOptions)}
-                className="w-full flex items-center justify-between p-4 rounded-lg bg-emerald-700 hover:bg-emerald-600 transition-colors border border-emerald-500"
+                aria-expanded={showOptions}
+                className="w-full flex items-center justify-between p-4 transition-colors hover:bg-emerald-700/60"
               >
                 <div className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-amber-400" />
@@ -295,137 +322,138 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
               </button>
 
               {showOptions && (
-                <div className="mt-2 bg-emerald-700/40 rounded-lg p-4 space-y-5 border border-emerald-600">
-                  {/* Special 9's Rule */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span className="text-white font-medium text-sm">{t('setup.option.specialNines.title')}</span>
-                      </div>
-                      <p className="text-emerald-400 text-xs">
-                        {t('setup.option.specialNines.desc')}
-                      </p>
-                    </div>
-                    <Toggle enabled={specialNinesRule} onToggle={() => setSpecialNinesRule(v => !v)} />
+                <div className="border-t border-emerald-600/60">
+                  <div
+                    role="tablist"
+                    aria-label={t('setup.gameOptions')}
+                    className="grid grid-cols-3 gap-1 bg-emerald-800/40 p-1.5"
+                  >
+                    {([
+                      { value: 'cards' as OptionsTab, label: t('setup.options.cards'), icon: Zap },
+                      { value: 'seating' as OptionsTab, label: t('setup.options.seating'), icon: Users },
+                      { value: 'general' as OptionsTab, label: t('setup.options.general'), icon: SlidersHorizontal },
+                    ]).map(({ value, label, icon: Icon }) => (
+                      <button
+                        key={value}
+                        role="tab"
+                        aria-selected={activeOptionsTab === value}
+                        onClick={() => setActiveOptionsTab(value)}
+                        className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:text-sm ${
+                          activeOptionsTab === value
+                            ? 'bg-amber-500 text-emerald-900 shadow'
+                            : 'text-emerald-300 hover:bg-emerald-700/70'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{label}</span>
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Take All Cards */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span className="text-white font-medium text-sm">{t('setup.option.takeAll.title')}</span>
+                  <div className="p-4">
+                    {activeOptionsTab === 'cards' && (
+                      <div className="divide-y divide-emerald-600/40">
+                        <OptionRow
+                          icon={<Zap className="w-4 h-4 text-amber-400" />}
+                          title={t('setup.option.specialNines.title')}
+                          description={t('setup.option.specialNines.desc')}
+                          enabled={specialNinesRule}
+                          onToggle={() => setSpecialNinesRule(v => !v)}
+                        />
+                        <OptionRow
+                          icon={<Zap className="w-4 h-4 text-amber-400" />}
+                          title={t('setup.option.takeAll.title')}
+                          description={t('setup.option.takeAll.desc')}
+                          enabled={allowTakeAllCards}
+                          onToggle={() => setAllowTakeAllCards(v => !v)}
+                        />
+                        <OptionRow
+                          icon={<Zap className="w-4 h-4 text-amber-400" />}
+                          title={t('setup.option.fourOfAKind.title')}
+                          description={t('setup.option.fourOfAKind.desc')}
+                          enabled={fourOfAKindRule}
+                          onToggle={() => setFourOfAKindRule(v => !v)}
+                        />
                       </div>
-                      <p className="text-emerald-400 text-xs">
-                        {t('setup.option.takeAll.desc')}
-                      </p>
-                    </div>
-                    <Toggle enabled={allowTakeAllCards} onToggle={() => setAllowTakeAllCards(v => !v)} />
-                  </div>
+                    )}
 
-                  {/* 4 of a Kind Rule */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span className="text-white font-medium text-sm">{t('setup.option.fourOfAKind.title')}</span>
+                    {activeOptionsTab === 'seating' && (
+                      <div className="divide-y divide-emerald-600/40">
+                        <OptionRow
+                          title={t('setup.option.rankedSeating.title')}
+                          description={t('setup.option.rankedSeating.desc')}
+                          enabled={rankedSeating}
+                          onToggle={() => setRankedSeating(v => !v)}
+                        />
+                        <OptionRow
+                          title={t('setup.option.randomSeating.title')}
+                          description={t('setup.option.randomSeating.desc')}
+                          enabled={randomSeating}
+                          onToggle={() => setRandomSeating(v => !v)}
+                        />
                       </div>
-                      <p className="text-emerald-400 text-xs">
-                        {t('setup.option.fourOfAKind.desc')}
-                      </p>
-                    </div>
-                    <Toggle enabled={fourOfAKindRule} onToggle={() => setFourOfAKindRule(v => !v)} />
-                  </div>
+                    )}
 
-                  {/* Ranked Seating */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-white font-medium text-sm">{t('setup.option.rankedSeating.title')}</span>
-                      </div>
-                      <p className="text-emerald-400 text-xs">
-                        {t('setup.option.rankedSeating.desc')}
-                      </p>
-                    </div>
-                    <Toggle enabled={rankedSeating} onToggle={() => setRankedSeating(v => !v)} />
-                  </div>
+                    {activeOptionsTab === 'general' && (
+                      <div className="space-y-5">
+                        <OptionRow
+                          icon={<Zap className="w-4 h-4 text-amber-400" />}
+                          title={t('setup.option.skipConfirmations.title')}
+                          description={t('setup.option.skipConfirmations.desc')}
+                          enabled={skipConfirmations}
+                          onToggle={() => setSkipConfirmations(v => !v)}
+                        />
 
-                  {/* Random Seating */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-white font-medium text-sm">{t('setup.option.randomSeating.title')}</span>
-                      </div>
-                      <p className="text-emerald-400 text-xs">
-                        {t('setup.option.randomSeating.desc')}
-                      </p>
-                    </div>
-                    <Toggle enabled={randomSeating} onToggle={() => setRandomSeating(v => !v)} />
-                  </div>
-
-                  {/* Skip Confirmations */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span className="text-white font-medium text-sm">{t('setup.option.skipConfirmations.title')}</span>
-                      </div>
-                      <p className="text-emerald-400 text-xs">
-                        {t('setup.option.skipConfirmations.desc')}
-                      </p>
-                    </div>
-                    <Toggle enabled={skipConfirmations} onToggle={() => setSkipConfirmations(v => !v)} />
-                  </div>
-
-                  {/* Theme */}
-                  <div className="pt-2 border-t border-emerald-600/50">
-                    <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.theme.title')}</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {([
-                        { value: 'summer' as ThemeName, label: t('setup.theme.summer.label'), desc: t('setup.theme.summer.desc') },
-                        { value: 'midnight' as ThemeName, label: t('setup.theme.midnight.label'), desc: t('setup.theme.midnight.desc') },
-                        { value: 'autumn' as ThemeName, label: t('setup.theme.autumn.label'), desc: t('setup.theme.autumn.desc') },
-                      ]).map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => setTheme(opt.value)}
-                          className={`p-2.5 rounded-lg text-left transition-all border ${
-                            theme === opt.value
-                              ? 'bg-amber-500 border-amber-400 text-emerald-900'
-                              : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
-                          }`}
-                        >
-                          <div className="font-semibold text-sm">{opt.label}</div>
-                          <div className={`text-xs mt-0.5 leading-tight ${theme === opt.value ? 'text-amber-800' : 'text-emerald-400'}`}>
-                            {opt.desc}
+                        <div className="border-t border-emerald-600/40 pt-4">
+                          <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.aiDifficulty.title')}</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {AI_DIFFICULTY_VALUES.map((value) => (
+                              <button
+                                key={value}
+                                onClick={() => setAiDifficulty(value)}
+                                className={`p-2.5 rounded-lg text-left transition-all border ${
+                                  aiDifficulty === value
+                                    ? 'bg-amber-500 border-amber-400 text-emerald-900'
+                                    : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
+                                }`}
+                              >
+                                <div className="font-semibold text-sm">{t(`setup.aiDifficulty.${value}.label`)}</div>
+                                <div className={`text-xs mt-0.5 leading-tight ${aiDifficulty === value ? 'text-amber-800' : 'text-emerald-400'}`}>
+                                  {t(`setup.aiDifficulty.${value}.desc`)}
+                                </div>
+                              </button>
+                            ))}
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                        </div>
 
-                  {/* AI Difficulty */}
-                  <div className="pt-2 border-t border-emerald-600/50">
-                    <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.aiDifficulty.title')}</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {AI_DIFFICULTY_VALUES.map((value) => (
-                        <button
-                          key={value}
-                          onClick={() => setAiDifficulty(value)}
-                          className={`p-2.5 rounded-lg text-left transition-all border ${
-                            aiDifficulty === value
-                              ? 'bg-amber-500 border-amber-400 text-emerald-900'
-                              : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
-                          }`}
-                        >
-                          <div className="font-semibold text-sm">{t(`setup.aiDifficulty.${value}.label`)}</div>
-                          <div className={`text-xs mt-0.5 leading-tight ${aiDifficulty === value ? 'text-amber-800' : 'text-emerald-400'}`}>
-                            {t(`setup.aiDifficulty.${value}.desc`)}
+                        <div className="border-t border-emerald-600/40 pt-4">
+                          <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.theme.title')}</label>
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {([
+                              { value: 'summer' as ThemeName, label: t('setup.theme.summer.label'), desc: t('setup.theme.summer.desc') },
+                              { value: 'midnight' as ThemeName, label: t('setup.theme.midnight.label'), desc: t('setup.theme.midnight.desc') },
+                              { value: 'autumn' as ThemeName, label: t('setup.theme.autumn.label'), desc: t('setup.theme.autumn.desc') },
+                              { value: 'ocean' as ThemeName, label: t('setup.theme.ocean.label'), desc: t('setup.theme.ocean.desc') },
+                            ]).map((opt) => (
+                              <button
+                                key={opt.value}
+                                onClick={() => setTheme(opt.value)}
+                                className={`p-2.5 rounded-lg text-left transition-all border ${
+                                  theme === opt.value
+                                    ? 'bg-amber-500 border-amber-400 text-emerald-900'
+                                    : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
+                                }`}
+                              >
+                                <div className="font-semibold text-sm">{opt.label}</div>
+                                <div className={`text-xs mt-0.5 leading-tight ${theme === opt.value ? 'text-amber-800' : 'text-emerald-400'}`}>
+                                  {opt.desc}
+                                </div>
+                              </button>
+                            ))}
                           </div>
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
