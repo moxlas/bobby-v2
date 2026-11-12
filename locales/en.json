@@ -166,7 +166,9 @@
       "easy": { "label": "Easy", "desc": "Plays simple moves, ends turn after each play" },
       "medium": { "label": "Medium", "desc": "Uses combos and multi-9 moves strategically" },
       "hard": { "label": "Hard", "desc": "Calculates optimal moves, seeks combos, blocks opponents" },
-      "expert": { "label": "Expert", "desc": "Deep search with multiple sampled worlds; very hard to beat" }
+      "expert": { "label": "Expert", "desc": "Deep search with multiple sampled worlds; very hard to beat" },
+      "previous": "Previous difficulty",
+      "next": "Next difficulty"
     },
     "rules": [
       { "title": "Overview", "text": "A shedding-type card game for 2-8 players. The goal is to be the first to discard all cards from your hand. The last player with cards loses!" },

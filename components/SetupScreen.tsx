@@ -1,10 +1,11 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName, Language } from '../types/game';
-import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal } from 'lucide-react';
+import { Play, BookOpen, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
 import { hasDuplicatePlayerNames } from '../utils/playerNames';
 import { getAdaptiveAIDifficulty, getHumanPerformanceSummary } from '../utils/aiAdaptation';
+import { cycleOptionIndex } from '../utils/optionCarousel';
 import { useTranslation, LANGUAGES } from '../lib/i18n';
 
 interface PlayerSetup {
@@ -107,6 +108,13 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameWarningIndex, setNameWarningIndex] = useState<number | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const moveDifficulty = (direction: 'next' | 'previous') => {
+    const currentIndex = AI_DIFFICULTY_VALUES.indexOf(aiDifficulty);
+    const nextIndex = cycleOptionIndex(currentIndex, direction, AI_DIFFICULTY_VALUES.length);
+    setAiDifficulty(AI_DIFFICULTY_VALUES[nextIndex]);
+  };
 
   const [specialNinesRule, setSpecialNinesRule] = useState(saved?.options.specialNinesRule ?? DEFAULT_OPTIONS.specialNinesRule);
   const [allowTakeAllCards, setAllowTakeAllCards] = useState(saved?.options.allowTakeAllCards ?? DEFAULT_OPTIONS.allowTakeAllCards);
@@ -427,23 +435,58 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                           />
 
                           <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.aiDifficulty.title')}</label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {AI_DIFFICULTY_VALUES.map((value) => (
-                              <button
-                                key={value}
-                                onClick={() => setAiDifficulty(value)}
-                                className={`p-2.5 rounded-lg text-left transition-all border ${
-                                  aiDifficulty === value
-                                    ? 'bg-amber-500 border-amber-400 text-emerald-900'
-                                    : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
-                                }`}
-                              >
-                                <div className="font-semibold text-sm">{t(`setup.aiDifficulty.${value}.label`)}</div>
-                                <div className={`text-xs mt-0.5 leading-tight ${aiDifficulty === value ? 'text-amber-800' : 'text-emerald-400'}`}>
-                                  {t(`setup.aiDifficulty.${value}.desc`)}
-                                </div>
-                              </button>
-                            ))}
+                          <div
+                            className="flex items-center gap-2 rounded-lg border border-emerald-500 bg-emerald-700/40 p-2"
+                            tabIndex={0}
+                            role="group"
+                            aria-label={t('setup.aiDifficulty.title')}
+                            onKeyDown={(event) => {
+                              if (event.key === 'ArrowLeft') {
+                                event.preventDefault();
+                                moveDifficulty('previous');
+                              } else if (event.key === 'ArrowRight') {
+                                event.preventDefault();
+                                moveDifficulty('next');
+                              }
+                            }}
+                            onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
+                            onTouchEnd={(event) => {
+                              if (touchStartX === null) return;
+                              const endX = event.changedTouches[0]?.clientX ?? touchStartX;
+                              const delta = endX - touchStartX;
+                              setTouchStartX(null);
+                              if (Math.abs(delta) < 40) return;
+                              if (delta < 0) moveDifficulty('next');
+                              else moveDifficulty('previous');
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => moveDifficulty('previous')}
+                              aria-label={t('setup.aiDifficulty.previous')}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-emerald-200 transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <div className="flex-1 text-center" aria-live="polite">
+                              <div className="text-base font-semibold text-white">
+                                {t(`setup.aiDifficulty.${aiDifficulty}.label`)}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => moveDifficulty('next')}
+                              aria-label={t('setup.aiDifficulty.next')}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-emerald-200 transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                          </div>
+                          <div
+                            className="mt-2 rounded-lg border border-emerald-600 bg-emerald-900/40 p-3 text-sm text-emerald-200"
+                            role="status"
+                          >
+                            {t(`setup.aiDifficulty.${aiDifficulty}.desc`)}
                           </div>
                         </div>
 
