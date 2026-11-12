@@ -3,6 +3,7 @@ import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName, Language } from 
 import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
+import { hasDuplicatePlayerNames } from '../utils/playerNames';
 import { useTranslation, LANGUAGES } from '../lib/i18n';
 
 interface PlayerSetup {
@@ -151,14 +152,19 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   };
 
   const handleStartGame = () => {
-    const humanPlayers = players.filter(p => !p.isAI);
+    const readyPlayers = players.map(player => ({ ...player, name: player.name.trim() }));
+    const humanPlayers = readyPlayers.filter(p => !p.isAI);
     if (humanPlayers.length === 0) {
       setError(t('setup.errorNoHuman'));
       return;
     }
-    const emptyNames = players.filter(p => p.name.trim() === '');
+    const emptyNames = readyPlayers.filter(p => p.name === '');
     if (emptyNames.length > 0) {
       setError(t('setup.errorEmptyName'));
+      return;
+    }
+    if (hasDuplicatePlayerNames(readyPlayers)) {
+      setError(t('setup.errorDuplicateName'));
       return;
     }
 
@@ -174,8 +180,8 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
       language,
     };
 
-    saveSettings(players, options);
-    onStartGame(players, options);
+    saveSettings(readyPlayers, options);
+    onStartGame(readyPlayers, options);
   };
 
   return (

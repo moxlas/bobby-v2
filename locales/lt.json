@@ -91,6 +91,7 @@
       "gameInProgress": "Tas žaidimas jau prasidėjo.",
       "nameRequired": "Įveskite vardą prieš prisijungdami.",
       "roomExists": "Toks kambario kodas jau užimtas.",
+      "nameTaken": "Toks vardas šiame kambaryje jau užimtas. Pasirinkite kitą.",
       "unknown": "Kažkas nutiko. Bandykite dar kartą.",
       "dismiss": "Uždaryti"
     },
@@ -122,6 +123,7 @@
     "startGame": "Pradėti žaidimą",
     "errorNoHuman": "Reikalingas bent vienas žmogus žaidėjas!",
     "errorEmptyName": "Visi žaidėjai turi turėti vardą!",
+    "errorDuplicateName": "Žaidėjų vardai turi būti skirtingi!",
     "option": {
       "specialNines": {
         "title": "Speciali 9-ukų taisyklė",

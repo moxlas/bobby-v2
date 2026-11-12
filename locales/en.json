@@ -91,6 +91,7 @@
       "gameInProgress": "That game has already started.",
       "nameRequired": "Enter a name before joining.",
       "roomExists": "That room code is already taken.",
+      "nameTaken": "That name is already in this room. Choose another one.",
       "unknown": "Something went wrong. Please try again.",
       "dismiss": "Dismiss"
     },
@@ -122,6 +123,7 @@
     "startGame": "Start Game",
     "errorNoHuman": "At least one human player is required!",
     "errorEmptyName": "All players must have a name!",
+    "errorDuplicateName": "Player names must be unique!",
     "option": {
       "specialNines": {
         "title": "Special 9's Rule",

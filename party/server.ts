@@ -28,6 +28,7 @@ import {
 } from '../utils/gameLogic';
 import { getAIDelay, getAIMove } from '../utils/aiLogic';
 import { toGameStateView } from '../utils/gameView';
+import { playerNameKey, isPlayerNameTaken } from '../utils/playerNames';
 import { isValidRoomCode } from '../utils/roomCode';
 import { ROOM_LIST_HEARTBEAT_MS } from '../utils/roomBrowser';
 import type { Env } from './env';
@@ -310,6 +311,10 @@ export class BobbyRoom extends Server<Env> {
       : undefined;
 
     if (existing) {
+      if (playerNameKey(name) !== playerNameKey(existing.name) && this.isNameTaken(name, existing)) {
+        this.send(connection, { type: 'error', code: 'nameTaken' });
+        return;
+      }
       await this.claimSeat(connection, existing, name);
       return;
     }
@@ -319,7 +324,18 @@ export class BobbyRoom extends Server<Env> {
       : undefined;
 
     if (existingSpectator) {
+      if (playerNameKey(name) !== playerNameKey(existingSpectator.name) && this.isNameTaken(name, existingSpectator)) {
+        this.send(connection, { type: 'error', code: 'nameTaken' });
+        return;
+      }
       await this.claimSpectator(connection, existingSpectator, name);
+      return;
+    }
+
+    // New participants need a name nobody else in the room is using, so two
+    // people never share one leaderboard row.
+    if (!message.create && this.isNameTaken(name)) {
+      this.send(connection, { type: 'error', code: 'nameTaken' });
       return;
     }
 
@@ -498,14 +514,11 @@ export class BobbyRoom extends Server<Env> {
     }
 
     while (aiSeats.length < target) {
-      const usedNumbers = new Set(
-        this.state.seats
-          .filter(s => s.isAI)
-          .map(s => Number(s.name.replace(/\D/g, '')))
-          .filter(n => Number.isFinite(n) && n > 0),
+      const usedNames = new Set(
+        [...this.state.seats, ...this.state.spectators].map(s => playerNameKey(s.name)),
       );
       let number = 1;
-      while (usedNumbers.has(number)) number++;
+      while (usedNames.has(playerNameKey(`AI ${number}`))) number++;
 
       const aiSeat: RoomSeat = {
         id: this.lowestFreeSeatId(),
@@ -1133,6 +1146,13 @@ export class BobbyRoom extends Server<Env> {
     return this.state?.isPublic
       ? Math.min(expiresAt, now + ROOM_LIST_HEARTBEAT_MS)
       : expiresAt;
+  }
+
+  private isNameTaken(name: string, except?: RoomSeat | RoomSpectator): boolean {
+    if (!this.state) return false;
+    const participants = [...this.state.seats, ...this.state.spectators]
+      .filter(participant => participant !== except);
+    return isPlayerNameTaken(participants, name);
   }
 
   private lowestFreeSeatId(): number {

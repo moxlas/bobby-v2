@@ -80,6 +80,17 @@ export function prunePublicRooms(
   return sortPublicRooms(fresh).slice(0, MAX_PUBLIC_ROOMS);
 }
 
+/**
+ * The public directory endpoint is read-only.
+ *
+ * Rooms publish and remove their own entries through the Durable Object
+ * binding. Only reads (and their CORS preflight) may pass through the worker,
+ * so a visitor cannot spam listings or delete someone else's room.
+ */
+export function isPublicDirectoryRequest(method: string, pathname: string): boolean {
+  return pathname === '/rooms' && (method === 'GET' || method === 'OPTIONS');
+}
+
 /** Insert or refresh one room, stamping it with the listing time. */
 export function upsertPublicRoom(
   rooms: PublicRoomSummary[],

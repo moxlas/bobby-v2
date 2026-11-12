@@ -4,6 +4,7 @@ import {
   ROOM_LIST_STALE_MS,
   getRoomAction,
   isListingFresh,
+  isPublicDirectoryRequest,
   prunePublicRooms,
   sortPublicRooms,
   upsertPublicRoom,
@@ -110,5 +111,21 @@ describe('upsertPublicRoom', () => {
     expect(next).toHaveLength(1);
     expect(next[0].humans).toBe(3);
     expect(next[0].updatedAt).toBe(50_000);
+  });
+});
+
+describe('isPublicDirectoryRequest', () => {
+  it('allows reads and CORS preflight', () => {
+    expect(isPublicDirectoryRequest('GET', '/rooms')).toBe(true);
+    expect(isPublicDirectoryRequest('OPTIONS', '/rooms')).toBe(true);
+  });
+
+  it('rejects public writes so only rooms can publish or remove listings', () => {
+    expect(isPublicDirectoryRequest('POST', '/rooms')).toBe(false);
+    expect(isPublicDirectoryRequest('DELETE', '/rooms')).toBe(false);
+  });
+
+  it('does not treat other paths as the directory', () => {
+    expect(isPublicDirectoryRequest('GET', '/main/ABC234')).toBe(false);
   });
 });

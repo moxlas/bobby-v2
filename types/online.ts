@@ -100,6 +100,7 @@ export type RoomErrorCode =
   | 'gameInProgress'
   | 'nameRequired'
   | 'roomExists'
+  | 'nameTaken'
   | 'unknown';
 
 export type RoomCloseReason = 'roomNotFound' | 'roomExpired' | 'kicked';

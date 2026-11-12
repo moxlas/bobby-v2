@@ -136,7 +136,7 @@ export function useOnlineRoom({ code, create, name, publicRoom = false, onCodeTa
             closedByUsRef.current = true;
             socket.close();
             codeTakenRef.current?.();
-          } else if (message.code === 'gameInProgress' || message.code === 'roomFull') {
+          } else if (message.code === 'gameInProgress' || message.code === 'roomFull' || message.code === 'nameTaken') {
             // There is no seat to reclaim, so reconnecting would only loop.
             closedByUsRef.current = true;
             socket.close();
