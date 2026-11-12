@@ -412,13 +412,6 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                       <div className="space-y-5">
                         <OptionRow
                           icon={<Zap className="w-4 h-4 text-amber-400" />}
-                          title={t('setup.option.adaptiveAI.title')}
-                          description={t('setup.option.adaptiveAI.desc')}
-                          enabled={adaptiveAI}
-                          onToggle={() => setAdaptiveAI(v => !v)}
-                        />
-                        <OptionRow
-                          icon={<Zap className="w-4 h-4 text-amber-400" />}
                           title={t('setup.option.skipConfirmations.title')}
                           description={t('setup.option.skipConfirmations.desc')}
                           enabled={skipConfirmations}
@@ -426,6 +419,13 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                         />
 
                         <div className="border-t border-emerald-600/40 pt-4">
+                          <OptionRow
+                            title={t('setup.option.adaptiveAI.title')}
+                            description={t('setup.option.adaptiveAI.desc')}
+                            enabled={adaptiveAI}
+                            onToggle={() => setAdaptiveAI(v => !v)}
+                          />
+
                           <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.aiDifficulty.title')}</label>
                           <div className="grid grid-cols-3 gap-2">
                             {AI_DIFFICULTY_VALUES.map((value) => (
