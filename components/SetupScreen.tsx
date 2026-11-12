@@ -4,6 +4,7 @@ import { Play, BookOpen, ChevronDown, ChevronUp, AlertCircle, Settings, Zap, Tro
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
 import { hasDuplicatePlayerNames } from '../utils/playerNames';
+import { getAdaptiveAIDifficulty, getHumanPerformanceSummary } from '../utils/aiAdaptation';
 import { useTranslation, LANGUAGES } from '../lib/i18n';
 
 interface PlayerSetup {
@@ -111,6 +112,7 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   const [allowTakeAllCards, setAllowTakeAllCards] = useState(saved?.options.allowTakeAllCards ?? DEFAULT_OPTIONS.allowTakeAllCards);
   const [fourOfAKindRule, setFourOfAKindRule] = useState(saved?.options.fourOfAKindRule ?? DEFAULT_OPTIONS.fourOfAKindRule);
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(saved?.options.aiDifficulty ?? DEFAULT_OPTIONS.aiDifficulty);
+  const [adaptiveAI, setAdaptiveAI] = useState(saved?.options.adaptiveAI ?? DEFAULT_OPTIONS.adaptiveAI);
   const [rankedSeating, setRankedSeating] = useState(saved?.options.rankedSeating ?? DEFAULT_OPTIONS.rankedSeating);
   const [randomSeating, setRandomSeating] = useState(saved?.options.randomSeating ?? DEFAULT_OPTIONS.randomSeating);
   const [skipConfirmations, setSkipConfirmations] = useState(saved?.options.skipConfirmations ?? DEFAULT_OPTIONS.skipConfirmations);
@@ -168,11 +170,12 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
       return;
     }
 
-    const options: GameOptions = {
+    const baseOptions: GameOptions = {
       specialNinesRule,
       allowTakeAllCards,
       fourOfAKindRule,
       aiDifficulty,
+      adaptiveAI,
       rankedSeating,
       randomSeating,
       skipConfirmations,
@@ -180,7 +183,12 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
       language,
     };
 
-    saveSettings(readyPlayers, options);
+    const resolvedDifficulty = adaptiveAI
+      ? getAdaptiveAIDifficulty(aiDifficulty, getHumanPerformanceSummary())
+      : aiDifficulty;
+    const options: GameOptions = { ...baseOptions, aiDifficulty: resolvedDifficulty };
+
+    saveSettings(readyPlayers, baseOptions);
     onStartGame(readyPlayers, options);
   };
 
@@ -402,6 +410,13 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
 
                     {activeOptionsTab === 'general' && (
                       <div className="space-y-5">
+                        <OptionRow
+                          icon={<Zap className="w-4 h-4 text-amber-400" />}
+                          title={t('setup.option.adaptiveAI.title')}
+                          description={t('setup.option.adaptiveAI.desc')}
+                          enabled={adaptiveAI}
+                          onToggle={() => setAdaptiveAI(v => !v)}
+                        />
                         <OptionRow
                           icon={<Zap className="w-4 h-4 text-amber-400" />}
                           title={t('setup.option.skipConfirmations.title')}

@@ -137,6 +137,10 @@
         "title": "4 of a Kind Rule",
         "desc": "When enabled, you may play all 4 cards of the same value as a single move. After playing 4 of a kind, you may play another valid card (or another 4 of a kind) on top before ending your turn."
       },
+      "adaptiveAI": {
+        "title": "Adaptive AI",
+        "desc": "Adjusts AI difficulty slightly based on your recent recorded results."
+      },
       "rankedSeating": {
         "title": "Ranked Seating",
         "desc": "When enabled, pressing Play Again arranges players by finish order — first place in seat 1, going clockwise by finish position."

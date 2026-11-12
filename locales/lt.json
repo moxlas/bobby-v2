@@ -137,6 +137,10 @@
         "title": "4 vienodų taisyklė",
         "desc": "Kai įjungta, galite žaisti visas 4 vienodos vertės kortas kaip vieną ėjimą. Po 4 vienodų galite žaisti kitą galimą kortą (arba dar 4 vienodas) prieš baigiant ėjimą."
       },
+      "adaptiveAI": {
+        "title": "Adaptivus DI",
+        "desc": "Šiek tiek keičia DI sudėtingumą pagal jūsų paskutinius rezultatus."
+      },
       "rankedSeating": {
         "title": "Rikiuota tvarka",
         "desc": "Kai įjungta, paspaudus Žaisti dar kartą, žaidėjai išrikiuojami pagal finišo tvarką — pirmoji vieta pirmoje pozicijoje, likę - pagal laikrodžio rodyklę."

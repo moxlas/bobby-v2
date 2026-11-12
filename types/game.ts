@@ -59,6 +59,7 @@ export interface GameRules {
 /** Per-player settings that never affect the rules or other seats. */
 export interface GamePreferences {
   aiDifficulty: AIDifficulty;
+  adaptiveAI: boolean;
   rankedSeating: boolean;
   randomSeating: boolean;
   skipConfirmations: boolean;
@@ -95,6 +96,7 @@ export const DEFAULT_RULES: GameRules = {
 
 export const DEFAULT_PREFERENCES: GamePreferences = {
   aiDifficulty: 'medium',
+  adaptiveAI: false,
   rankedSeating: false,
   randomSeating: false,
   skipConfirmations: false,
