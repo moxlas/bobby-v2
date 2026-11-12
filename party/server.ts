@@ -2,9 +2,11 @@ import { Server, type Connection } from 'partyserver';
 import { DEFAULT_OPTIONS, type GameRules, type GameState } from '../types/game';
 import {
   MAX_ROOM_SEATS,
+  MAX_ROOM_SPECTATORS,
   MIN_ROOM_SEATS,
   type ClientMessage,
   type GameStateView,
+  type PublicRoomSummary,
   type RoomCloseReason,
   type RoomErrorCode,
   type RoomPhase,
@@ -26,12 +28,14 @@ import {
 import { getAIDelay, getAIMove } from '../utils/aiLogic';
 import { toGameStateView } from '../utils/gameView';
 import { isValidRoomCode } from '../utils/roomCode';
+import { ROOM_LIST_HEARTBEAT_MS } from '../utils/roomBrowser';
+import type { Env } from './env';
 
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 const RECONNECT_GRACE_MS = 60 * 1000;
-const MAX_SPECTATORS = 8;
 const AI_DIFFICULTY = 'medium' as const;
 const STORAGE_KEY = 'room';
+const DIRECTORY_ORIGIN = 'https://directory.internal';
 
 interface RoomSeat {
   id: number;
@@ -58,6 +62,10 @@ interface StoredRoom {
   rules: GameRules;
   createdAt: number;
   version: number;
+  /** Rooms persist this opt-in; anything saved before it existed is private. */
+  isPublic: boolean;
+  /** Inactivity deadline, refreshed on every save. */
+  expiresAt: number;
 }
 
 interface ConnectionSeat {
@@ -82,10 +90,6 @@ function isFirstMoveOfGame(game: GameState): boolean {
   return pile.length === 1 && pile[0].suit === 'diamonds' && pile[0].value === 9;
 }
 
-export interface Env {
-  Main: DurableObjectNamespace<BobbyRoom>;
-}
-
 /**
  * One PartyServer room per code. The server is the only writer of the game
  * state: clients send intents, every seat receives its own redacted view.
@@ -95,6 +99,10 @@ export class BobbyRoom extends Server<Env> {
   private loaded = false;
   private aiTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly graceTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  /** The last published roster/phase, so game moves never touch the directory. */
+  private listingSignature: string | null = null;
+  /** Last time an entry was actually sent; keeps long games fresh. */
+  private lastPublishedAt = 0;
 
   async onStart(): Promise<void> {
     await this.load();
@@ -115,6 +123,10 @@ export class BobbyRoom extends Server<Env> {
       const seat = current ? this.state.seats.find(s => s.id === current.id) : null;
       if (seat && !seat.isAI) this.scheduleGrace(seat.id);
     }
+
+    // A cold start may follow a deploy or hibernation; refresh the public entry
+    // so the directory keeps the room visible while it waits for players.
+    if (this.state.isPublic) await this.syncListing(true);
   }
 
   async onConnect(): Promise<void> {
@@ -230,6 +242,21 @@ export class BobbyRoom extends Server<Env> {
   }
 
   async onAlarm(): Promise<void> {
+    await this.load();
+    const now = Date.now();
+
+    if (this.state && this.state.expiresAt > now) {
+      // Public rooms wake every minute to refresh their listing. This heartbeat
+      // must not extend the inactivity deadline, so it does not call save().
+      await this.syncListing(true);
+      await this.ctx.storage.setAlarm(
+        Math.min(this.state.expiresAt, now + ROOM_LIST_HEARTBEAT_MS),
+      );
+      return;
+    }
+
+    await this.unpublishListing();
+
     // The TTL alarm only needs storage and sockets; it never inspects the game.
     this.loaded = true;
     for (const connection of this.getConnections()) {
@@ -253,6 +280,11 @@ export class BobbyRoom extends Server<Env> {
       this.state = stored;
       // Rooms persisted before spectators existed need the new list.
       if (!Array.isArray(this.state.spectators)) this.state.spectators = [];
+      // Public listing is opt-in, so every older room stays private.
+      if (typeof this.state.isPublic !== 'boolean') this.state.isPublic = false;
+      if (!Number.isFinite(this.state.expiresAt)) {
+        this.state.expiresAt = Date.now() + ROOM_TTL_MS;
+      }
     }
   }
 
@@ -304,6 +336,9 @@ export class BobbyRoom extends Server<Env> {
         rules: sanitizeRules(DEFAULT_OPTIONS),
         createdAt: Date.now(),
         version: 0,
+        // Public listing is opt-in, but the entry screen defaults it on.
+        isPublic: message.publicRoom !== false,
+        expiresAt: Date.now() + ROOM_TTL_MS,
       };
       const host: RoomSeat = {
         id: 0,
@@ -327,7 +362,7 @@ export class BobbyRoom extends Server<Env> {
     // A running (or paused) game accepts watchers; the finished screen accepts
     // new players so they can be dealt into the next round.
     if (this.state.phase === 'playing') {
-      if (this.state.spectators.length >= MAX_SPECTATORS) {
+      if (this.state.spectators.length >= MAX_ROOM_SPECTATORS) {
         this.send(connection, { type: 'error', code: 'roomFull' });
         return;
       }
@@ -1000,13 +1035,106 @@ export class BobbyRoom extends Server<Env> {
   }
 
   // ---------------------------------------------------------------------------
+  // Public directory
+  // ---------------------------------------------------------------------------
+
+  /** Build the public view of this room; null before the room exists. */
+  private buildListing(now = Date.now()): PublicRoomSummary | null {
+    if (!this.state) return null;
+
+    const host = this.state.seats.find(seat => seat.isHost);
+    return {
+      code: this.name,
+      hostName: host?.name ?? 'Host',
+      phase: this.state.phase,
+      humans: this.state.seats.filter(seat => !seat.isAI).length,
+      ai: this.state.seats.filter(seat => seat.isAI).length,
+      spectators: this.state.spectators.length,
+      maxSeats: MAX_ROOM_SEATS,
+      createdAt: this.state.createdAt,
+      updatedAt: now,
+    };
+  }
+
+  /**
+   * Publish the room when its phase or roster changes. A signature keeps game
+   * moves (which bump `version`) from touching the directory on every turn.
+   */
+  private async syncListing(force = false): Promise<void> {
+    if (!this.state?.isPublic) return;
+
+    let listing: PublicRoomSummary | null;
+    try {
+      listing = this.buildListing();
+    } catch {
+      return;
+    }
+    if (!listing) return;
+
+    const signature = [
+      listing.phase,
+      listing.humans,
+      listing.ai,
+      listing.spectators,
+      listing.hostName,
+      listing.maxSeats,
+    ].join('|');
+
+    const heartbeatDue = Date.now() - this.lastPublishedAt >= ROOM_LIST_HEARTBEAT_MS;
+    if (!force && !heartbeatDue && signature === this.listingSignature) return;
+    this.listingSignature = signature;
+
+    await this.directoryRequest('/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ room: listing }),
+    });
+    this.lastPublishedAt = Date.now();
+  }
+
+  private async unpublishListing(): Promise<void> {
+    this.listingSignature = null;
+    if (this.state && !this.state.isPublic) return;
+
+    try {
+      await this.directoryRequest(`/rooms?code=${encodeURIComponent(this.name)}`, {
+        method: 'DELETE',
+      });
+    } catch {
+      // The room is going away regardless; a stale entry expires on its own.
+    }
+  }
+
+  private async directoryRequest(path: string, init: RequestInit): Promise<void> {
+    try {
+      const id = this.env.Directory.idFromName('global');
+      await this.env.Directory.get(id).fetch(`${DIRECTORY_ORIGIN}${path}`, init);
+    } catch {
+      // Listing is best-effort: never let the directory failure break a room.
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Storage helpers
   // ---------------------------------------------------------------------------
 
   private async save(): Promise<void> {
     if (!this.state) return;
+
+    // Any activity keeps the room alive for another two hours.
+    this.state.expiresAt = Date.now() + ROOM_TTL_MS;
     await this.ctx.storage.put(STORAGE_KEY, this.state);
-    await this.ctx.storage.setAlarm(Date.now() + ROOM_TTL_MS);
+    await this.ctx.storage.setAlarm(this.nextAlarmAt());
+    await this.syncListing();
+  }
+
+  /** Public rooms wake every minute; private rooms only at their deadline. */
+  private nextAlarmAt(): number {
+    const now = Date.now();
+    const expiresAt = this.state?.expiresAt ?? now + ROOM_TTL_MS;
+    return this.state?.isPublic
+      ? Math.min(expiresAt, now + ROOM_LIST_HEARTBEAT_MS)
+      : expiresAt;
   }
 
   private lowestFreeSeatId(): number {
@@ -1019,7 +1147,7 @@ export class BobbyRoom extends Server<Env> {
 
   private lowestFreeSpectatorId(): number {
     const used = new Set(this.state?.spectators.map(spectator => spectator.id) ?? []);
-    for (let id = 0; id < MAX_SPECTATORS; id++) {
+    for (let id = 0; id < MAX_ROOM_SPECTATORS; id++) {
       if (!used.has(id)) return id;
     }
     return 0;
@@ -1037,6 +1165,8 @@ export class BobbyRoom extends Server<Env> {
   }
 
   private async destroy(): Promise<void> {
+    await this.unpublishListing();
+
     for (const connection of this.getConnections()) {
       this.send(connection, { type: 'closed', reason: 'roomNotFound' as RoomCloseReason });
       connection.close(1000, 'roomClosed');

@@ -34,6 +34,7 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
     code,
     create: session.create,
     name: session.name,
+    publicRoom: session.publicRoom,
     onCodeTaken: handleCodeTaken,
   });
 

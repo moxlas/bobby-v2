@@ -4,7 +4,13 @@
   "main": "party/worker.ts",
   "compatibility_date": "2026-09-01",
   "durable_objects": {
-    "bindings": [{ "name": "Main", "class_name": "BobbyRoom" }]
+    "bindings": [
+      { "name": "Main", "class_name": "BobbyRoom" },
+      { "name": "Directory", "class_name": "RoomDirectory" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["BobbyRoom"] }]
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["BobbyRoom"] },
+    { "tag": "v2", "new_sqlite_classes": ["RoomDirectory"] }
+  ]
 }

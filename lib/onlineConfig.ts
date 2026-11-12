@@ -24,6 +24,18 @@ export function buildShareUrl(code: string): string {
   return `${window.location.origin}/join/${code}`;
 }
 
+/** Absolute URL of the public room directory, or null when online is off. */
+export function buildRoomsUrl(): string | null {
+  if (!ONLINE_CONFIGURED) return null;
+
+  const absolute = /^[a-z]+:\/\//i.test(ROOMS_HOST);
+  if (absolute) return `${ROOMS_HOST.replace(/\/+$/, '')}/rooms`;
+
+  if (typeof window === 'undefined') return `https://${ROOMS_HOST}/rooms`;
+  const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+  return `${protocol}://${ROOMS_HOST}/rooms`;
+}
+
 /** Read `/join/ABC123` (and the dev hash fallback) from the current URL. */
 export function readJoinCodeFromLocation(): string | null {
   if (typeof window === 'undefined') return null;

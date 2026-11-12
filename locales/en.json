@@ -15,7 +15,32 @@
       "back": "Back",
       "nameRequired": "Enter a name before continuing.",
       "codeInvalid": "Enter a 6-character room code.",
+      "listPublic": "List in server browser",
+      "listPublicHint": "Anyone can find and join this room. Turn off to share only by code.",
       "unavailable": "Online play is not configured yet. Set VITE_ROOMS_HOST to enable it."
+    },
+    "browser": {
+      "title": "Server browser",
+      "subtitle": "Public rooms looking for players",
+      "refresh": "Refresh",
+      "loading": "Loading rooms…",
+      "empty": "No public rooms right now. Create one!",
+      "error": "Could not load public rooms.",
+      "retry": "Try again",
+      "join": "Join",
+      "watch": "Watch",
+      "nextRound": "Join next round",
+      "full": "Full",
+      "host": "Host: {name}",
+      "humans": "{count} players",
+      "ai": "{count} AI",
+      "spectators": "{count} watching",
+      "seats": "{count}/{max} seats",
+      "phase": {
+        "lobby": "Lobby",
+        "playing": "In progress",
+        "finished": "Finished"
+      }
     },
     "connecting": {
       "title": "Connecting…",

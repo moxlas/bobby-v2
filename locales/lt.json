@@ -15,7 +15,32 @@
       "back": "Atgal",
       "nameRequired": "Įveskite vardą, kad galėtumėte tęsti.",
       "codeInvalid": "Įveskite 6 simbolių kambario kodą.",
+      "listPublic": "Rodyti serverių sąraše",
+      "listPublicHint": "Visi gali rasti ir prisijungti prie šio kambario. Išjunkite, jei norite dalintis tik kodu.",
       "unavailable": "Žaidimas internetu dar nesukonfigūruotas. Nustatykite VITE_ROOMS_HOST, kad įjungtumėte."
+    },
+    "browser": {
+      "title": "Serverių sąrašas",
+      "subtitle": "Vieši kambariai, laukiantys žaidėjų",
+      "refresh": "Atnaujinti",
+      "loading": "Įkeliami kambariai…",
+      "empty": "Šiuo metu viešų kambarių nėra. Sukurkite!",
+      "error": "Nepavyko įkelti viešų kambarių.",
+      "retry": "Bandyti dar kartą",
+      "join": "Prisijungti",
+      "watch": "Stebėti",
+      "nextRound": "Prisijungti prie kito raundo",
+      "full": "Pilna",
+      "host": "Šeimininkas: {name}",
+      "humans": "Žaidėjai: {count}",
+      "ai": "AI: {count}",
+      "spectators": "Stebi: {count}",
+      "seats": "Vietos: {count}/{max}",
+      "phase": {
+        "lobby": "Laukiama",
+        "playing": "Vyksta",
+        "finished": "Baigta"
+      }
     },
     "connecting": {
       "title": "Jungiamasi…",

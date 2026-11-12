@@ -17,6 +17,8 @@ export interface UseOnlineRoomOptions {
   code: string;
   create: boolean;
   name: string;
+  /** Only used while creating; joiners never change a room's listing. */
+  publicRoom?: boolean;
   onCodeTaken?: () => void;
 }
 
@@ -36,7 +38,7 @@ export interface OnlineRoom {
  * A single room connection. The socket reconnects on its own; every open sends
  * `hello` with the seat token so the server can reclaim the same seat.
  */
-export function useOnlineRoom({ code, create, name, onCodeTaken }: UseOnlineRoomOptions): OnlineRoom {
+export function useOnlineRoom({ code, create, name, publicRoom = false, onCodeTaken }: UseOnlineRoomOptions): OnlineRoom {
   const [status, setStatus] = useState<OnlineStatus>('connecting');
   const [error, setError] = useState<RoomErrorCode | null>(null);
   const [closeReason, setCloseReason] = useState<RoomCloseReason | null>(null);
@@ -48,11 +50,16 @@ export function useOnlineRoom({ code, create, name, onCodeTaken }: UseOnlineRoom
   const tokenRef = useRef<string | null>(null);
   const closedByUsRef = useRef(false);
   const nameRef = useRef(name);
+  const publicRoomRef = useRef(publicRoom);
   const codeTakenRef = useRef(onCodeTaken);
 
   useEffect(() => {
     nameRef.current = name;
   }, [name]);
+
+  useEffect(() => {
+    publicRoomRef.current = publicRoom;
+  }, [publicRoom]);
 
   useEffect(() => {
     codeTakenRef.current = onCodeTaken;
@@ -87,6 +94,7 @@ export function useOnlineRoom({ code, create, name, onCodeTaken }: UseOnlineRoom
         token: tokenRef.current,
         name: nameRef.current,
         create,
+        publicRoom: create ? publicRoomRef.current : undefined,
       } satisfies ClientMessage));
     };
 

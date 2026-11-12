@@ -4,7 +4,9 @@ import { useTranslation } from '../lib/i18n';
 import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from '../utils/roomCode';
 import { ONLINE_CONFIGURED } from '../lib/onlineConfig';
 import { saveOnlineName } from '../lib/onlineIdentity';
-import type { OnlineSession } from '../types/online';
+import { Toggle } from './SetupScreen';
+import { RoomBrowser } from './RoomBrowser';
+import type { OnlineSession, PublicRoomSummary } from '../types/online';
 
 interface OnlineEntryProps {
   initialCode?: string | null;
@@ -17,6 +19,7 @@ export function OnlineEntry({ initialCode, defaultName, onEnter, onCancel }: Onl
   const { t } = useTranslation();
   const [name, setName] = useState(defaultName);
   const [code, setCode] = useState(() => normalizeRoomCode(initialCode ?? ''));
+  const [listPublic, setListPublic] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const readName = () => {
@@ -32,7 +35,12 @@ export function OnlineEntry({ initialCode, defaultName, onEnter, onCancel }: Onl
   const handleCreate = () => {
     const readyName = readName();
     if (!readyName) return;
-    onEnter({ code: generateRoomCode(), create: true, name: readyName });
+    onEnter({
+      code: generateRoomCode(),
+      create: true,
+      name: readyName,
+      publicRoom: listPublic,
+    });
   };
 
   const handleJoin = () => {
@@ -46,10 +54,17 @@ export function OnlineEntry({ initialCode, defaultName, onEnter, onCancel }: Onl
     onEnter({ code: normalized, create: false, name: readyName });
   };
 
+  const handleBrowseJoin = (room: PublicRoomSummary) => {
+    const readyName = readName();
+    if (!readyName) return;
+    onEnter({ code: room.code, create: false, name: readyName });
+  };
+
   return (
-    <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-emerald-800 rounded-xl shadow-2xl border border-emerald-600 overflow-hidden">
-        <div className="relative bg-amber-500 px-4 py-5 text-center">
+    <div className="min-h-screen overflow-y-auto bg-emerald-900 p-4">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 py-2 lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start">
+        <div className="w-full overflow-hidden rounded-xl border border-emerald-600 bg-emerald-800 shadow-2xl">
+          <div className="relative bg-amber-500 px-4 py-5 text-center">
           <button
             type="button"
             onClick={onCancel}
@@ -101,6 +116,21 @@ export function OnlineEntry({ initialCode, defaultName, onEnter, onCancel }: Onl
             {t('online.entry.create')}
           </button>
 
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-emerald-600 bg-emerald-900/40 p-3">
+            <div className="flex-1">
+              <span className="text-sm font-medium text-emerald-100">
+                {t('online.entry.listPublic')}
+              </span>
+              <p className="mt-0.5 text-xs leading-relaxed text-emerald-400">
+                {t('online.entry.listPublicHint')}
+              </p>
+            </div>
+            <Toggle
+              enabled={listPublic}
+              onToggle={() => setListPublic((value) => !value)}
+            />
+          </div>
+
           <div className="flex items-center gap-3 text-xs uppercase tracking-wide text-emerald-400">
             <span className="h-px flex-1 bg-emerald-600" />
             {t('online.entry.or')}
@@ -143,6 +173,9 @@ export function OnlineEntry({ initialCode, defaultName, onEnter, onCancel }: Onl
             {t('online.entry.hint')}
           </p>
         </div>
+        </div>
+
+        {ONLINE_CONFIGURED && <RoomBrowser onSelect={handleBrowseJoin} />}
       </div>
     </div>
   );

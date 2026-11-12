@@ -29,6 +29,28 @@ export interface OnlineSession {
   code: string;
   create: boolean;
   name: string;
+  /** Only meaningful when creating: list the room in the public browser. */
+  publicRoom?: boolean;
+}
+
+/** A trimmed-down room description safe to show before joining. */
+export interface PublicRoomSummary {
+  code: string;
+  hostName: string;
+  phase: RoomPhase;
+  /** Human seats, including disconnected players still inside the grace window. */
+  humans: number;
+  ai: number;
+  spectators: number;
+  maxSeats: number;
+  createdAt: number;
+  /** When the room last refreshed its listing; used to drop stale entries. */
+  updatedAt: number;
+}
+
+export interface PublicRoomList {
+  rooms: PublicRoomSummary[];
+  updatedAt: number;
 }
 
 export interface LobbySeat {
@@ -84,7 +106,7 @@ export type RoomCloseReason = 'roomNotFound' | 'roomExpired' | 'kicked';
 
 export type ClientMessage =
   /** Claim a new room (create) or join/reclaim a seat. */
-  | { type: 'hello'; token: string | null; name: string; create: boolean }
+  | { type: 'hello'; token: string | null; name: string; create: boolean; publicRoom?: boolean }
   | { type: 'setRules'; rules: GameRules }
   | { type: 'setAICount'; count: number }
   | { type: 'startGame' }
@@ -113,3 +135,4 @@ export type ServerMessage =
 
 export const MIN_ROOM_SEATS = 2;
 export const MAX_ROOM_SEATS = 8;
+export const MAX_ROOM_SPECTATORS = 8;
