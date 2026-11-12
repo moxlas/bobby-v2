@@ -698,7 +698,12 @@ export function shouldPlayFourAces(hand: Card[], pile: Card[], state: GameState,
 
 // -----------------------------
 
-export function evaluateCandidate(state: GameState, playerId: number, candidate: any) {
+export function evaluateCandidate(
+  state: GameState,
+  playerId: number,
+  candidate: any,
+  tracker = buildOpponentCardTracker(state, playerId),
+) {
 
   if (candidate.type === 'endTurn') return -10;
 
@@ -709,8 +714,6 @@ export function evaluateCandidate(state: GameState, playerId: number, candidate:
   const pile = state.pile;
 
   const topValue = pile[pile.length - 1].value;
-
-  const tracker = buildOpponentCardTracker(state, playerId);
 
   const opponentInfo = estimateOpponentStrength(state, playerId);
 

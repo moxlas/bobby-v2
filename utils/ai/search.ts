@@ -17,7 +17,14 @@ import { getTakeOptions, validatePlay, playCards, takeCards, endTurn } from '../
 
 export function sampleHiddenHands(state: GameState, playerId: number): GameState {
 
-  const sampled = JSON.parse(JSON.stringify(state)) as GameState;
+  const sampled: GameState = {
+    ...state,
+    players: state.players.map(player => ({ ...player, hand: [...player.hand] })),
+    pile: [...state.pile],
+    finishOrder: state.finishOrder.map(player => ({ ...player, hand: [...player.hand] })),
+    moveHistory: [...state.moveHistory],
+    deck: [...state.deck],
+  };
 
   const tracker = buildOpponentCardTracker(state, playerId);
 
@@ -128,6 +135,9 @@ export function getPreviousActionAtRepeatedPosition(state: GameState, playerId: 
   const player = state.players.find(candidate => candidate.id === playerId);
 
   if (!player || state.moveHistory.length < 3 || state.moveHistory[0]?.turnNumber !== 0) return [];
+  // The repeated-position scan is quadratic; skip it in long games to keep
+  // search responsive. Cycle protection is still provided by transpositions.
+  if (state.moveHistory.length > 60) return [];
 
   let historicalPile = [...state.pile];
 
@@ -646,6 +656,7 @@ export function getHardAIMove(state: GameState, playerId: number, searchFuture =
   const candidatesToScore = preferredCandidates.length > 0 ? preferredCandidates : candidates;
 
   const demonstrationScores = getHumanDemonstrationScores(state, playerId, candidatesToScore);
+  const evaluationTracker = buildOpponentCardTracker(state, playerId);
 
   const baseScored = candidatesToScore.map(c => {
 
@@ -693,7 +704,7 @@ export function getHardAIMove(state: GameState, playerId: number, searchFuture =
 
     const humanDemonstrationScore = demonstrationScores.get(getTrainingMoveKey(c)) ?? 0;
 
-    return { c, score: strategicScore + evaluateCandidate(state, playerId, c) + humanDemonstrationScore };
+    return { c, score: strategicScore + evaluateCandidate(state, playerId, c, evaluationTracker) + humanDemonstrationScore };
 
   });
 

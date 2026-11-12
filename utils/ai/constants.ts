@@ -88,9 +88,9 @@ export const HARD_SEARCH_WORLDS = 2;
 
 export const EXPERT_SEARCH_DEPTH = 11;
 
-export const EXPERT_SEARCH_NODE_BUDGET = 12000;
+export const EXPERT_SEARCH_NODE_BUDGET = 15000;
 
-export const EXPERT_SEARCH_TIME_BUDGET_MS = 150;
+export const EXPERT_SEARCH_TIME_BUDGET_MS = 250;
 
 export const EXPERT_SEARCH_WORLDS = 2;
 
