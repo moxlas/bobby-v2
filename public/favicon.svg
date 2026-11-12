@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="The Bobby - 9 of diamonds">
+  <defs>
+    <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a5c46" />
+      <stop offset="1" stop-color="#043c2e" />
+    </linearGradient>
+    <filter id="card-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#021f18" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#felt)" />
+  <rect x="16" y="16" width="480" height="480" rx="98" fill="none" stroke="#f59e0b" stroke-opacity="0.35" stroke-width="6" />
+
+  <g transform="rotate(-9 256 256)" filter="url(#card-shadow)">
+    <rect x="116" y="62" width="280" height="388" rx="28" fill="#fffdf7" stroke="#d9c9a3" stroke-width="6" />
+    <text x="256" y="272" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-size="200" fill="#d62839">9</text>
+    <path d="M 256 300 L 304 354 L 256 408 L 208 354 Z" fill="#d62839" />
+  </g>
+</svg>
