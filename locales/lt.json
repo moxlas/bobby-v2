@@ -139,7 +139,7 @@
       },
       "adaptiveAI": {
         "title": "Adaptivus DI",
-        "desc": "Šiek tiek keičia DI sudėtingumą pagal jūsų paskutinius rezultatus."
+        "desc": "Pritaiko sunkumą pagal jūsų paskutinių žaidimų rezultatus."
       },
       "rankedSeating": {
         "title": "Rikiuota tvarka",
@@ -163,10 +163,10 @@
     },
     "aiDifficulty": {
       "title": "DI sudėtingumas",
-      "easy": { "label": "Lengvas", "desc": "Žaidžia paprastus ėjimus, baigia ėjimą po kiekvieno žaidimo" },
-      "medium": { "label": "Vidutinis", "desc": "Naudoja kombinacijas ir kelių 9-ukų ėjimus strategiškai" },
-      "hard": { "label": "Sunkus", "desc": "Apskaičiuoja optimalius ėjimus, siekia kombinacijų, blokuoja priešininkus" },
-      "expert": { "label": "Ekspertas", "desc": "Gili paieška su keliais pavyzdiniais pasauliais; labai sunku įveikti" },
+      "easy": { "label": "Lengvas", "desc": "Lengvas iššūkis taisyklėms išmokti" },
+      "medium": { "label": "Vidutinis", "desc": "Subalansuotas iššūkis kasdieniam žaidimui" },
+      "hard": { "label": "Sunkus", "desc": "Sunkus iššūkis, skaitantis jūsų ėjimus" },
+      "expert": { "label": "Ekspertas", "desc": "Maksimalus iššūkis; kiekvienas ėjimas ilgiau apgalvojamas" },
       "previous": "Ankstesnis sudėtingumas",
       "next": "Kitas sudėtingumas"
     },
