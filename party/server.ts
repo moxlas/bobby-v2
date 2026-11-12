@@ -21,6 +21,7 @@ import {
   initializeGame,
   pauseGame,
   playCards,
+  resolveHandCards,
   resumeGame,
   takeCards,
   validatePlay,
@@ -565,25 +566,22 @@ export class BobbyRoom extends Server<Env> {
       return;
     }
 
-    const ids = new Set(player.hand.map(card => card.id));
-    const wellFormed = cards.every(card =>
-      card &&
-      typeof card.id === 'string' &&
-      ids.has(card.id),
-    );
-    if (!wellFormed || new Set(cards.map(card => card.id)).size !== cards.length) {
+    // Values and suits always come from the server's hand; the client only
+    // supplies ids, so a modified client cannot promote its own cards.
+    const playedCards = resolveHandCards(player.hand, cards);
+    if (!playedCards) {
       this.sendError(seat, 'invalidMove');
       return;
     }
 
-    const validation = validatePlay(cards, game.pile, isFirstMoveOfGame(game), game.options);
+    const validation = validatePlay(playedCards, game.pile, isFirstMoveOfGame(game), game.options);
     if (!validation.valid) {
       this.sendError(seat, 'invalidMove');
       return;
     }
 
     // The server decides whether a combo keeps the turn; never trust the client.
-    this.state!.game = playCards(game, seat.id, cards, validation.continueTurn ?? false);
+    this.state!.game = playCards(game, seat.id, playedCards, validation.continueTurn ?? false);
     await this.commitGame();
   }
 

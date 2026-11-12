@@ -1,10 +1,194 @@
-import { describe, expect, it } from 'vitest';
-import { DEFAULT_OPTIONS, type Card } from '../types/game';
-import { initializeGame, offersTakeChoice, takeCards, validatePlay } from './gameLogic';
+import { describe, expect, it, vi } from 'vitest';
+import { DEFAULT_OPTIONS, type Card, type GameState, type Player } from '../types/game';
+import {
+  completeRankings,
+  endTurn,
+  finishGame,
+  forfeitPlayer,
+  initializeGame,
+  offersTakeChoice,
+  playCards,
+  resolveHandCards,
+  takeCards,
+  validatePlay,
+} from './gameLogic';
 
 function card(id: string, value: Card['value'] = 9): Card {
   return { id, suit: 'hearts', value, faceUp: true };
 }
+
+function player(id: number, overrides: Partial<Player> = {}): Player {
+  return {
+    id,
+    name: `P${id}`,
+    hand: [card(`hand-${id}`)],
+    isCurrentTurn: false,
+    isConnected: true,
+    isAI: false,
+    hasFinished: false,
+    finishPosition: null,
+    finishTime: null,
+    ...overrides,
+  };
+}
+
+function game(players: Player[], overrides: Partial<GameState> = {}): GameState {
+  return {
+    phase: 'playing',
+    players,
+    currentPlayerIndex: 0,
+    pile: [card('base')],
+    deck: [],
+    direction: 'clockwise',
+    finishOrder: [],
+    loser: null,
+    moveHistory: [],
+    gameStartTime: null,
+    pausedTime: null,
+    totalPausedTime: 0,
+    turnNumber: 1,
+    options: DEFAULT_OPTIONS,
+    canContinueTurn: false,
+    aiOnlyStartTurn: null,
+    ...overrides,
+  };
+}
+
+describe('resolveHandCards', () => {
+  const hand = [
+    card('9h', 9),
+    card('10h', 10),
+    { id: 'ac', suit: 'clubs', value: 14, faceUp: true } as Card,
+  ];
+
+  it('replaces forged values and suits with the authoritative hand cards', () => {
+    const forged = [{ id: '9h', suit: 'spades', value: 14, faceUp: true }];
+
+    expect(resolveHandCards(hand, forged)).toEqual([hand[0]]);
+  });
+
+  it('resolves id-only references in the order they were sent', () => {
+    expect(resolveHandCards(hand, [{ id: 'ac' }, { id: '9h' }])?.map(c => c.id))
+      .toEqual(['ac', '9h']);
+  });
+
+  it('rejects empty, malformed, duplicated, and unowned references', () => {
+    expect(resolveHandCards(hand, [])).toBeNull();
+    expect(resolveHandCards(hand, null)).toBeNull();
+    expect(resolveHandCards(hand, '9h')).toBeNull();
+    expect(resolveHandCards(hand, [null])).toBeNull();
+    expect(resolveHandCards(hand, [{}])).toBeNull();
+    expect(resolveHandCards(hand, [{ id: 9 }])).toBeNull();
+    expect(resolveHandCards(hand, [{ id: '9h' }, { id: '9h' }])).toBeNull();
+    expect(resolveHandCards(hand, [{ id: 'missing' }])).toBeNull();
+  });
+});
+
+describe('completeRankings', () => {
+  it('ranks active players before forfeiters and makes the earliest forfeiter the loser', () => {
+    const state = game(
+      [
+        player(0, { name: 'finisher', hasFinished: true, finishPosition: 1, finishTime: 10 }),
+        player(1, { name: 'active' }),
+        player(2, { name: 'early-leaver', hasFinished: true, finishPosition: null, finishTime: 5 }),
+        player(3, { name: 'late-leaver', hasFinished: true, finishPosition: null, finishTime: 20 }),
+      ],
+      {
+        finishOrder: [player(0, { hasFinished: true, finishPosition: 1, finishTime: 10 })],
+      },
+    );
+
+    const next = completeRankings(state, 100);
+
+    expect(next.phase).toBe('finished');
+    expect(next.finishOrder.map(p => p.name))
+      .toEqual(['finisher', 'active', 'late-leaver', 'early-leaver']);
+    expect(next.finishOrder.map(p => p.finishPosition)).toEqual([1, 2, 3, 4]);
+    expect(next.players.find(p => p.id === 1))
+      .toMatchObject({ hasFinished: true, finishPosition: 2, finishTime: 100 });
+    expect(next.loser?.name).toBe('early-leaver');
+  });
+
+  it('keeps a forfeiter in the standings when the game continues', () => {
+    const started = game([player(0), player(1), player(2), player(3)]);
+    const afterForfeit = forfeitPlayer(started, 2);
+
+    expect(afterForfeit.phase).toBe('playing');
+    expect(afterForfeit.finishOrder).toHaveLength(0);
+    expect(afterForfeit.players[2]).toMatchObject({ hasFinished: true, finishPosition: null });
+
+    const finished = finishGame(afterForfeit);
+
+    expect(finished.finishOrder.map(p => p.id)).toEqual([0, 1, 3, 2]);
+    expect(finished.finishOrder.map(p => p.finishPosition)).toEqual([1, 2, 3, 4]);
+    expect(finished.loser?.id).toBe(2);
+  });
+
+  it('orders multiple forfeiters by when they left', () => {
+    vi.useFakeTimers();
+    try {
+      const started = game([player(0), player(1), player(2), player(3)], { gameStartTime: 1000 });
+
+      vi.setSystemTime(2000);
+      const firstLeft = forfeitPlayer(started, 0);
+      vi.setSystemTime(3000);
+      const secondLeft = forfeitPlayer(firstLeft, 1);
+
+      expect(secondLeft.phase).toBe('playing');
+
+      const finished = finishGame(secondLeft);
+
+      expect(finished.finishOrder.map(p => p.id)).toEqual([2, 3, 1, 0]);
+      expect(finished.loser?.id).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ends the game when only one player is left standing', () => {
+    const next = forfeitPlayer(game([player(0), player(1)]), 0);
+
+    expect(next.phase).toBe('finished');
+    expect(next.finishOrder.map(p => p.id)).toEqual([1, 0]);
+    expect(next.finishOrder.map(p => p.finishPosition)).toEqual([1, 2]);
+    expect(next.loser?.id).toBe(0);
+    expect(next.players.every(p => p.hasFinished)).toBe(true);
+  });
+
+  it('completes the standings when an AI-only game times out', () => {
+    const state = game(
+      [
+        player(0, { isAI: true, hasFinished: true, finishPosition: null, finishTime: 15 }),
+        player(1, { isAI: true }),
+        player(2, { isAI: true }),
+      ],
+      { aiOnlyStartTurn: 1, turnNumber: 201 },
+    );
+
+    const next = endTurn(state);
+
+    expect(next.phase).toBe('finished');
+    expect(next.finishOrder.map(p => p.id)).toEqual([1, 2, 0]);
+    expect(next.loser?.id).toBe(0);
+  });
+
+  it('includes a forfeiter when the last card ends the game', () => {
+    const state = game(
+      [
+        player(0, { hand: [card('10h', 10)], isCurrentTurn: true }),
+        player(1, { hand: [card('9h', 9)] }),
+        player(2, { hand: [], hasFinished: true, finishPosition: null, finishTime: 5 }),
+      ],
+      { pile: [{ id: '9d', suit: 'diamonds', value: 9, faceUp: true }] },
+    );
+
+    const next = playCards(state, 0, [card('10h', 10)], false);
+
+    expect(next.phase).toBe('finished');
+    expect(next.finishOrder.map(p => p.id)).toEqual([0, 1, 2]);
+    expect(next.loser?.id).toBe(2);
+  });
+});
 
 describe('initializeGame', () => {
   it('keeps explicit seat ids and uses them in the opening move', () => {
