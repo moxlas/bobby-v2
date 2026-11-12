@@ -485,9 +485,11 @@ export function adversarialSearchEstimates(state: GameState, playerId: number, c
 
   const profile = getSearchProfile(state.options.aiDifficulty);
 
+  const searchedCandidates = candidates.slice(0, Math.min(candidates.length, 6));
+
   const worldScores = new Map<string, number[]>();
 
-  const perWorldCandidateBudget = Math.max(200, Math.floor(profile.nodeBudget / (profile.worlds * candidates.length)));
+  const perWorldCandidateBudget = Math.max(200, Math.floor(profile.nodeBudget / (profile.worlds * Math.max(1, searchedCandidates.length))));
 
   const perWorldTimeBudget = Math.max(10, Math.floor(profile.timeBudget / profile.worlds));
 
@@ -497,7 +499,7 @@ export function adversarialSearchEstimates(state: GameState, playerId: number, c
 
     const sharedTranspositions = new Map<string, number>();
 
-    for (const candidate of candidates) {
+    for (const candidate of searchedCandidates) {
 
       const key = candidateKey(candidate);
 
