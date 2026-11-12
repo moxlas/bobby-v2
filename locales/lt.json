@@ -161,7 +161,8 @@
       "title": "DI sudėtingumas",
       "easy": { "label": "Lengvas", "desc": "Žaidžia paprastus ėjimus, baigia ėjimą po kiekvieno žaidimo" },
       "medium": { "label": "Vidutinis", "desc": "Naudoja kombinacijas ir kelių 9-ukų ėjimus strategiškai" },
-      "hard": { "label": "Sunkus", "desc": "Apskaičiuoja optimalius ėjimus, siekia kombinacijų, blokuoja priešininkus" }
+      "hard": { "label": "Sunkus", "desc": "Apskaičiuoja optimalius ėjimus, siekia kombinacijų, blokuoja priešininkus" },
+      "expert": { "label": "Ekspertas", "desc": "Gili paieška su keliais pavyzdiniais pasauliais; labai sunku įveikti" }
     },
     "rules": [
       { "title": "Apžvalga", "text": "Kortų žaidimas 2-8 žaidėjams. Tikslas yra pirmam išmesti visas kortas iš rankos. Paskutinis žaidėjas su kortomis pralaimi!" },

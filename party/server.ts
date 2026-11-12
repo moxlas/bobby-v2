@@ -35,7 +35,7 @@ import type { Env } from './env';
 
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 const RECONNECT_GRACE_MS = 60 * 1000;
-const AI_DIFFICULTY = 'medium' as const;
+const AI_DIFFICULTY = 'expert' as const;
 const STORAGE_KEY = 'room';
 const DIRECTORY_ORIGIN = 'https://directory.internal';
 
@@ -855,7 +855,7 @@ export class BobbyRoom extends Server<Env> {
     if (!current || current.id !== seatId || !current.isAI) return;
 
     // The server never needs a deep search; medium play keeps a room responsive.
-    const move = getAIMove(game, seatId, false);
+    const move = getAIMove(game, seatId, true);
     let next = game;
 
     if (move.type === 'play' && move.cards.length > 0) {

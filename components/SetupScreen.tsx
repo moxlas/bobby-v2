@@ -16,7 +16,7 @@ interface SetupScreenProps {
   onPlayOnline?: () => void;
 }
 
-const AI_DIFFICULTY_VALUES: AIDifficulty[] = ['easy', 'medium', 'hard'];
+const AI_DIFFICULTY_VALUES: AIDifficulty[] = ['easy', 'medium', 'hard', 'expert'];
 
 type OptionsTab = 'cards' | 'seating' | 'general';
 

@@ -597,80 +597,44 @@ function enforceNoSkipDecision(
   bestMove: { type: 'play' | 'take' | 'endTurn'; cards: Card[]; takeType?: 'take3' | 'takeAll' } | null,
   pile: Card[],
   options: GameOptions,
-  playerHand?: Card[]
+  playerHand?: Card[],
 ): AIMove {
-  // If bestMove is a valid play, return it
   if (bestMove && bestMove.type === 'play' && bestMove.cards && bestMove.cards.length > 0) {
     return bestMove;
   }
 
-  // Preserve the AI's chosen pickup size. Previously this helper silently
-  // replaced every take-three decision with take-all whenever that option was on.
   if (bestMove?.type === 'take') return bestMove;
 
-  // If any possible plays exist, return the first one
   if (possiblePlays && possiblePlays.length > 0) {
     return { type: 'play', cards: possiblePlays[0] };
   }
 
-  // Special case: pile only contains 9♦ (pile length === 1)
-  // Taking is impossible; AI must play if it has cards.
   if (pile.length === 1 && playerHand && playerHand.length > 0) {
-    // 1) opening special nines
-    const nines = playerHand.filter(c => c.value === 9);
-    if (options.specialNinesRule && nines.length >= 3) return { type: 'play', cards: nines.slice(0, 3) };
-    // 2) 4-of-a-kind
-    const fourVal = hasFourOfSameValue(playerHand);
-    if (fourVal !== null) {
-      const fourCards = getCardsOfSameValue(playerHand, fourVal);
+    const nines = playerHand.filter(card => card.value === 9);
+    if (options.specialNinesRule && nines.length >= 3) {
+      return { type: 'play', cards: nines.slice(0, 3) };
+    }
+
+    const fourValue = hasFourOfSameValue(playerHand);
+    if (fourValue !== null) {
+      const fourCards = getCardsOfSameValue(playerHand, fourValue);
       if (fourCards.length === 4) return { type: 'play', cards: fourCards };
     }
-    // 3) play lowest single (always legal because top is 9)
+
     const sorted = [...playerHand].sort((a, b) => a.value - b.value);
     return { type: 'play', cards: [sorted[0]] };
-    // If bestMove is 'endTurn', replace with a play move
-    // Inside the block
-    if (bestMove && bestMove.type === 'endTurn') {
-      if (possiblePlays && possiblePlays.length > 0) {
-        return { type: 'play', cards: possiblePlays[0] };
-      }
-      // This fallback is for scenario where no moves available
-      // Always play the lowest card in hand
-      const sortedHand = [...playerHand].sort((a, b) => a.value - b.value);
-      if (sortedHand.length > 0) {
-        return { type: 'play', cards: [sortedHand[0]] };
-      }
-    }
   }
-  
-  // Prevent ending turn if only 9♦ on pile and no prior combo
-  if (
-    pile.length === 1 &&
-    pile[0].value === 9 &&
-    pile[0].suit === 'diamonds' &&
-    bestMove?.type === 'endTurn'
-  ) {
-    // Force a play instead
-    if (possiblePlays && possiblePlays.length > 0) {
-      return { type: 'play', cards: possiblePlays[0] };
-    }
-    // fallback: play lowest card
-    if (playerHand && playerHand.length > 0) {
-      const sortedHand = [...playerHand].sort((a, b) => a.value - b.value);
-      return { type: 'play', cards: [sortedHand[0]] };
-    }
-  }
-  
-  // Otherwise choose a take if allowed
-  const takeOpts = getTakeOptions(pile, options);
-  if (takeOpts.canTake3) return { type: 'take' as const, cards: [], takeType: 'take3' };
-  if (takeOpts.canTakeAll) return { type: 'take' as const, cards: [], takeType: 'takeAll' };
 
-  // fallback: if no other move, try to force a take
+  const takeOptions = getTakeOptions(pile, options);
+  if (takeOptions.canTake3) return { type: 'take', cards: [], takeType: 'take3' };
+  if (takeOptions.canTakeAll) return { type: 'take', cards: [], takeType: 'takeAll' };
+
   if (playerHand && playerHand.length > 0) {
-    return { type: 'play', cards: [playerHand[0]] };
+    const sorted = [...playerHand].sort((a, b) => a.value - b.value);
+    return { type: 'play', cards: [sorted[0]] };
   }
-  return { type: 'play', cards: [] }; // default fallback
+
+  return { type: 'play', cards: [] };
 }
 
 // -----------------------------
@@ -1117,54 +1081,6 @@ export function getHumanImitationMove(state: GameState, playerId: number, style:
 }
 
 // -----------------------------
-// Candidate generation (small set) for Hard AI
-// -----------------------------
-function generateCandidates(state: GameState, playerId: number) {
-  const player = state.players.find(p => p.id === playerId)!;
-  const hand = player.hand;
-  const pile = state.pile;
-  const options = state.options;
-  const topCard = pile[pile.length - 1];
-  const isFirstMove = pile.length === 1 && topCard.value === 9 && topCard.suit === 'diamonds';
-
-  const candidates: any[] = [];
-  const legalSingles = hand.filter(c => c.value >= topCard.value);
-  for (const card of legalSingles) candidates.push({ type: 'play', cards: [card] });
-
-  const byVal = new Map<number, Card[]>();
-  for (const c of hand) {
-    if (!byVal.has(c.value)) byVal.set(c.value, []);
-    byVal.get(c.value)!.push(c);
-  }
-  for (const [val, cards] of byVal) {
-    if (val < topCard.value) continue;
-    if (cards.length === 4 && options.fourOfAKindRule) candidates.push({ type: 'play', cards: cards.slice() });
-  }
-
-  if (isFirstMove) {
-    const nines = (byVal.get(9) || []);
-    if (options.specialNinesRule && nines.length >= 3) candidates.push({ type: 'play', cards: nines.slice(0, 3) });
-    if (nines.length >= 1) candidates.push({ type: 'play', cards: [nines[0]] });
-  }
-
-  // The player may choose a pickup when a legal play exists.
-  const takeOpts = getTakeOptions(pile, options);
-  if (takeOpts.canTake3) candidates.push({ type: 'take', takeType: 'take3', cards: [] });
-  if (takeOpts.canTakeAll) candidates.push({ type: 'take', takeType: 'takeAll', cards: [] });
-
-  // Deduplicate
-  const sigs = new Set<string>();
-  const uniq: any[] = [];
-  for (const c of candidates) {
-    const sig = c.type === 'take' ? `take-${c.takeType}` : `play-${c.cards.map((x: Card) => x.id).join(',')}`;
-    if (!sigs.has(sig)) { sigs.add(sig); uniq.push(c); }
-  }
-  return uniq.filter(candidate =>
-    candidate.type === 'take' || validatePlay(candidate.cards, pile, isFirstMove, options).valid
-  );
-}
-
-// -----------------------------
 // Candidate evaluation (Hard AI)
 // -----------------------------
 function evaluateCandidate(state: GameState, playerId: number, candidate: any) {
@@ -1476,10 +1392,18 @@ interface AdversarialSearchContext {
   exhausted: boolean;
   transpositions: Map<string, number>;
   path: Set<string>;
+  deadline: number;
 }
 
 const HARD_SEARCH_DEPTH = 10;
 const HARD_SEARCH_NODE_BUDGET = 9000;
+const HARD_SEARCH_TIME_BUDGET_MS = 75;
+const HARD_SEARCH_WORLDS = 2;
+
+const EXPERT_SEARCH_DEPTH = 12;
+const EXPERT_SEARCH_NODE_BUDGET = 18000;
+const EXPERT_SEARCH_TIME_BUDGET_MS = 225;
+const EXPERT_SEARCH_WORLDS = 4;
 
 function cloneSearchState(state: GameState): GameState {
   return {
@@ -1587,6 +1511,10 @@ function minimaxSearch(
 ): number {
   const terminalScore = getSearchTerminalScore(state, context, depth);
   if (terminalScore !== null) return terminalScore;
+  if (context.deadline && Date.now() >= context.deadline) {
+    context.exhausted = true;
+    return evaluateSearchPosition(state, context.rootPlayerId);
+  }
   const positionKey = getSearchPositionKey(state, 0, context.initialFinishCount);
   if (context.path.has(positionKey)) return 0;
   if (depth <= 0) return evaluateSearchPosition(state, context.rootPlayerId);
@@ -1627,6 +1555,11 @@ function minimaxSearch(
     let best = maximizing ? -Infinity : Infinity;
     let fullySearched = true;
     for (const entry of ordered) {
+      if (context.deadline && Date.now() >= context.deadline) {
+        context.exhausted = true;
+        fullySearched = false;
+        break;
+      }
       if (context.nodes >= context.maxNodes) {
         context.exhausted = true;
         fullySearched = false;
@@ -1652,39 +1585,81 @@ function minimaxSearch(
   }
 }
 
+function getSearchProfile(difficulty: AIDifficulty) {
+  if (difficulty === 'expert') {
+    return {
+      depth: EXPERT_SEARCH_DEPTH,
+      nodeBudget: EXPERT_SEARCH_NODE_BUDGET,
+      timeBudget: EXPERT_SEARCH_TIME_BUDGET_MS,
+      worlds: EXPERT_SEARCH_WORLDS,
+    };
+  }
+
+  return {
+    depth: HARD_SEARCH_DEPTH,
+    nodeBudget: HARD_SEARCH_NODE_BUDGET,
+    timeBudget: HARD_SEARCH_TIME_BUDGET_MS,
+    worlds: HARD_SEARCH_WORLDS,
+  };
+}
+
 function adversarialSearchEstimates(state: GameState, playerId: number, candidates: AIMove[]): Map<string, number> {
   const results = new Map<string, number>();
   if (candidates.length === 0) return results;
 
-  // Reconstruct opponent hands from the full public move history and the known
-  // cards picked up from the pile. In two-player games, this identifies every
-  // unseen rank exactly; larger tables use one consistent sampled deal.
-  const sampledWorld = sampleHiddenHands(state, playerId);
-  const perCandidateBudget = Math.max(350, Math.floor(HARD_SEARCH_NODE_BUDGET / candidates.length));
-  const sharedTranspositions = new Map<string, number>();
-  for (const candidate of candidates) {
-    const afterMove = applySearchMove(sampledWorld, playerId, candidate);
-    if (!afterMove) {
-      results.set(candidateKey(candidate), -Infinity);
-      continue;
+  const profile = getSearchProfile(state.options.aiDifficulty);
+  const worldScores = new Map<string, number[]>();
+  const perWorldCandidateBudget = Math.max(200, Math.floor(profile.nodeBudget / (profile.worlds * candidates.length)));
+  const perWorldTimeBudget = Math.max(10, Math.floor(profile.timeBudget / profile.worlds));
+
+  for (let world = 0; world < profile.worlds; world++) {
+    const sampledWorld = sampleHiddenHands(state, playerId);
+    const sharedTranspositions = new Map<string, number>();
+
+    for (const candidate of candidates) {
+      const key = candidateKey(candidate);
+      const afterMove = applySearchMove(sampledWorld, playerId, candidate);
+      if (!afterMove) {
+        if (!worldScores.has(key)) worldScores.set(key, []);
+        worldScores.get(key)!.push(-Infinity);
+        continue;
+      }
+
+      const context: AdversarialSearchContext = {
+        rootPlayerId: playerId,
+        initialFinishCount: state.finishOrder.length,
+        maxNodes: perWorldCandidateBudget,
+        nodes: 0,
+        exhausted: false,
+        transpositions: sharedTranspositions,
+        path: new Set([getSearchPositionKey(sampledWorld, 0, state.finishOrder.length)]),
+        deadline: Date.now() + perWorldTimeBudget,
+      };
+
+      const value = minimaxSearch(
+        afterMove,
+        profile.depth - 1,
+        -Infinity,
+        Infinity,
+        context,
+      );
+
+      if (!worldScores.has(key)) worldScores.set(key, []);
+      worldScores.get(key)!.push(value);
     }
-    const context: AdversarialSearchContext = {
-      rootPlayerId: playerId,
-      initialFinishCount: state.finishOrder.length,
-      maxNodes: perCandidateBudget,
-      nodes: 0,
-      exhausted: false,
-      transpositions: sharedTranspositions,
-      path: new Set([getSearchPositionKey(sampledWorld, 0, state.finishOrder.length)]),
-    };
-    results.set(candidateKey(candidate), minimaxSearch(
-      afterMove,
-      HARD_SEARCH_DEPTH - 1,
-      -Infinity,
-      Infinity,
-      context,
-    ));
   }
+
+  for (const candidate of candidates) {
+    const key = candidateKey(candidate);
+    const scores = worldScores.get(key) ?? [];
+    const finiteScores = scores.filter(score => Number.isFinite(score));
+    if (finiteScores.length === 0) {
+      results.set(key, -Infinity);
+    } else {
+      results.set(key, finiteScores.reduce((total, score) => total + score, 0) / finiteScores.length);
+    }
+  }
+
   return results;
 }
 
@@ -1697,11 +1672,9 @@ function getHardAIMove(state: GameState, playerId: number, searchFuture = true):
   const pile = state.pile;
   const options = state.options;
 
-  // The full legal-action list is used for the ten-decision search. The older
-  // compact generator remains available to the no-search fallback.
-  const generatedCandidates = searchFuture
-    ? getAIMoveCandidates(state, playerId, state.canContinueTurn)
-    : generateCandidates(state, playerId);
+  // The full legal-action list is used for the search. The candidate generator
+  // is shared by every difficulty level so online and local AI agree.
+  const generatedCandidates = getAIMoveCandidates(state, playerId, state.canContinueTurn);
   // A four-of-a-kind continuation can be ended, but it cannot be used to pick
   // up cards. The compact timeout policy must not turn a take choice into an
   // accidental end turn.
@@ -1864,7 +1837,9 @@ function getMediumAIMove(state: GameState, playerId: number): AIMove {
 
   if (!bestMove) {
     if (takeOpts.canTake3) bestMove = { type: 'take', cards: [], takeType: 'take3' };
-    bestMove = hand.length > 0 ? { type: 'play', cards: [hand[0]] } : { type: 'endTurn', cards: [] };
+    else if (takeOpts.canTakeAll) bestMove = { type: 'take', cards: [], takeType: 'takeAll' };
+    else if (hand.length > 0) bestMove = { type: 'play', cards: [hand[0]] };
+    else bestMove = { type: 'endTurn', cards: [] };
   }
 
   const safeDecision = enforceNoSkipDecision(possiblePlays, bestMove, pile, options, hand);
@@ -1901,16 +1876,6 @@ export function getAIMove(state: GameState, playerId: number, searchFuture = tru
 
   const options = state.options;
   const difficulty = options.aiDifficulty;
-
-  const isSpecialNineOpening = state.pile.length === 1 &&
-    state.pile[0].value === 9 &&
-    state.pile[0].suit === 'diamonds';
-  if (options.specialNinesRule && isSpecialNineOpening) {
-    const remainingNines = player.hand.filter(card => card.value === 9);
-    if (remainingNines.length === 3) {
-      return { type: 'play', cards: remainingNines };
-    }
-  }
 
   if (difficulty === 'easy') return getEasyAIMove(player.hand, state.pile, options);
   if (difficulty === 'medium') return getMediumAIMove(state, playerId);
@@ -2069,7 +2034,8 @@ export function getAIDelay(difficulty: AIDifficulty): number {
   const BASE = {
     easy: 500,
     medium: 1000, // previous "hard" behavior moved to medium
-    hard: 1500
+    hard: 1500,
+    expert: 2000,
   } as Record<AIDifficulty, number>;
 
   const base = BASE[difficulty] ?? 400;

@@ -45,7 +45,7 @@ export type PlayError =
   | 'comboChain'
   | 'valueTooLow';
 
-export type AIDifficulty = 'easy' | 'medium' | 'hard';
+export type AIDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 export type ThemeName = 'summer' | 'midnight' | 'autumn' | 'ocean';
 export type Language = 'en' | 'lt';
 
