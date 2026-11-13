@@ -78,11 +78,11 @@ html[data-animations="off"] *::after {
 }
 
 [data-theme="ocean"] {
-  --color-emerald-50: #dbeafe;
-  --color-emerald-100: #bfdbfe;
-  --color-emerald-200: #93c5fd;
-  --color-emerald-300: #60a5fa;
-  --color-emerald-400: #3b82f6;
+  --color-emerald-50: #f8fafc;
+  --color-emerald-100: #f0f9ff;
+  --color-emerald-200: #e0f2fe;
+  --color-emerald-300: #dbeafe;
+  --color-emerald-400: #bfdbfe;
   --color-emerald-500: #2563eb;
   --color-emerald-600: #1d4ed8;
   --color-emerald-700: #1e40af;

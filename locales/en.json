@@ -133,9 +133,8 @@
     },
     "cardSize": {
       "title": "Card Size",
-      "normal": "Normal",
-      "large": "Large",
-      "desc": "Makes cards easier to see."
+      "normal": { "label": "Normal", "desc": "Normal sized cards." },
+      "large": { "label": "Large", "desc": "Larger cards for easier viewing." }
     },
     "animations": {
       "title": "Animations",
@@ -191,9 +190,9 @@
     },
     "aiThinkingTime": {
       "title": "AI Thinking Time",
-      "normal": { "label": "Normal", "desc": "Expert searches for 0.75s, then pauses 3s." },
-      "long": { "label": "Long", "desc": "Expert searches for 1s, then pauses 4s." },
-      "max": { "label": "Maximum", "desc": "Expert searches for 1.25s, then pauses 5s." }
+      "normal": { "label": "Normal", "desc": "Quick thinking for casual play." },
+      "long": { "label": "Long", "desc": "Deeper thinking for stronger play." },
+      "max": { "label": "Maximum", "desc": "Maximum thinking for the hardest challenge." }
     },
     "rules": [
       { "title": "Overview", "text": "A shedding-type card game for 2-8 players. The goal is to be the first to discard all cards from your hand. The last player with cards loses!" },

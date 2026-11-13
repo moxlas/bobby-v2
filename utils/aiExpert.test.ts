@@ -146,9 +146,9 @@ describe('Expert thinking time', () => {
       expect(actual).toBeLessThanOrEqual(base + 99);
     };
 
-    expectNear(getAIDelay('expert', 'normal'), 3000);
-    expectNear(getAIDelay('expert', 'long'), 4000);
-    expectNear(getAIDelay('expert', 'max'), 5000);
+    expectNear(getAIDelay('expert', 'normal'), 1000);
+    expectNear(getAIDelay('expert', 'long'), 2000);
+    expectNear(getAIDelay('expert', 'max'), 3000);
     expectNear(getAIDelay('hard', 'max'), 1800);
     expectNear(getAIDelay('medium', 'max'), 1000);
     expectNear(getAIDelay('easy', 'max'), 500);

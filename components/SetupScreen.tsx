@@ -602,9 +602,9 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                                     : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
                                 }`}
                               >
-                                <div className="font-semibold text-sm">{t(`setup.cardSize.${value}`)}</div>
+                                <div className="font-semibold text-sm">{t(`setup.cardSize.${value}.label`)}</div>
                                 <div className={`text-xs mt-0.5 leading-tight ${cardSize === value ? 'text-amber-800' : 'text-emerald-400'}`}>
-                                  {t('setup.cardSize.desc')}
+                                  {t(`setup.cardSize.${value}.desc`)}
                                 </div>
                               </button>
                             ))}

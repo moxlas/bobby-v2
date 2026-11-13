@@ -133,9 +133,8 @@
     },
     "cardSize": {
       "title": "Kortų dydis",
-      "normal": "Normalus",
-      "large": "Didelis",
-      "desc": "Padaro korteles lengviau matomas."
+      "normal": { "label": "Normalus", "desc": "Normalaus dydžio kortos." },
+      "large": { "label": "Didelis", "desc": "Didesnės kortos, kad būtų lengviau matyti." }
     },
     "animations": {
       "title": "Animacijos",
@@ -191,9 +190,9 @@
     },
     "aiThinkingTime": {
       "title": "DI mąstymo laikas",
-      "normal": { "label": "Normalus", "desc": "Ekspertas ieško 0,75 s, tada pauzė 3 s." },
-      "long": { "label": "Ilgas", "desc": "Ekspertas ieško 1 s, tada pauzė 4 s." },
-      "max": { "label": "Maksimalus", "desc": "Ekspertas ieško 1,25 s, tada pauzė 5 s." }
+      "normal": { "label": "Normalus", "desc": "Greitas mąstymas kasdieniam žaidimui." },
+      "long": { "label": "Ilgas", "desc": "Gilesnis mąstymas stipresniam žaidimui." },
+      "max": { "label": "Maksimalus", "desc": "Maksimalus mąstymas sunkiausiam iššūkiui." }
     },
     "rules": [
       { "title": "Apžvalga", "text": "Kortų žaidimas 2-8 žaidėjams. Tikslas yra pirmam išmesti visas kortas iš rankos. Paskutinis žaidėjas su kortomis pralaimi!" },

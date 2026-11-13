@@ -125,8 +125,8 @@ export const EXPERT_SEARCH_CANDIDATES = 10;
  * chosen a move. Hard/Medium/Easy keep their existing timings.
  */
 export const AI_THINKING_PROFILES: Record<AIThinkingTime, { searchTimeBudgetMs: number; delayMs: number }> = {
-  normal: { searchTimeBudgetMs: EXPERT_SEARCH_TIME_BUDGET_MS, delayMs: 3000 },
-  long: { searchTimeBudgetMs: 1000, delayMs: 4000 },
-  max: { searchTimeBudgetMs: 1250, delayMs: 5000 },
+  normal: { searchTimeBudgetMs: EXPERT_SEARCH_TIME_BUDGET_MS, delayMs: 1000 },
+  long: { searchTimeBudgetMs: 1000, delayMs: 2000 },
+  max: { searchTimeBudgetMs: 1250, delayMs: 3000 },
 };
 
