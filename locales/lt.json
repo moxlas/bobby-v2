@@ -191,7 +191,7 @@
     "aiThinkingTime": {
       "title": "DI mąstymo laikas",
       "normal": { "label": "Normalus", "desc": "Greitas mąstymas kasdieniam žaidimui." },
-      "long": { "label": "Ilgas", "desc": "Gilesnis mąstymas stipresniam žaidimui." },
+      "long": { "label": "Ilgas", "desc": "Gilesnis mąstymas sudėtingesniam žaidimui." },
       "max": { "label": "Maksimalus", "desc": "Maksimalus mąstymas sunkiausiam iššūkiui." }
     },
     "rules": [

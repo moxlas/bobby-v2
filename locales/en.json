@@ -191,7 +191,7 @@
     "aiThinkingTime": {
       "title": "AI Thinking Time",
       "normal": { "label": "Normal", "desc": "Quick thinking for casual play." },
-      "long": { "label": "Long", "desc": "Deeper thinking for stronger play." },
+      "long": { "label": "Long", "desc": "Deeper thinking for more challenging play." },
       "max": { "label": "Maximum", "desc": "Maximum thinking for the hardest challenge." }
     },
     "rules": [
