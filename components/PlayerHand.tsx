@@ -16,6 +16,8 @@ interface PlayerHandProps {
   hiddenCardIds?: Set<string> | null;
   /** Seat whose hand this is; stops arrivals from replaying on hand swaps. */
   ownerId?: number | null;
+  /** Animate cards that arrive after the first render. */
+  animateArrivals?: boolean;
 }
 
 export function PlayerHand({
@@ -28,9 +30,10 @@ export function PlayerHand({
   faceUp = true,
   hiddenCardIds,
   ownerId,
+  animateArrivals = true,
 }: PlayerHandProps) {
   const sortedHand = sortHand(hand);
-  const handRef = useHandArrivals<HTMLDivElement>(hand, ownerId);
+  const handRef = useHandArrivals<HTMLDivElement>(hand, ownerId, animateArrivals);
 
   return (
     <div ref={handRef} className="flex flex-wrap gap-2 justify-center max-w-5xl mx-auto">

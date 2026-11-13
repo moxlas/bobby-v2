@@ -14,6 +14,11 @@ const DRAG_THRESHOLD = 48;
 const MAX_PULL = 96;
 const CLICK_SUPPRESS_MS = 400;
 
+/** CSS zoom scales rendering, but pointer deltas are in visual viewport pixels. */
+function rootZoom(): number {
+  return parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+}
+
 export function GamePile({ pile, onTakeClick }: GamePileProps) {
   const { t, tPlural } = useTranslation();
   const showBottomCard = pile.length > 1 && pile.length <= 4;
@@ -105,8 +110,6 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
       data-pile-draggable={clickable ? 'true' : undefined}
       style={{
         touchAction: clickable ? 'none' : undefined,
-        transform: `translateY(${pull}px) scale(${1 - pullProgress * 0.05})`,
-        transition: pull > 0 ? 'none' : 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)',
       }}
       onClick={clickable ? handleClick : undefined}
       onPointerDown={clickable ? handlePointerDown : undefined}
@@ -124,7 +127,13 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         {tPlural('pile.count', pile.length)}
       </div>
 
-      <div className="relative h-[24dvh] max-h-[calc(10rem*var(--card-scale,1))] w-[calc(6rem*var(--card-scale,1))] flex items-center justify-center lg:h-[calc(10rem*var(--card-scale,1))]">
+      <div
+        className="relative h-[24dvh] max-h-[calc(10rem*var(--card-scale,1))] w-[calc(6rem*var(--card-scale,1))] flex items-center justify-center lg:h-[calc(10rem*var(--card-scale,1))]"
+        style={{
+          transform: `translateY(${pull / rootZoom()}px) scale(${1 - pullProgress * 0.05})`,
+          transition: pull > 0 ? 'none' : 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
+      >
         {underCards.map((card, index) => {
           const isFourthFromTop = index === underCards.length - 1;
           const offsetY = isFourthFromTop ? 0 : (underCards.length - index - 1) * 1;

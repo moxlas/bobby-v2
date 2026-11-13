@@ -548,7 +548,7 @@ export function GameBoard({
   const handCardsFaceUp = !!handOwner && (!handOwner.isAI || allHumanPlayersFinished || spectatingHand);
 
   /** New cards slide into the mobile dock when a pickup fills the hand. */
-  const mobileHandRef = useHandArrivals<HTMLDivElement>(handOwner?.hand ?? [], handOwner?.id ?? null);
+  const mobileHandRef = useHandArrivals<HTMLDivElement>(handOwner?.hand ?? [], handOwner?.id ?? null, !revealing);
 
   /**
    * Hold the previous frame while a move animates.
@@ -2088,6 +2088,7 @@ export function GameBoard({
               faceUp={handCardsFaceUp}
               hiddenCardIds={hiddenCardIds}
               ownerId={handOwner.id}
+              animateArrivals={!revealing}
             />
           </div>
         </div>

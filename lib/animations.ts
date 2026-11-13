@@ -96,6 +96,8 @@ export function usePileLand(cardId: string | undefined) {
 export function useHandArrivals<T extends HTMLElement = HTMLDivElement>(
   cards: Array<{ id: string }>,
   ownerKey?: string | number | null,
+  /** Skip the arrival animation, e.g. while a pickup is already being revealed. */
+  animate = true,
 ) {
   const ref = useRef<T>(null);
   const seenRef = useRef<Set<string> | null>(null);
@@ -111,7 +113,7 @@ export function useHandArrivals<T extends HTMLElement = HTMLDivElement>(
       return;
     }
 
-    if (prefersReducedMotion()) {
+    if (!animate || prefersReducedMotion()) {
       seenRef.current = new Set(ids);
       return;
     }
@@ -139,7 +141,7 @@ export function useHandArrivals<T extends HTMLElement = HTMLDivElement>(
 
     seenRef.current = new Set(ids);
     // cardKey identifies the hand; the array itself is rebuilt every render.
-  }, [cardKey, ownerKey]);
+  }, [cardKey, ownerKey, animate]);
 
   return ref;
 }
