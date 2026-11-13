@@ -87,7 +87,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
   if (pile.length === 0) {
     return (
       <div className="relative flex flex-col items-center">
-        <div className="w-24 h-32 border-2 border-dashed border-emerald-500 rounded-lg flex items-center justify-center">
+        <div className="w-[calc(6rem*var(--card-scale,1))] h-[calc(8rem*var(--card-scale,1))] border-2 border-dashed border-emerald-500 rounded-lg flex items-center justify-center">
           <span className="text-emerald-400 text-sm">{t('pile.empty')}</span>
         </div>
       </div>
@@ -124,7 +124,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
         {tPlural('pile.count', pile.length)}
       </div>
 
-      <div className="relative h-[24dvh] max-h-40 w-24 flex items-center justify-center lg:h-40">
+      <div className="relative h-[24dvh] max-h-[calc(10rem*var(--card-scale,1))] w-[calc(6rem*var(--card-scale,1))] flex items-center justify-center lg:h-[calc(10rem*var(--card-scale,1))]">
         {underCards.map((card, index) => {
           const isFourthFromTop = index === underCards.length - 1;
           const offsetY = isFourthFromTop ? 0 : (underCards.length - index - 1) * 1;
@@ -133,7 +133,7 @@ export function GamePile({ pile, onTakeClick }: GamePileProps) {
             <div
               key={card.id}
               className="absolute transition-all duration-200 scale-[1.05] lg:scale-100"
-              style={{ left: '-48px', top: `${offsetY}px`, zIndex: index + 1 }}
+              style={{ left: 'calc(-3rem*var(--card-scale,1))', top: `${offsetY}px`, zIndex: index + 1 }}
             >
               <Card card={{ ...card, faceUp: true }} size="lg" />
             </div>

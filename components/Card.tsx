@@ -249,10 +249,12 @@ function renderCenter(card: CardType, suitSymbol: string, suitColor: string, siz
 }
 
 export function Card({ card, onClick, onPointerDown, isSelected, isDragging, disabled, hidden, size = 'md' }: CardProps) {
+  // Card dimensions follow the Display > Card Size setting. The scale is
+  // applied to layout sizes so surrounding card slots grow with the card.
   const sizeClasses = {
-    sm: 'w-16 h-24',
-    md: 'w-20 h-28',
-    lg: 'w-24 h-32',
+    sm: 'w-[calc(4rem*var(--card-scale,1))] h-[calc(6rem*var(--card-scale,1))]',
+    md: 'w-[calc(5rem*var(--card-scale,1))] h-[calc(7rem*var(--card-scale,1))]',
+    lg: 'w-[calc(6rem*var(--card-scale,1))] h-[calc(8rem*var(--card-scale,1))]',
   };
 
   const suitSymbol = SUIT_SYMBOLS[card.suit] || '?';

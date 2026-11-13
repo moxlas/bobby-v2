@@ -6,6 +6,10 @@ body,
   min-height: 100%;
 }
 
+html {
+  --card-scale: 1;
+}
+
 html[data-text-size="big"] {
   zoom: 1.12;
 }
@@ -15,6 +19,7 @@ html[data-text-size="biggest"] {
 }
 
 html[data-card-size="large"] {
+  --card-scale: calc(21 / 18);
   --card-width: 21vw;
   --card-max-width: 5.25rem;
 }

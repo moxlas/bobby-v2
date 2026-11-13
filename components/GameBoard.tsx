@@ -2114,9 +2114,7 @@ export function GameBoard({
       {draggedCards.length > 0 && dragPreviewPosition && (
         <div
           aria-hidden="true"
-          className={`pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-1/2 ${
-            gameState.options.cardSize === 'large' ? 'h-32 w-24' : 'h-28 w-20'
-          }`}
+          className="pointer-events-none fixed z-[60] h-[calc(7rem*var(--card-scale,1))] w-[calc(5rem*var(--card-scale,1))] -translate-x-1/2 -translate-y-1/2"
           style={{ left: dragPreviewPosition.x, top: dragPreviewPosition.y }}
         >
           {draggedCards.map((card: CardType, index: number) => (
@@ -2125,10 +2123,7 @@ export function GameBoard({
               className="absolute"
               style={{ left: `${index * 4}px`, top: `${-index * 3}px`, zIndex: index + 1 }}
             >
-              <PlayingCard
-                card={{ ...card, faceUp: true }}
-                size={gameState.options.cardSize === 'large' ? 'lg' : 'md'}
-              />
+              <PlayingCard card={{ ...card, faceUp: true }} size="md" />
             </div>
           ))}
         </div>
