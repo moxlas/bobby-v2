@@ -166,12 +166,22 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (gameState?.options.theme) {
+    // While no local game is active (setup or online), the screen that is
+
+    // currently mounted owns these display settings. Resetting them to
+
+    // defaults here would override SetupScreen's saved text/card size just
+
+    // after it mounts, so only apply game options when a game exists.
+
+    if (!gameState) return;
+
+    if (gameState.options.theme) {
       document.documentElement.dataset.theme = gameState.options.theme;
     }
-    document.documentElement.dataset.textSize = gameState?.options.textSize ?? 'normal';
-    document.documentElement.dataset.cardSize = gameState?.options.cardSize ?? 'normal';
-    document.documentElement.dataset.animations = (gameState?.options.animations ?? true) ? 'on' : 'off';
+    document.documentElement.dataset.textSize = gameState.options.textSize;
+    document.documentElement.dataset.cardSize = gameState.options.cardSize;
+    document.documentElement.dataset.animations = gameState.options.animations ? 'on' : 'off';
   }, [gameState?.options.theme, gameState?.options.textSize, gameState?.options.cardSize, gameState?.options.animations]);
 
   return (
