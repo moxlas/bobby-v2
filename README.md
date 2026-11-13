@@ -1,33 +1,127 @@
-# Bobby-the-game
+# Bobby
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Bobby is a multiplayer shedding card game for 2–8 players. Be the first to discard all cards from your hand; the last player with cards loses.
 
-## Built with v0
+Play locally in hot-seat mode or online in shared rooms with friends, spectators, and AI-filled seats.
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+## Screenshots
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_c1kZ2bAsLeFa4AEjdfXMZDPmMkVt)
+![Setup screen](docs/screenshots/setup.png)
+![Game board](docs/screenshots/game-board.png)
+![Online server browser](docs/screenshots/online-browser.png)
 
-## Getting Started
+## Features
 
-First, run the development server:
+- Local hot-seat play for 2–8 players
+- Online rooms with create/join by code
+- Public server browser for opt-in room listing
+- Spectator support
+- AI opponents with Easy, Medium, Hard, and Expert difficulties
+- Adaptive AI based on recorded results
+- House rules for special 9s, take-all, and four-of-a-kind
+- Ranked seating and random seating options
+- Final rankings, including forfeited or disconnected players
+- English and Lithuanian localization
+- Local leaderboard
+
+## Tech stack
+
+- React 18
+- Vite
+- TypeScript
+- Tailwind CSS
+- Vitest
+- Cloudflare Workers and Durable Objects via PartyServer
+
+## Getting started
+
+### Prerequisites
+
+- Node.js
+- pnpm
+
+### Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+```
+
+### Run the frontend
+
+```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Run the realtime room server
 
-## Learn More
+For online play, start the Cloudflare Worker locally:
 
-To learn more, take a look at the following resources:
+```bash
+pnpm party:dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+Then configure the frontend to use it:
+
+```bash
+VITE_ROOMS_HOST=localhost:1999 pnpm dev
+```
+
+## Online play
+
+Online rooms support:
+
+- Creating a private or public room
+- Joining an existing room by code
+- Browsing public rooms in the server browser
+- Spectating games in progress
+- Filling empty seats with AI
+- Reconnecting after a temporary disconnect
+
+Room listings are refreshed automatically and stale entries expire after missed heartbeats.
+
+## Quality checks
+
+```bash
+pnpm test
+pnpm i18n:check
+pnpm exec tsc --noEmit
+pnpm build
+```
+
+## Deployment
+
+Deploy the realtime room server:
+
+```bash
+pnpm party:deploy
+```
+
+Deploy the frontend using your preferred static hosting provider. Make sure `VITE_ROOMS_HOST` points to the deployed room server.
+
+## Project structure
+
+```text
+components/   React UI components
+utils/        Game logic, AI, settings, leaderboard, and helpers
+party/        Cloudflare Worker and Durable Objects
+locales/      English and Lithuanian translations
+types/        Shared TypeScript types
+docs/         Documentation assets
+```
+
+## Game rules
+
+Bobby uses cards from 9 through Ace. The 9 of Diamonds starts the pile and never leaves it. On your turn, play a card equal to or higher than the top card, or take cards from the pile if you cannot play. The first player to empty their hand wins.
+
+Additional rules include:
+
+- Special 9s
+- Four of a kind
+- Taking all cards
+- Ranked seating for rematches
+
+## License
+
+This project is private. Add a license here if you plan to distribute it.
