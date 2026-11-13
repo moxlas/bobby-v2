@@ -260,6 +260,16 @@ export function isUnnecessaryAceOnOpening(cardsToPlay: Card[], hand: Card[], pil
 
   if (!isOpeningPile || !cardsToPlay.some(card => card.value === 14)) return false;
 
+  // The intentional 3-nines + Ace trap is not a wasted opening Ace: it forces
+
+  // the opponent to answer with an Ace or pick up, setting up a quad bury.
+
+  const isNineAceTrap = cardsToPlay.filter(card => card.value === 9).length === 3 &&
+
+    cardsToPlay.filter(card => card.value === 14).length === 1;
+
+  if (isNineAceTrap) return false;
+
   const remainingHand = hand.filter(card => !cardsToPlay.some(played => played.id === card.id));
 
   // Keep a winning play, but save the Ace when any lower card can open instead.
@@ -272,7 +282,15 @@ export function isUnnecessaryAceOnOpening(cardsToPlay: Card[], hand: Card[], pil
 
 export function shouldUseFourOfAKind(cardsToPlay: Card[], hand: Card[], state: GameState, playerId: number): boolean {
 
-  if (cardsToPlay.length !== 4) return true;
+  // A four-card combined play (3 nines + Ace/King, or a quad + extra card)
+
+  // is not a plain quad and is handled by its own tactical evaluation.
+
+  const isPlainQuad = cardsToPlay.length === 4 &&
+
+    new Set(cardsToPlay.map(card => card.value)).size === 1;
+
+  if (!isPlainQuad) return true;
 
   const value = cardsToPlay[0].value;
 
@@ -290,6 +308,14 @@ export function shouldUseFourOfAKind(cardsToPlay: Card[], hand: Card[], state: G
 
   const nextPlayer = state.players[nextIndex];
 
+  // Expert bury: when the opponent has just picked up and is several cards
+
+  // behind, spend the quad as a quick getaway rather than holding it forever.
+
+  if (state.options.aiDifficulty === 'expert' && nextPlayer && !nextPlayer.hasFinished &&
+
+    nextPlayer.hand.length - hand.length >= 3) return true;
+
   if (!nextPlayer || nextPlayer.hasFinished || nextPlayer.hand.length > 3) return false;
 
   // Save the quad unless raising the pile is likely to strand the next player
@@ -304,7 +330,147 @@ export function shouldUseFourOfAKind(cardsToPlay: Card[], hand: Card[], state: G
 
   const requiredBlockProbability = nextPlayer.hand.length === 1 ? 0.35 : nextPlayer.hand.length === 2 ? 0.5 : 0.67;
 
-  return blockProbability >= requiredBlockProbability;
+  // Expert is stingier with quads: outside an immediate block, hold them for a
+
+  // quick getaway or a follow-up bury after the opponent picks up.
+
+  const expertAdjustment = state.options.aiDifficulty === 'expert' ? 0.1 : 0;
+
+  return blockProbability >= requiredBlockProbability + expertAdjustment;
+
+}
+
+export function getExpertOpeningTrap(
+  hand: Card[],
+  pile: Card[],
+  state: GameState,
+  playerId: number,
+): Card[] | null {
+
+  if (state.options.aiDifficulty !== 'expert' || state.canContinueTurn) return null;
+
+  if (!state.options.specialNinesRule) return null;
+
+  const activePlayers = state.players.filter(player => !player.hasFinished);
+
+  if (activePlayers.length !== 2) return null;
+
+  const player = state.players.find(entry => entry.id === playerId);
+
+  if (!player || player.hasFinished) return null;
+
+  const isOpeningPile = pile.length === 1 && pile[0].value === 9 && pile[0].suit === 'diamonds';
+
+  if (!isOpeningPile) return null;
+
+  const nines = hand.filter(card => card.value === 9);
+
+  if (nines.length < 3) return null;
+
+  const highCard = hand.find(card => card.value === 14) ?? hand.find(card => card.value === 13);
+
+  if (!highCard) return null;
+
+  const cards = [...nines.slice(0, 3), highCard];
+
+  return validatePlay(cards, pile, true, state.options).valid ? cards : null;
+
+}
+
+export function getExpertCombinationPlays(
+  hand: Card[],
+  pile: Card[],
+  state: GameState,
+  playerId: number,
+): Card[][] {
+
+  if (state.options.aiDifficulty !== 'expert') return [];
+
+  const activePlayers = state.players.filter(player => !player.hasFinished);
+
+  // The pro trap and bury lines are heads-up tactics. Keep them out of larger
+
+  // tables where a forced pickup does not hand the lead straight back.
+
+  if (activePlayers.length !== 2) return [];
+
+  const player = state.players.find(entry => entry.id === playerId);
+
+  if (!player || player.hasFinished || hand.length === 0) return [];
+
+  const topCard = pile[pile.length - 1];
+
+  if (!topCard) return [];
+
+  const isOpeningPile = pile.length === 1 && topCard.value === 9 && topCard.suit === 'diamonds';
+
+  const cardsByValue = new Map<number, Card[]>();
+
+  for (const card of hand) {
+
+    if (!cardsByValue.has(card.value)) cardsByValue.set(card.value, []);
+
+    cardsByValue.get(card.value)!.push(card);
+
+  }
+
+  const plays: Card[][] = [];
+
+  const addIfLegal = (cards: Card[]) => {
+
+    if (!validatePlay(cards, pile, isOpeningPile, state.options).valid) return;
+
+    const key = cards.map(card => card.id).sort().join(',');
+
+    if (plays.some(existing => existing.map(card => card.id).sort().join(',') === key)) return;
+
+    plays.push(cards);
+
+  };
+
+  // Pro opening: 3 nines continue the turn, and a King or Ace on top forces
+
+  // the opponent to answer with an Ace or pick up. If they pick up, the AI
+
+  // keeps the lead and can follow with a quad bury.
+
+  const nines = cardsByValue.get(9) ?? [];
+
+  if (isOpeningPile && state.options.specialNinesRule && nines.length >= 3) {
+
+    const highs = [...(cardsByValue.get(14) ?? []), ...(cardsByValue.get(13) ?? [])];
+
+    for (const high of highs.slice(0, 2)) addIfLegal([...nines.slice(0, 3), high]);
+
+  }
+
+  // Quad bury: use the quad's continuation to add one high single card, so
+
+  // the opponent is stranded under a rank they are unlikely to answer.
+
+  if (state.options.fourOfAKindRule) {
+
+    for (const [value, cards] of cardsByValue) {
+
+      if (cards.length !== 4 || value < topCard.value) continue;
+
+      const extras = [...cardsByValue.entries()]
+
+        .filter(([extraValue]) => extraValue > value)
+
+        .sort((left, right) => right[0] - left[0]);
+
+      for (const [, extraCards] of extras.slice(0, 2)) {
+
+        addIfLegal([...cards, extraCards[0]]);
+
+      }
+
+    }
+
+  }
+
+  return plays;
 
 }
 
@@ -316,11 +482,23 @@ export function getAIMoveCandidates(state: GameState, playerId: number, continui
 
   const isFirstMove = state.pile.length === 1 && state.pile[0].value === 9 && state.pile[0].suit === 'diamonds';
 
-  const possiblePlays = getPossiblePlays(player.hand, state.pile, state.options)
+  const possiblePlays = [
 
-    .filter(cards => (cards.length !== 4 || state.options.fourOfAKindRule) &&
+    ...getPossiblePlays(player.hand, state.pile, state.options),
 
-      validatePlay(cards, state.pile, isFirstMove, state.options).valid);
+    ...getExpertCombinationPlays(player.hand, state.pile, state, playerId),
+
+  ]
+
+    .filter(cards => {
+
+      const isPlainQuad = cards.length === 4 && new Set(cards.map(card => card.value)).size === 1;
+
+      return (!isPlainQuad || state.options.fourOfAKindRule) &&
+
+        validatePlay(cards, state.pile, isFirstMove, state.options).valid;
+
+    });
 
   const candidates: AIMove[] = possiblePlays.map(cards => ({ type: 'play', cards }));
 

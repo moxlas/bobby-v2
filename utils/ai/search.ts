@@ -1,7 +1,7 @@
 import { Card, GameState, GameOptions, AIDifficulty, Player, PlayerMove } from '../../types/game';
-import { EXPERT_SEARCH_DEPTH, EXPERT_SEARCH_NODE_BUDGET, EXPERT_SEARCH_TIME_BUDGET_MS, EXPERT_SEARCH_WORLDS, HARD_SEARCH_DEPTH, HARD_SEARCH_NODE_BUDGET, HARD_SEARCH_TIME_BUDGET_MS, HARD_SEARCH_WORLDS } from './constants';
+import { EXPERT_SEARCH_CANDIDATES, EXPERT_SEARCH_DEPTH, EXPERT_SEARCH_NODE_BUDGET, EXPERT_SEARCH_TIME_BUDGET_MS, EXPERT_SEARCH_WORLDS, HARD_SEARCH_CANDIDATES, HARD_SEARCH_DEPTH, HARD_SEARCH_NODE_BUDGET, HARD_SEARCH_TIME_BUDGET_MS, HARD_SEARCH_WORLDS } from './constants';
 import { evaluateCandidate, evaluatePlayMove, evaluateSearchPosition, evaluateTakeMove, getHighCardBlockingPenalty } from './evaluation';
-import { getAIMoveCandidates, getHumanDemonstrationScores, getPossiblePlays, isUnnecessaryAceOnOpening, shouldUseFourOfAKind } from './candidates';
+import { getAIMoveCandidates, getExpertOpeningTrap, getHumanDemonstrationScores, getPossiblePlays, isUnnecessaryAceOnOpening, shouldUseFourOfAKind } from './candidates';
 import { buildOpponentCardTracker } from './opponentModel';
 import { AIMove, AdversarialSearchContext } from './types';
 import { getTrainingMoveKey, returnTakeMove } from './utils';
@@ -459,6 +459,8 @@ export function getSearchProfile(difficulty: AIDifficulty) {
 
       worlds: EXPERT_SEARCH_WORLDS,
 
+      candidateLimit: EXPERT_SEARCH_CANDIDATES,
+
     };
 
   }
@@ -473,6 +475,8 @@ export function getSearchProfile(difficulty: AIDifficulty) {
 
     worlds: HARD_SEARCH_WORLDS,
 
+    candidateLimit: HARD_SEARCH_CANDIDATES,
+
   };
 
 }
@@ -485,13 +489,21 @@ export function adversarialSearchEstimates(state: GameState, playerId: number, c
 
   const profile = getSearchProfile(state.options.aiDifficulty);
 
-  const searchedCandidates = candidates.slice(0, Math.min(candidates.length, 6));
+  const searchedCandidates = candidates.slice(0, Math.min(candidates.length, profile.candidateLimit));
 
   const worldScores = new Map<string, number[]>();
 
-  const perWorldCandidateBudget = Math.max(200, Math.floor(profile.nodeBudget / (profile.worlds * Math.max(1, searchedCandidates.length))));
+  // Budget the whole search, not each candidate separately, so wider candidate
 
-  const perWorldTimeBudget = Math.max(10, Math.floor(profile.timeBudget / profile.worlds));
+  // lists and more sampled worlds cannot multiply the total think time.
+
+  const overallDeadline = Date.now() + Math.max(25, profile.timeBudget);
+
+  const searchCount = Math.max(1, profile.worlds * searchedCandidates.length);
+
+  const perWorldCandidateBudget = Math.max(250, Math.floor(profile.nodeBudget / searchCount));
+
+  const perCandidateTimeBudget = Math.max(8, Math.floor(profile.timeBudget / searchCount));
 
   for (let world = 0; world < profile.worlds; world++) {
 
@@ -531,7 +543,7 @@ export function adversarialSearchEstimates(state: GameState, playerId: number, c
 
         path: new Set([getSearchPositionKey(sampledWorld, 0, state.finishOrder.length)]),
 
-        deadline: Date.now() + perWorldTimeBudget,
+        deadline: Math.min(overallDeadline, Date.now() + perCandidateTimeBudget),
 
       };
 
@@ -602,6 +614,36 @@ export function getHardAIMove(state: GameState, playerId: number, searchFuture =
   // is shared by every difficulty level so online and local AI agree.
 
   const generatedCandidates = getAIMoveCandidates(state, playerId, state.canContinueTurn);
+
+  // The 3-nines + King/Ace opening trap is a known pro line: it forces the
+
+  // opponent to answer with an Ace or pick up, then the AI keeps the lead for a
+
+  // quad bury. Play it unless a different move wins the hand immediately.
+
+  const openingTrap = getExpertOpeningTrap(hand, pile, state, playerId);
+
+  if (openingTrap) {
+
+    const trapKey = candidateKey({ type: 'play', cards: openingTrap });
+
+    const hasWinningAlternative = generatedCandidates.some(candidate =>
+
+      candidate.type === 'play' &&
+
+      candidate.cards.length === hand.length &&
+
+      candidateKey(candidate) !== trapKey,
+
+    );
+
+    if (openingTrap.length === hand.length || !hasWinningAlternative) {
+
+      return { type: 'play', cards: openingTrap };
+
+    }
+
+  }
 
   // A four-of-a-kind continuation can be ended, but it cannot be used to pick
 

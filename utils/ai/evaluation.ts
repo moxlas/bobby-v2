@@ -158,27 +158,31 @@ export function evaluateNineAceTrap(hand: Card[], pile: Card[], state: GameState
 
   const aces = hand.filter(c => c.value === 14);
 
-  if (aces.length === 0) return { canPlay: false, score: 0, cards: [] as Card[] };
+  const kings = hand.filter(c => c.value === 13);
 
-  const tens = hand.filter(c => c.value === 10);
+  const highCard = aces[0] ?? kings[0];
 
-  const jacks = hand.filter(c => c.value === 11);
+  if (!highCard) return { canPlay: false, score: 0, cards: [] as Card[] };
 
-  const queens = hand.filter(c => c.value === 12);
+  // An Ace on top cannot be answered; a King can still be beaten by an Ace,
 
-  const hasFourTens = tens.length === 4;
+  // so the King version of the trap is worth less.
 
-  const hasFourJacks = jacks.length === 4;
+  let trapBonus = highCard.value === 14
 
-  const hasFourQueens = queens.length === 4;
+    ? SCORE_WEIGHTS.NINE_PLUS_ACE_TRAP_BONUS
 
-  let trapBonus = SCORE_WEIGHTS.NINE_PLUS_ACE_TRAP_BONUS;
+    : SCORE_WEIGHTS.NINE_PLUS_KING_TRAP_BONUS;
 
-  if (hasFourTens || hasFourJacks || hasFourQueens) trapBonus += SCORE_WEIGHTS.FOUR_OF_KIND_TRAP_BONUS;
-
-  const cards = [...nines.slice(0, 3), aces[0]];
+  const cards = [...nines.slice(0, 3), highCard];
 
   const remainingHand = hand.filter(c => !cards.some(pc => pc.id === c.id));
+
+  // Keeping any four-of-a-kind in reserve sets up the follow-up bury after
+
+  // the opponent picks up.
+
+  if (hasFourOfSameValue(remainingHand) !== null) trapBonus += SCORE_WEIGHTS.FOUR_OF_KIND_TRAP_BONUS;
 
   const remainingHighCards = countHighCards(remainingHand);
 
@@ -224,6 +228,8 @@ export function evaluatePlayMove(cardsToPlay: Card[], hand: Card[], pile: Card[]
 
       state.players.length === 2,
 
+      state.options.aiDifficulty === 'expert',
+
     );
 
   }
@@ -236,7 +242,7 @@ export function evaluatePlayMove(cardsToPlay: Card[], hand: Card[], pile: Card[]
 
     cardsToPlay.length === 1 &&
 
-    playValue >= 13 &&
+    playValue >= (state.options.aiDifficulty === 'expert' ? 12 : 13) &&
 
     pileTopValue <= 10 &&
 
@@ -246,23 +252,31 @@ export function evaluatePlayMove(cardsToPlay: Card[], hand: Card[], pile: Card[]
 
   ) {
 
-    // Avoid spending a King or Ace on a low pile when a lower legal card can
+    // Avoid spending a high card on a low pile when a lower legal card can
 
     // answer it. A high card is justified here only to stop a close opponent.
 
-    score -= 100;
+    score -= state.options.aiDifficulty === 'expert' ? 140 : 100;
 
   }
 
-  if (playValue >= 11) {
+  const highCardsPlayed = cardsToPlay.filter(card => card.value >= 11);
 
-    const highCardCount = cardsToPlay.length;
+  if (highCardsPlayed.length > 0) {
+
+    const highCardCount = highCardsPlayed.length;
 
     score += SCORE_WEIGHTS.HIGH_CARD_PENALTY * highCardCount;
 
-    if (playValue === 14) score += SCORE_WEIGHTS.ACE_PENALTY * highCardCount;
+    const aceCount = highCardsPlayed.filter(card => card.value === 14).length;
 
-    if (cardsToPlay.length === 4 && playValue === 14) {
+    if (aceCount > 0) score += SCORE_WEIGHTS.ACE_PENALTY * aceCount;
+
+    const isPlainQuad = cardsToPlay.length === 4 &&
+
+      new Set(cardsToPlay.map(card => card.value)).size === 1;
+
+    if (isPlainQuad && playValue === 14) {
 
       const aceDecision = shouldPlayFourAces(hand, pile, state, playerId);
 
@@ -284,7 +298,11 @@ export function evaluatePlayMove(cardsToPlay: Card[], hand: Card[], pile: Card[]
 
   }
 
-  if (cardsToPlay.length === 4) {
+  const isPlainQuad = cardsToPlay.length === 4 &&
+
+    new Set(cardsToPlay.map(card => card.value)).size === 1;
+
+  if (isPlainQuad) {
 
     if (playValue === 14) {
 
@@ -299,6 +317,18 @@ export function evaluatePlayMove(cardsToPlay: Card[], hand: Card[], pile: Card[]
       const fourOfKindValue = hasFourOfSameValue(remainingHand);
 
       if (fourOfKindValue !== null && fourOfKindValue !== 14) score += SCORE_WEIGHTS.FOUR_OF_A_KIND_BONUS * 0.4;
+
+    }
+
+    // A quad is especially valuable as a quick getaway when the opponent has
+
+    // just picked up a large hand and cannot answer the raised rank.
+
+    if (state.options.aiDifficulty === 'expert' && opponentInfo.strongestOpponent) {
+
+      const opponentCardLead = opponentInfo.strongestOpponent.hand.length - hand.length;
+
+      if (opponentCardLead > 0) score += Math.min(6, opponentCardLead) * 12;
 
     }
 
@@ -334,6 +364,8 @@ export function getFourOfAKindBreakPenalty(
 
   useDemonstrationStats: boolean,
 
+  expert = false,
+
 ) {
 
   const topValue = pile[pile.length - 1]?.value ?? 9;
@@ -348,7 +380,7 @@ export function getFourOfAKindBreakPenalty(
 
     const breakSupport = useDemonstrationStats ? getDemonstratedQuadBreakShare(playValue) : 0.5;
 
-    const basePenalty = Math.round(-140 + 90 * breakSupport);
+    const basePenalty = Math.round(-140 + 90 * breakSupport) - (expert ? 45 : 0);
 
     return opponentCloseToWin ? basePenalty + 40 : basePenalty;
 
@@ -360,11 +392,11 @@ export function getFourOfAKindBreakPenalty(
 
   );
 
-  if (topValue <= 9 && playValue >= 13 && keepsHigherQuad) return opponentCloseToWin ? -40 : -125;
+  if (topValue <= 9 && playValue >= 13 && keepsHigherQuad) return opponentCloseToWin ? -40 : (expert ? -190 : -125);
 
-  if (topValue <= 9 && opponentCloseToWin && playValue >= 13) return -160;
+  if (topValue <= 9 && opponentCloseToWin && playValue >= 13) return expert ? -210 : -160;
 
-  return -500;
+  return expert ? -650 : -500;
 
 }
 
@@ -698,6 +730,163 @@ export function shouldPlayFourAces(hand: Card[], pile: Card[], state: GameState,
 
 // -----------------------------
 
+export function evaluateExpertTactics(
+  cardsToPlay: Card[],
+  hand: Card[],
+  pile: Card[],
+  state: GameState,
+  playerId: number,
+  tracker: OpponentCardTracker,
+): number {
+
+  if (state.options.aiDifficulty !== 'expert') return 0;
+
+  const opponentInfo = estimateOpponentStrength(state, playerId);
+
+  if (!opponentInfo.isOneVOne || !opponentInfo.strongestOpponent) return 0;
+
+  const remainingHand = hand.filter(card => !cardsToPlay.some(played => played.id === card.id));
+
+  if (remainingHand.length === 0) return 0;
+
+  const sorted = [...cardsToPlay].sort((left, right) => left.value - right.value);
+
+  const topValue = sorted[sorted.length - 1].value;
+
+  const isOpeningPile = pile.length === 1 && pile[0].value === 9 && pile[0].suit === 'diamonds';
+
+  const opponent = opponentInfo.strongestOpponent;
+
+  let score = 0;
+
+  // Hold four-of-a-kinds for a quick getaway or a follow-up bury. Breaking one
+
+  // with a single card is heavily discouraged unless the opponent is about to
+
+  // finish (otherwise the generic single-card break penalty would be bypassed).
+
+  const quadValue = hasFourOfSameValue(hand);
+
+  if (quadValue !== null) {
+
+    const playedFromQuad = cardsToPlay.some(card => card.value === quadValue);
+
+    if (!playedFromQuad) score += SCORE_WEIGHTS.EXPERT_QUAD_PRESERVE_BONUS;
+
+    else if (sorted.length === 1 && !opponentInfo.opponentCloseToWin) {
+
+      score -= SCORE_WEIGHTS.EXPERT_QUAD_BREAK_PENALTY;
+
+    }
+
+  }
+
+  // Prefer the lowest legal card. High cards are only justified when they
+
+  // materially block the opponent or force a pickup.
+
+  const pileTopValue = pile[pile.length - 1]?.value ?? 9;
+
+  const legalValues = hand.filter(card => card.value >= pileTopValue).map(card => card.value);
+
+  const lowestLegalValue = legalValues.length > 0 ? Math.min(...legalValues) : pileTopValue;
+
+  if (sorted.length === 1 && sorted[0].value >= 11 && sorted[0].value > lowestLegalValue && !opponentInfo.opponentCloseToWin) {
+
+    const excess = sorted[0].value - lowestLegalValue;
+
+    score -= Math.min(120, excess * SCORE_WEIGHTS.EXPERT_HIGH_CARD_WASTE_PENALTY);
+
+  }
+
+  // Pro opening trap: 3 nines keep the turn, a King/Ace forces the opponent to
+
+  // answer with an Ace or pick up. A remaining quad sets up the follow-up bury.
+
+  const nineCount = sorted.filter(card => card.value === 9).length;
+
+  if (isOpeningPile && state.options.specialNinesRule && nineCount === 3 && sorted.length === 4 && topValue >= 13) {
+
+    const answerProbability = probabilityOpponentCanAnswer(tracker, state, opponent.id, topValue);
+
+    score += topValue === 14
+
+      ? SCORE_WEIGHTS.NINE_PLUS_ACE_TRAP_BONUS
+
+      : SCORE_WEIGHTS.NINE_PLUS_KING_TRAP_BONUS * (1 - answerProbability);
+
+    if (hasFourOfSameValue(remainingHand) !== null) score += SCORE_WEIGHTS.FOUR_OF_KIND_TRAP_BONUS;
+
+  }
+
+  // Quad bury: play the quad, then use the continuation to strand the opponent
+
+  // under an extra high card.
+
+  if (sorted.length >= 5 && new Set(sorted.slice(0, 4).map(card => card.value)).size === 1) {
+
+    const forceProbability = 1 - probabilityOpponentCanAnswer(tracker, state, opponent.id, topValue);
+
+    const opponentLeadBeforePlay = opponent.hand.length - hand.length;
+
+    const isBuryOpportunity = opponentLeadBeforePlay >= 2 || remainingHand.length <= 4;
+
+    if (isBuryOpportunity) {
+
+      score += SCORE_WEIGHTS.EXPERT_QUAD_BURY_BONUS;
+
+      score += SCORE_WEIGHTS.EXPERT_QUAD_BURY_FORCE_BONUS * forceProbability;
+
+      if (opponentLeadBeforePlay > 0) score += Math.min(8, opponentLeadBeforePlay) * 10;
+
+    } else {
+
+      // Outside a genuine bury, the quad still has tempo value but should not
+
+      // be dumped early just to shed five cards.
+
+      score += 25;
+
+    }
+
+  }
+
+  // Keep the last King/Ace unless playing it actually wins or blocks.
+
+  if (sorted.length === 1 && sorted[0].value >= 13) {
+
+    const lowerLegal = hand.some(card => card.value >= pileTopValue && card.value < sorted[0].value);
+
+    const highCardsAfter = remainingHand.filter(card => card.value >= 13).length;
+
+    if (lowerLegal && highCardsAfter === 0 && !opponentInfo.opponentCloseToWin) {
+
+      score -= SCORE_WEIGHTS.EXPERT_LAST_HIGH_CARD_PENALTY;
+
+    }
+
+  }
+
+  // Opponent threat prevention: force a near-finished opponent to pick up.
+
+  if (opponentInfo.opponentCloseToWin) {
+
+    const forceProbability = 1 - probabilityOpponentCanAnswer(tracker, state, opponent.id, topValue);
+
+    score += SCORE_WEIGHTS.EXPERT_OPPONENT_THREAT_BONUS * forceProbability;
+
+    if (opponent.hand.length <= 2 && forceProbability < 0.5 && topValue <= 12) {
+
+      score -= SCORE_WEIGHTS.EXPERT_OPPONENT_THREAT_BONUS * (1 - forceProbability);
+
+    }
+
+  }
+
+  return score;
+
+}
+
 export function evaluateCandidate(
   state: GameState,
   playerId: number,
@@ -798,6 +987,8 @@ export function evaluateCandidate(
   if (candidate.type === 'play') {
 
     score += evaluateHighCardControl(candidate.cards, hand, pile, state, playerId, tracker);
+
+    score += evaluateExpertTactics(candidate.cards, hand, pile, state, playerId, tracker);
 
     if (candidate.cards.length === hand.length) score += SCORE_WEIGHTS.WINNING_MOVE_BONUS;
 
@@ -917,9 +1108,15 @@ export function evaluateCandidate(
 
   }
 
-  if (candidate.type === 'play' && candidate.cards.length === 4) {
+  const candidateIsPlainQuad = candidate.type === 'play' &&
 
-    const remainingAfterQuad = hand.filter(card => !candidate.cards.some(played => played.id === card.id));
+    candidate.cards.length === 4 &&
+
+    new Set(candidate.cards.map((card: Card) => card.value)).size === 1;
+
+  if (candidateIsPlainQuad) {
+
+    const remainingAfterQuad = hand.filter(card => !candidate.cards.some((played: Card) => played.id === card.id));
 
     if (remainingAfterQuad.every(card => card.value >= candidate.cards[0].value)) {
 
@@ -967,9 +1164,17 @@ export function evaluateCandidate(
 
   // Reward plays that public-card tracking predicts will make the next player
 
-  // spend a higher card or pick up, including before their endgame.
+  // spend a higher card or pick up, including before their endgame. Expert
 
-  score += 45 * forceProb;
+  // weights this more heavily because preventing the opponent's next move is
+
+  // the main source of advantage.
+
+  score += (state.options.aiDifficulty === 'expert'
+
+    ? SCORE_WEIGHTS.EXPERT_FORCE_PICKUP_BONUS
+
+    : 45) * forceProb;
 
   if (opponentInfo.opponentCloseToWin) {
 
@@ -1007,7 +1212,7 @@ export function evaluateCandidate(
 
     : 0;
 
-  score -= 8 * enableProb;
+  score -= (state.options.aiDifficulty === 'expert' ? 14 : 8) * enableProb;
 
   return score;
 
@@ -1105,7 +1310,9 @@ export function evaluateSearchPosition(state: GameState, rootPlayerId: number): 
 
     const ownBlockedCards = getSearchBlockedCardValue(root.hand, pileTop);
 
-    score += nextOpponentBlocked * 7 - ownBlockedCards * 3;
+    const blockingWeight = state.options.aiDifficulty === 'expert' ? 10 : 7;
+
+    score += nextOpponentBlocked * blockingWeight - ownBlockedCards * 3;
 
   }
 
@@ -1113,11 +1320,13 @@ export function evaluateSearchPosition(state: GameState, rootPlayerId: number): 
 
   // threat; retaining a similar lead for the AI is correspondingly valuable.
 
-  if (root.hand.length <= 2) score += (3 - root.hand.length) * 35;
+  const endgameWeight = state.options.aiDifficulty === 'expert' ? 55 : 35;
+
+  if (root.hand.length <= 2) score += (3 - root.hand.length) * endgameWeight;
 
   for (const opponent of opponents) {
 
-    if (opponent.hand.length <= 2) score -= (3 - opponent.hand.length) * 35;
+    if (opponent.hand.length <= 2) score -= (3 - opponent.hand.length) * endgameWeight;
 
   }
 
@@ -1129,9 +1338,11 @@ export function evaluateSearchPosition(state: GameState, rootPlayerId: number): 
 
       .some(candidate => candidate.type === 'play');
 
-    if (current.id === rootPlayerId) score += canPlay ? 10 : -10;
+    const tempoWeight = state.options.aiDifficulty === 'expert' ? 25 : 10;
 
-    else score += canPlay ? -10 : 10;
+    if (current.id === rootPlayerId) score += canPlay ? tempoWeight : -tempoWeight;
+
+    else score += canPlay ? -tempoWeight : tempoWeight;
 
   }
 
@@ -1172,6 +1383,26 @@ export function evaluateTakeMove(takeCount: number, hand: Card[], pile: Card[], 
   const handChange = newHandScore - currentHandScore;
 
   score += handChange * 0.75;
+
+  if (state.options.aiDifficulty === 'expert') {
+
+    // Prefer picking up useful high cards over spending the last King/Ace.
+
+    if (wouldGetHighCards(cardsToTake)) score += SCORE_WEIGHTS.EXPERT_TAKE_HIGH_CARDS_BONUS;
+
+    if (cardsToTake.some(card => card.value === 14)) score += 20;
+
+    const topValue = pile[pile.length - 1]?.value ?? 9;
+
+    const legalAnswers = hand.filter(card => card.value >= topValue);
+
+    if (hand.length > 1 && legalAnswers.length > 0 && legalAnswers.every(card => card.value >= 13)) {
+
+      score += SCORE_WEIGHTS.EXPERT_LAST_HIGH_CARD_PENALTY;
+
+    }
+
+  }
 
   return score;
 

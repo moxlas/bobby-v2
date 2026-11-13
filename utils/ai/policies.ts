@@ -436,7 +436,7 @@ export function getContinueTurnMove(
 
   if (!possiblePlays || possiblePlays.length === 0) return { type: 'endTurn', cards: [] };
 
-  if (difficulty === 'hard') {
+  if (difficulty === 'hard' || difficulty === 'expert') {
 
     const hardState = { ...state, canContinueTurn: true };
 
@@ -530,9 +530,9 @@ export function getAIDelay(difficulty: AIDifficulty): number {
 
     medium: 1000, // previous "hard" behavior moved to medium
 
-    hard: 1500,
+    hard: 1800,
 
-    expert: 2000,
+    expert: 3000,
 
   } as Record<AIDifficulty, number>;
 
