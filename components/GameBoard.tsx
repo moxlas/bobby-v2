@@ -125,6 +125,11 @@ function visibleElement(selector: string): HTMLElement | null {
   return null;
 }
 
+/** CSS zoom scales rendering but leaves pointer coordinates in the zoomed space. */
+function rootZoom(): number {
+  return parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+}
+
 function visibleRect(selector: string): DOMRect | null {
   return visibleElement(selector)?.getBoundingClientRect() ?? null;
 }
@@ -835,7 +840,7 @@ export function GameBoard({
         cardGestureSoundPlayedRef.current = true;
       }
       setDraggingCardId(gesture.card.id);
-      setDragPreviewPosition({ x: event.clientX, y: event.clientY });
+      setDragPreviewPosition({ x: event.clientX / rootZoom(), y: event.clientY / rootZoom() });
     }
   };
 
@@ -850,7 +855,7 @@ export function GameBoard({
     const deltaX = event.clientX - gesture.startX;
     const deltaY = event.clientY - gesture.startY;
     const movedDistance = Math.hypot(deltaX, deltaY);
-    const releasedOverPile = Boolean(document.elementFromPoint(event.clientX, event.clientY)
+    const releasedOverPile = Boolean(document.elementFromPoint(event.clientX / rootZoom(), event.clientY / rootZoom())
       ?.closest('[data-pile-drop-zone]'));
     const isTouchSwipeUp = gesture.pointerType !== 'mouse' && deltaY < -42 && Math.abs(deltaY) > Math.abs(deltaX) * 1.1;
     const isMouseDropOnPile = gesture.pointerType === 'mouse' && releasedOverPile && movedDistance > 10;
