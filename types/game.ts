@@ -47,7 +47,7 @@ export type PlayError =
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 export type ThemeName = 'summer' | 'midnight' | 'autumn' | 'ocean';
-export type TextSize = 'normal' | 'big';
+export type TextSize = 'normal' | 'big' | 'biggest';
 export type CardSize = 'normal' | 'large';
 export type Language = 'en' | 'lt';
 

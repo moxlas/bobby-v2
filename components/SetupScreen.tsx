@@ -543,8 +543,8 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
 
                         <div className="border-t border-emerald-600/40 pt-4">
                           <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.textSize.title')}</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {(['normal', 'big'] as TextSize[]).map((value) => (
+                          <div className="grid grid-cols-3 gap-2">
+                            {(['normal', 'big', 'biggest'] as TextSize[]).map((value) => (
                               <button
                                 key={value}
                                 onClick={() => setTextSize(value)}
@@ -554,9 +554,9 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                                     : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
                                 }`}
                               >
-                                <div className="font-semibold text-sm">{t(`setup.textSize.${value}`)}</div>
+                                <div className="font-semibold text-sm">{t(`setup.textSize.${value}.label`)}</div>
                                 <div className={`text-xs mt-0.5 leading-tight ${textSize === value ? 'text-amber-800' : 'text-emerald-400'}`}>
-                                  {t('setup.textSize.desc')}
+                                  {t(`setup.textSize.${value}.desc`)}
                                 </div>
                               </button>
                             ))}

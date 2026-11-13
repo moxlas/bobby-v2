@@ -127,9 +127,9 @@
     "errorDuplicateName": "Player names must be unique!",
     "textSize": {
       "title": "Text Size",
-      "normal": "Normal",
-      "big": "Bigger",
-      "desc": "Makes text and icons easier to read."
+      "normal": { "label": "Normal", "desc": "Default size for most screens." },
+      "big": { "label": "Bigger", "desc": "Larger text and icons for easier reading." },
+      "biggest": { "label": "Biggest", "desc": "Largest text and icons for maximum readability." }
     },
     "cardSize": {
       "title": "Card Size",

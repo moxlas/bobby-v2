@@ -10,6 +10,10 @@ html[data-text-size="big"] {
   zoom: 1.12;
 }
 
+html[data-text-size="biggest"] {
+  zoom: 1.25;
+}
+
 html[data-card-size="large"] {
   --card-width: 21vw;
   --card-max-width: 5.25rem;

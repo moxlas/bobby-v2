@@ -127,9 +127,9 @@
     "errorDuplicateName": "Žaidėjų vardai turi būti skirtingi!",
     "textSize": {
       "title": "Teksto dydis",
-      "normal": "Normalus",
-      "big": "Didesnis",
-      "desc": "Padaro tekstą ir piktogramas lengviau skaitomus."
+      "normal": { "label": "Normalus", "desc": "Numatytas dydis daugumai ekranų." },
+      "big": { "label": "Didesnis", "desc": "Didesnis tekstas ir piktogramos lengvesniam skaitymui." },
+      "biggest": { "label": "Didžiausias", "desc": "Didžiausias tekstas ir piktogramos maksimaliam skaitomumui." }
     },
     "cardSize": {
       "title": "Kortų dydis",
