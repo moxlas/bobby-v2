@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName, TextSize, CardSize, Language } from '../types/game';
+import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, AIThinkingTime, ThemeName, TextSize, CardSize, Language } from '../types/game';
 import { Play, BookOpen, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal, Palette } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
@@ -120,6 +120,7 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   const [allowTakeAllCards, setAllowTakeAllCards] = useState(saved?.options.allowTakeAllCards ?? DEFAULT_OPTIONS.allowTakeAllCards);
   const [fourOfAKindRule, setFourOfAKindRule] = useState(saved?.options.fourOfAKindRule ?? DEFAULT_OPTIONS.fourOfAKindRule);
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(saved?.options.aiDifficulty ?? DEFAULT_OPTIONS.aiDifficulty);
+  const [aiThinkingTime, setAiThinkingTime] = useState<AIThinkingTime>(saved?.options.aiThinkingTime ?? DEFAULT_OPTIONS.aiThinkingTime);
   const [adaptiveAI, setAdaptiveAI] = useState(saved?.options.adaptiveAI ?? DEFAULT_OPTIONS.adaptiveAI);
   const [rankedSeating, setRankedSeating] = useState(saved?.options.rankedSeating ?? DEFAULT_OPTIONS.rankedSeating);
   const [randomSeating, setRandomSeating] = useState(saved?.options.randomSeating ?? DEFAULT_OPTIONS.randomSeating);
@@ -198,6 +199,7 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
       allowTakeAllCards,
       fourOfAKindRule,
       aiDifficulty,
+      aiThinkingTime,
       adaptiveAI,
       rankedSeating,
       randomSeating,
@@ -506,6 +508,30 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                             role="status"
                           >
                             {t(`setup.aiDifficulty.${aiDifficulty}.desc`)}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-emerald-600/40 pt-4">
+                          <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.aiThinkingTime.title')}</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {(['normal', 'long', 'max'] as AIThinkingTime[]).map((value) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => setAiThinkingTime(value)}
+                                aria-pressed={aiThinkingTime === value}
+                                className={`p-2.5 rounded-lg text-left transition-all border ${
+                                  aiThinkingTime === value
+                                    ? 'bg-amber-500 border-amber-400 text-emerald-900'
+                                    : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
+                                }`}
+                              >
+                                <div className="font-semibold text-sm">{t(`setup.aiThinkingTime.${value}.label`)}</div>
+                                <div className={`text-xs mt-0.5 leading-tight ${aiThinkingTime === value ? 'text-amber-800' : 'text-emerald-400'}`}>
+                                  {t(`setup.aiThinkingTime.${value}.desc`)}
+                                </div>
+                              </button>
+                            ))}
                           </div>
                         </div>
 

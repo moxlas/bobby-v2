@@ -789,7 +789,7 @@ export function GameBoard({
       setIsAIThinking(false);
     };
 
-    const delay = getAIDelay(gameState.options.aiDifficulty);
+    const delay = getAIDelay(gameState.options.aiDifficulty, gameState.options.aiThinkingTime);
     const timeout = setTimeout(executeAITurn, delay);
 
     return () => {

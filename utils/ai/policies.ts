@@ -1,4 +1,5 @@
-import { Card, GameState, GameOptions, AIDifficulty, Player, PlayerMove } from '../../types/game';
+import { Card, GameState, GameOptions, AIDifficulty, AIThinkingTime, Player, PlayerMove } from '../../types/game';
+import { AI_THINKING_PROFILES } from './constants';
 import { evaluatePlayMove, evaluateTakeMove } from './evaluation';
 import { AIMove } from './types';
 import { estimateOpponentStrength } from './opponentModel';
@@ -520,11 +521,11 @@ if (best && best.length > 0) return { type: 'play', cards: best };
 
 // -----------------------------
 
-export function getAIDelay(difficulty: AIDifficulty): number {
+export function getAIDelay(difficulty: AIDifficulty, thinkingTime: AIThinkingTime = 'normal'): number {
 
   // base delays (ms)
 
-  const BASE = {
+  const BASE: Record<AIDifficulty, number> = {
 
     easy: 500,
 
@@ -532,9 +533,9 @@ export function getAIDelay(difficulty: AIDifficulty): number {
 
     hard: 1800,
 
-    expert: 3000,
+    expert: AI_THINKING_PROFILES[thinkingTime]?.delayMs ?? AI_THINKING_PROFILES.normal.delayMs,
 
-  } as Record<AIDifficulty, number>;
+  };
 
   const base = BASE[difficulty] ?? 400;
 

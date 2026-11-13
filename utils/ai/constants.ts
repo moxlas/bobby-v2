@@ -1,4 +1,4 @@
-import { Card, GameState, GameOptions, AIDifficulty, Player, PlayerMove } from '../../types/game';
+import { Card, GameState, GameOptions, AIDifficulty, AIThinkingTime, Player, PlayerMove } from '../../types/game';
 
 // ============================================================
 
@@ -113,9 +113,20 @@ export const EXPERT_SEARCH_DEPTH = 13;
 
 export const EXPERT_SEARCH_NODE_BUDGET = 40000;
 
-export const EXPERT_SEARCH_TIME_BUDGET_MS = 500;
+export const EXPERT_SEARCH_TIME_BUDGET_MS = 750;
 
 export const EXPERT_SEARCH_WORLDS = 4;
 
 export const EXPERT_SEARCH_CANDIDATES = 10;
+
+/**
+ * Player-selectable Expert thinking time. The search budget controls how long
+ * the AI may spend calculating; the delay is the visible pause after it has
+ * chosen a move. Hard/Medium/Easy keep their existing timings.
+ */
+export const AI_THINKING_PROFILES: Record<AIThinkingTime, { searchTimeBudgetMs: number; delayMs: number }> = {
+  normal: { searchTimeBudgetMs: EXPERT_SEARCH_TIME_BUDGET_MS, delayMs: 3000 },
+  long: { searchTimeBudgetMs: 1000, delayMs: 4000 },
+  max: { searchTimeBudgetMs: 1250, delayMs: 5000 },
+};
 

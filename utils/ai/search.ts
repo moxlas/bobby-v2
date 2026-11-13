@@ -1,5 +1,5 @@
-import { Card, GameState, GameOptions, AIDifficulty, Player, PlayerMove } from '../../types/game';
-import { EXPERT_SEARCH_CANDIDATES, EXPERT_SEARCH_DEPTH, EXPERT_SEARCH_NODE_BUDGET, EXPERT_SEARCH_TIME_BUDGET_MS, EXPERT_SEARCH_WORLDS, HARD_SEARCH_CANDIDATES, HARD_SEARCH_DEPTH, HARD_SEARCH_NODE_BUDGET, HARD_SEARCH_TIME_BUDGET_MS, HARD_SEARCH_WORLDS } from './constants';
+import { Card, GameState, GameOptions, AIDifficulty, AIThinkingTime, Player, PlayerMove } from '../../types/game';
+import { AI_THINKING_PROFILES, EXPERT_SEARCH_CANDIDATES, EXPERT_SEARCH_DEPTH, EXPERT_SEARCH_NODE_BUDGET, EXPERT_SEARCH_WORLDS, HARD_SEARCH_CANDIDATES, HARD_SEARCH_DEPTH, HARD_SEARCH_NODE_BUDGET, HARD_SEARCH_TIME_BUDGET_MS, HARD_SEARCH_WORLDS } from './constants';
 import { evaluateCandidate, evaluatePlayMove, evaluateSearchPosition, evaluateTakeMove, getHighCardBlockingPenalty } from './evaluation';
 import { getAIMoveCandidates, getExpertOpeningTrap, getHumanDemonstrationScores, getPossiblePlays, isUnnecessaryAceOnOpening, shouldUseFourOfAKind } from './candidates';
 import { buildOpponentCardTracker } from './opponentModel';
@@ -445,9 +445,11 @@ export function minimaxSearch(
 
 }
 
-export function getSearchProfile(difficulty: AIDifficulty) {
+export function getSearchProfile(difficulty: AIDifficulty, thinkingTime: AIThinkingTime = 'normal') {
 
   if (difficulty === 'expert') {
+
+    const thinking = AI_THINKING_PROFILES[thinkingTime] ?? AI_THINKING_PROFILES.normal;
 
     return {
 
@@ -455,7 +457,7 @@ export function getSearchProfile(difficulty: AIDifficulty) {
 
       nodeBudget: EXPERT_SEARCH_NODE_BUDGET,
 
-      timeBudget: EXPERT_SEARCH_TIME_BUDGET_MS,
+      timeBudget: thinking.searchTimeBudgetMs,
 
       worlds: EXPERT_SEARCH_WORLDS,
 
@@ -487,7 +489,7 @@ export function adversarialSearchEstimates(state: GameState, playerId: number, c
 
   if (candidates.length === 0) return results;
 
-  const profile = getSearchProfile(state.options.aiDifficulty);
+  const profile = getSearchProfile(state.options.aiDifficulty, state.options.aiThinkingTime);
 
   const searchedCandidates = candidates.slice(0, Math.min(candidates.length, profile.candidateLimit));
 

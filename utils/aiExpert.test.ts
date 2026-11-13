@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_OPTIONS, type Card, type GameState, type Suit, type Value } from '../types/game';
 import { initializeGame } from './gameLogic';
-import { getAIMove, getAIMoveCandidates } from './aiLogic';
+import { getAIDelay, getAIMove, getAIMoveCandidates, getSearchProfile, EXPERT_SEARCH_TIME_BUDGET_MS } from './aiLogic';
 
 function card(value: Value, suit: Suit): Card {
   return { id: `${suit}-${value}`, suit, value, faceUp: false };
@@ -131,4 +131,26 @@ describe('Expert tactical moves', () => {
 
     expect(elapsed).toBeLessThan(2000);
   }, 10000);
+});
+
+describe('Expert thinking time', () => {
+  it('maps each thinking-time setting to a search budget', () => {
+    expect(getSearchProfile('expert', 'normal').timeBudget).toBe(EXPERT_SEARCH_TIME_BUDGET_MS);
+    expect(getSearchProfile('expert', 'long').timeBudget).toBe(1000);
+    expect(getSearchProfile('expert', 'max').timeBudget).toBe(1250);
+  });
+
+  it('changes the expert pause without touching other difficulties', () => {
+    const expectNear = (actual: number, base: number) => {
+      expect(actual).toBeGreaterThanOrEqual(base - 100);
+      expect(actual).toBeLessThanOrEqual(base + 99);
+    };
+
+    expectNear(getAIDelay('expert', 'normal'), 3000);
+    expectNear(getAIDelay('expert', 'long'), 4000);
+    expectNear(getAIDelay('expert', 'max'), 5000);
+    expectNear(getAIDelay('hard', 'max'), 1800);
+    expectNear(getAIDelay('medium', 'max'), 1000);
+    expectNear(getAIDelay('easy', 'max'), 500);
+  });
 });

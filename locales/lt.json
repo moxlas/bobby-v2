@@ -189,6 +189,12 @@
       "previous": "Ankstesnis sudėtingumas",
       "next": "Kitas sudėtingumas"
     },
+    "aiThinkingTime": {
+      "title": "DI mąstymo laikas",
+      "normal": { "label": "Normalus", "desc": "Ekspertas ieško 0,75 s, tada pauzė 3 s." },
+      "long": { "label": "Ilgas", "desc": "Ekspertas ieško 1 s, tada pauzė 4 s." },
+      "max": { "label": "Maksimalus", "desc": "Ekspertas ieško 1,25 s, tada pauzė 5 s." }
+    },
     "rules": [
       { "title": "Apžvalga", "text": "Kortų žaidimas 2-8 žaidėjams. Tikslas yra pirmam išmesti visas kortas iš rankos. Paskutinis žaidėjas su kortomis pralaimi!" },
       { "title": "Kaladė ir dalinimas", "text": "Naudojamos 24 kortos (nuo 9 iki Tūzo). Visos kortos yra sumaišomos, perkeliamos ir dalinamos užverstos po vieną. Kiekviena korta išdalinama — kortų kaladėje nelieka." },

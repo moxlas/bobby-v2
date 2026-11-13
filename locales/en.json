@@ -189,6 +189,12 @@
       "previous": "Previous difficulty",
       "next": "Next difficulty"
     },
+    "aiThinkingTime": {
+      "title": "AI Thinking Time",
+      "normal": { "label": "Normal", "desc": "Expert searches for 0.75s, then pauses 3s." },
+      "long": { "label": "Long", "desc": "Expert searches for 1s, then pauses 4s." },
+      "max": { "label": "Maximum", "desc": "Expert searches for 1.25s, then pauses 5s." }
+    },
     "rules": [
       { "title": "Overview", "text": "A shedding-type card game for 2-8 players. The goal is to be the first to discard all cards from your hand. The last player with cards loses!" },
       { "title": "Deck & Deal", "text": "Uses 24 cards (9 through Ace). All cards are shuffled, cut, and dealt face-down one at a time. Every card is dealt — no draw pile remains." },

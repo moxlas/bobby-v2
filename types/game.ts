@@ -46,6 +46,7 @@ export type PlayError =
   | 'valueTooLow';
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
+export type AIThinkingTime = 'normal' | 'long' | 'max';
 export type ThemeName = 'summer' | 'midnight' | 'autumn' | 'ocean';
 export type TextSize = 'normal' | 'big' | 'biggest';
 export type CardSize = 'normal' | 'large';
@@ -61,6 +62,7 @@ export interface GameRules {
 /** Per-player settings that never affect the rules or other seats. */
 export interface GamePreferences {
   aiDifficulty: AIDifficulty;
+  aiThinkingTime: AIThinkingTime;
   adaptiveAI: boolean;
   rankedSeating: boolean;
   randomSeating: boolean;
@@ -101,6 +103,7 @@ export const DEFAULT_RULES: GameRules = {
 
 export const DEFAULT_PREFERENCES: GamePreferences = {
   aiDifficulty: 'medium',
+  aiThinkingTime: 'normal',
   adaptiveAI: false,
   rankedSeating: false,
   randomSeating: false,
