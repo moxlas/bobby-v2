@@ -117,13 +117,32 @@
     "options": {
       "cards": "Kortų taisyklės",
       "seating": "Išdėstymas",
-      "general": "Bendri"
+      "general": "Bendri",
+      "display": "Išvaizda"
     },
     "gameRules": "Žaidimo taisyklės",
     "startGame": "Pradėti žaidimą",
     "errorNoHuman": "Reikalingas bent vienas žmogus žaidėjas!",
     "errorEmptyName": "Visi žaidėjai turi turėti vardą!",
     "errorDuplicateName": "Žaidėjų vardai turi būti skirtingi!",
+    "textSize": {
+      "title": "Teksto dydis",
+      "normal": "Normalus",
+      "big": "Didesnis",
+      "desc": "Padaro tekstą ir piktogramas lengviau skaitomus."
+    },
+    "cardSize": {
+      "title": "Kortų dydis",
+      "normal": "Normalus",
+      "large": "Didelis",
+      "desc": "Padaro korteles lengviau matomas."
+    },
+    "animations": {
+      "title": "Animacijos",
+      "on": "Įjungtos",
+      "off": "Išjungtos",
+      "desc": "Išjungia judesį ir perėjimus."
+    },
     "option": {
       "specialNines": {
         "title": "Speciali 9-ukų taisyklė",

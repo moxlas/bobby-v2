@@ -16,6 +16,7 @@ interface PlayerInfo {
 interface DealingAnimationProps {
   players: PlayerInfo[];
   onComplete: () => void;
+  animations?: boolean;
 }
 
 const VISUAL_CARDS = 6;
@@ -31,10 +32,10 @@ function getPlayerStagger(playerCount: number): number {
   return Math.min(280, Math.floor(available / (playerCount - 1)));
 }
 
-export function DealingAnimation({ players, onComplete }: DealingAnimationProps) {
+export function DealingAnimation({ players, onComplete, animations = true }: DealingAnimationProps) {
   const { t, tPlural } = useTranslation();
   const calledRef = useRef(false);
-  const reduced = prefersReducedMotion();
+  const reduced = prefersReducedMotion() || !animations;
   /**
    * Freeze the hand sizes at deal time. Online the server keeps playing while
    * this screen is up, so live counts would drop a card mid-shuffle.
@@ -48,6 +49,14 @@ export function DealingAnimation({ players, onComplete }: DealingAnimationProps)
     COMPLETE_EXTRA_MS;
 
   useEffect(() => {
+    if (!animations) {
+      if (!calledRef.current) {
+        calledRef.current = true;
+        onComplete();
+      }
+      return;
+    }
+
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     if (!reduced) {

@@ -47,6 +47,8 @@ export type PlayError =
 
 export type AIDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 export type ThemeName = 'summer' | 'midnight' | 'autumn' | 'ocean';
+export type TextSize = 'normal' | 'big';
+export type CardSize = 'normal' | 'large';
 export type Language = 'en' | 'lt';
 
 /** Rules the host chooses for a room. They change how the game is played. */
@@ -64,6 +66,9 @@ export interface GamePreferences {
   randomSeating: boolean;
   skipConfirmations: boolean;
   theme: ThemeName;
+  textSize: TextSize;
+  cardSize: CardSize;
+  animations: boolean;
   language: Language;
 }
 
@@ -101,6 +106,9 @@ export const DEFAULT_PREFERENCES: GamePreferences = {
   randomSeating: false,
   skipConfirmations: false,
   theme: 'summer',
+  textSize: 'normal',
+  cardSize: 'normal',
+  animations: true,
   language: 'en',
 };
 

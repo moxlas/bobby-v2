@@ -117,13 +117,32 @@
     "options": {
       "cards": "Card Rules",
       "seating": "Seating",
-      "general": "General"
+      "general": "General",
+      "display": "Display"
     },
     "gameRules": "Game Rules",
     "startGame": "Start Game",
     "errorNoHuman": "At least one human player is required!",
     "errorEmptyName": "All players must have a name!",
     "errorDuplicateName": "Player names must be unique!",
+    "textSize": {
+      "title": "Text Size",
+      "normal": "Normal",
+      "big": "Bigger",
+      "desc": "Makes text and icons easier to read."
+    },
+    "cardSize": {
+      "title": "Card Size",
+      "normal": "Normal",
+      "large": "Large",
+      "desc": "Makes cards easier to see."
+    },
+    "animations": {
+      "title": "Animations",
+      "on": "On",
+      "off": "Off",
+      "desc": "Turn off motion and transitions."
+    },
     "option": {
       "specialNines": {
         "title": "Special 9's Rule",

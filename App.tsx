@@ -169,7 +169,10 @@ function App() {
     if (gameState?.options.theme) {
       document.documentElement.dataset.theme = gameState.options.theme;
     }
-  }, [gameState?.options.theme]);
+    document.documentElement.dataset.textSize = gameState?.options.textSize ?? 'normal';
+    document.documentElement.dataset.cardSize = gameState?.options.cardSize ?? 'normal';
+    document.documentElement.dataset.animations = (gameState?.options.animations ?? true) ? 'on' : 'off';
+  }, [gameState?.options.theme, gameState?.options.textSize, gameState?.options.cardSize, gameState?.options.animations]);
 
   return (
     <I18nProvider>
@@ -204,7 +207,7 @@ function App() {
             isYou: !p.isAI,
             cardCount: p.hand.length + (p.id === openingPlayerId ? 1 : 0),
           }));
-          return <DealingAnimation players={playerInfos} onComplete={handleDealingComplete} />;
+          return <DealingAnimation players={playerInfos} animations={gameState.options.animations} onComplete={handleDealingComplete} />;
         })()
       ) : (
         <GameBoard

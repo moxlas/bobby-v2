@@ -6,6 +6,22 @@ body,
   min-height: 100%;
 }
 
+html[data-text-size="big"] {
+  zoom: 1.12;
+}
+
+html[data-card-size="large"] {
+  --card-width: 21vw;
+  --card-max-width: 5.25rem;
+}
+
+html[data-animations="off"] *,
+html[data-animations="off"] *::before,
+html[data-animations="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 [data-theme="midnight"] {
   --color-emerald-50: #f8fafc;
   --color-emerald-100: #f1f5f9;

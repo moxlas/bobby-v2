@@ -1940,7 +1940,7 @@ export function GameBoard({
                     data-card-id={card.id}
                     aria-hidden="true"
                     style={hidden ? { visibility: 'hidden' } : undefined}
-                    className="flex aspect-[3/4] w-[18vw] max-w-[4.5rem] flex-shrink-0 items-center justify-center rounded-xl border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
+                    className="flex aspect-[3/4] w-[var(--card-width,18vw)] max-w-[var(--card-max-width,4.5rem)] flex-shrink-0 items-center justify-center rounded-xl border-2 border-blue-400 bg-blue-600 opacity-75 shadow-sm"
                   >
                     <div className="h-[52%] w-[46%] rounded border border-blue-300 bg-blue-500" />
                   </div>
@@ -1958,7 +1958,7 @@ export function GameBoard({
                   onPointerDown={event => handleCardPointerDown(card, event)}
                   onClick={() => handleCardSelect(card)}
                   disabled={!isMyTurn}
-                  className={`relative flex aspect-[3/4] w-[18vw] max-w-[4.5rem] flex-shrink-0 select-none flex-col items-center justify-center rounded-xl border-2 font-bold shadow-sm transition-all ${draggingCardId === card.id ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${
+                  className={`relative flex aspect-[3/4] w-[var(--card-width,18vw)] max-w-[var(--card-max-width,4.5rem)] flex-shrink-0 select-none flex-col items-center justify-center rounded-xl border-2 font-bold shadow-sm transition-all ${draggingCardId === card.id ? 'z-20 -translate-y-3 rotate-2 scale-105 shadow-xl' : ''} ${
                     isSelected
                       ? 'scale-105 border-amber-400 bg-amber-50 shadow-md'
                       : 'border-slate-300 bg-white hover:border-slate-400 hover:shadow'

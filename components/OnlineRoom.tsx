@@ -56,6 +56,15 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
   const [dealing, setDealing] = useState(false);
   const dealtGameStartRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (game?.options.theme) {
+      document.documentElement.dataset.theme = game.options.theme;
+    }
+    document.documentElement.dataset.textSize = game?.options.textSize ?? 'normal';
+    document.documentElement.dataset.cardSize = game?.options.cardSize ?? 'normal';
+    document.documentElement.dataset.animations = (game?.options.animations ?? true) ? 'on' : 'off';
+  }, [game?.options.theme, game?.options.textSize, game?.options.cardSize, game?.options.animations]);
+
   const gameStartTime = game?.gameStartTime ?? null;
   const dealTurnNumber = game?.turnNumber;
   const dealPileLength = game?.pile.length;
@@ -224,6 +233,7 @@ export function OnlineRoom({ session, onExit }: OnlineRoomProps) {
           isYou: player.id === youId,
           cardCount: (player.handCount ?? player.hand.length) + (player.id === openingPlayerId ? 1 : 0),
         }))}
+        animations={game.options.animations}
         onComplete={handleDealComplete}
       />
     );

@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName, Language } from '../types/game';
-import { Play, BookOpen, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal } from 'lucide-react';
+import { GameOptions, DEFAULT_OPTIONS, AIDifficulty, ThemeName, TextSize, CardSize, Language } from '../types/game';
+import { Play, BookOpen, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, AlertCircle, Settings, Zap, Trophy, Globe, Users, SlidersHorizontal, Palette } from 'lucide-react';
 import { Leaderboard } from './Leaderboard';
 import { loadSettings, saveSettings } from '../utils/settings';
 import { hasDuplicatePlayerNames } from '../utils/playerNames';
@@ -20,7 +20,7 @@ interface SetupScreenProps {
 
 const AI_DIFFICULTY_VALUES: AIDifficulty[] = ['easy', 'medium', 'hard', 'expert'];
 
-type OptionsTab = 'cards' | 'seating' | 'general';
+type OptionsTab = 'cards' | 'seating' | 'general' | 'display';
 
 function LanguageFlag({ language }: { language: Language }) {
   const flagClass = 'h-4 w-7 shrink-0 overflow-hidden rounded-[3px] shadow-sm';
@@ -125,10 +125,25 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
   const [randomSeating, setRandomSeating] = useState(saved?.options.randomSeating ?? DEFAULT_OPTIONS.randomSeating);
   const [skipConfirmations, setSkipConfirmations] = useState(saved?.options.skipConfirmations ?? DEFAULT_OPTIONS.skipConfirmations);
   const [theme, setTheme] = useState<ThemeName>(saved?.options.theme ?? DEFAULT_OPTIONS.theme);
+  const [textSize, setTextSize] = useState<TextSize>(saved?.options.textSize ?? DEFAULT_OPTIONS.textSize);
+  const [cardSize, setCardSize] = useState<CardSize>(saved?.options.cardSize ?? DEFAULT_OPTIONS.cardSize);
+  const [animations, setAnimations] = useState(saved?.options.animations ?? DEFAULT_OPTIONS.animations);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.textSize = textSize;
+  }, [textSize]);
+
+  useEffect(() => {
+    document.documentElement.dataset.cardSize = cardSize;
+  }, [cardSize]);
+
+  useEffect(() => {
+    document.documentElement.dataset.animations = animations ? 'on' : 'off';
+  }, [animations]);
 
   const handlePlayerCountChange = (count: number) => {
     setPlayerCount(count);
@@ -188,6 +203,9 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
       randomSeating,
       skipConfirmations,
       theme,
+      textSize,
+      cardSize,
+      animations,
       language,
     };
 
@@ -348,12 +366,13 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                   <div
                     role="tablist"
                     aria-label={t('setup.gameOptions')}
-                    className="grid grid-cols-3 gap-1 bg-emerald-800/40 p-1.5"
+                    className="grid grid-cols-2 gap-1 bg-emerald-800/40 p-1.5 sm:grid-cols-4"
                   >
                     {([
                       { value: 'cards' as OptionsTab, label: t('setup.options.cards'), icon: Zap },
                       { value: 'seating' as OptionsTab, label: t('setup.options.seating'), icon: Users },
                       { value: 'general' as OptionsTab, label: t('setup.options.general'), icon: SlidersHorizontal },
+                      { value: 'display' as OptionsTab, label: t('setup.options.display'), icon: Palette },
                     ]).map(({ value, label, icon: Icon }) => (
                       <button
                         key={value}
@@ -490,7 +509,12 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                           </div>
                         </div>
 
-                        <div className="border-t border-emerald-600/40 pt-4">
+                      </div>
+                    )}
+
+                    {activeOptionsTab === 'display' && (
+                      <div className="space-y-5">
+                        <div>
                           <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.theme.title')}</label>
                           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                             {([
@@ -515,6 +539,59 @@ export function SetupScreen({ onStartGame, onPlayOnline }: SetupScreenProps) {
                               </button>
                             ))}
                           </div>
+                        </div>
+
+                        <div className="border-t border-emerald-600/40 pt-4">
+                          <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.textSize.title')}</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(['normal', 'big'] as TextSize[]).map((value) => (
+                              <button
+                                key={value}
+                                onClick={() => setTextSize(value)}
+                                className={`p-2.5 rounded-lg text-left transition-all border ${
+                                  textSize === value
+                                    ? 'bg-amber-500 border-amber-400 text-emerald-900'
+                                    : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
+                                }`}
+                              >
+                                <div className="font-semibold text-sm">{t(`setup.textSize.${value}`)}</div>
+                                <div className={`text-xs mt-0.5 leading-tight ${textSize === value ? 'text-amber-800' : 'text-emerald-400'}`}>
+                                  {t('setup.textSize.desc')}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-emerald-600/40 pt-4">
+                          <label className="text-sm font-medium text-emerald-300 mb-2 block">{t('setup.cardSize.title')}</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(['normal', 'large'] as CardSize[]).map((value) => (
+                              <button
+                                key={value}
+                                onClick={() => setCardSize(value)}
+                                className={`p-2.5 rounded-lg text-left transition-all border ${
+                                  cardSize === value
+                                    ? 'bg-amber-500 border-amber-400 text-emerald-900'
+                                    : 'bg-emerald-600 border-emerald-500 text-emerald-300 hover:bg-emerald-500'
+                                }`}
+                              >
+                                <div className="font-semibold text-sm">{t(`setup.cardSize.${value}`)}</div>
+                                <div className={`text-xs mt-0.5 leading-tight ${cardSize === value ? 'text-amber-800' : 'text-emerald-400'}`}>
+                                  {t('setup.cardSize.desc')}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-emerald-600/40 pt-4">
+                          <OptionRow
+                            title={t('setup.animations.title')}
+                            description={t('setup.animations.desc')}
+                            enabled={animations}
+                            onToggle={() => setAnimations((value) => !value)}
+                          />
                         </div>
                       </div>
                     )}
