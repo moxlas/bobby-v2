@@ -840,6 +840,8 @@ export function GameBoard({
         cardGestureSoundPlayedRef.current = true;
       }
       setDraggingCardId(gesture.card.id);
+      // Fixed-position offsets are part of the zoomed layout, while pointer
+      // coordinates are already in raw viewport pixels.
       setDragPreviewPosition({ x: event.clientX / rootZoom(), y: event.clientY / rootZoom() });
     }
   };
@@ -855,7 +857,7 @@ export function GameBoard({
     const deltaX = event.clientX - gesture.startX;
     const deltaY = event.clientY - gesture.startY;
     const movedDistance = Math.hypot(deltaX, deltaY);
-    const releasedOverPile = Boolean(document.elementFromPoint(event.clientX / rootZoom(), event.clientY / rootZoom())
+    const releasedOverPile = Boolean(document.elementFromPoint(event.clientX, event.clientY)
       ?.closest('[data-pile-drop-zone]'));
     const isTouchSwipeUp = gesture.pointerType !== 'mouse' && deltaY < -42 && Math.abs(deltaY) > Math.abs(deltaX) * 1.1;
     const isMouseDropOnPile = gesture.pointerType === 'mouse' && releasedOverPile && movedDistance > 10;
@@ -2112,7 +2114,9 @@ export function GameBoard({
       {draggedCards.length > 0 && dragPreviewPosition && (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed z-[60] h-24 w-20 -translate-x-1/2 -translate-y-1/2 lg:h-28 lg:w-24"
+          className={`pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-1/2 ${
+            gameState.options.cardSize === 'large' ? 'h-32 w-24' : 'h-28 w-20'
+          }`}
           style={{ left: dragPreviewPosition.x, top: dragPreviewPosition.y }}
         >
           {draggedCards.map((card: CardType, index: number) => (
@@ -2121,7 +2125,10 @@ export function GameBoard({
               className="absolute"
               style={{ left: `${index * 4}px`, top: `${-index * 3}px`, zIndex: index + 1 }}
             >
-              <PlayingCard card={{ ...card, faceUp: true }} size="sm" />
+              <PlayingCard
+                card={{ ...card, faceUp: true }}
+                size={gameState.options.cardSize === 'large' ? 'lg' : 'md'}
+              />
             </div>
           ))}
         </div>
