@@ -37,13 +37,18 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
     if (!layer) return;
 
     const nodes = Array.from(layer.children) as HTMLElement[];
-    if (nodes.length === 0 || prefersReducedMotion()) {
+    if (
+      nodes.length === 0 ||
+      prefersReducedMotion() ||
+      document.documentElement.dataset.animations === 'off'
+    ) {
       completeRef.current();
       return;
     }
 
     const animations: Animation[] = [];
     let remaining = nodes.length;
+    const zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
 
     nodes.forEach((node, index) => {
       const natural = node.getBoundingClientRect();
@@ -66,7 +71,7 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
       // Hand cards can be scrolled out of view; start those from the viewport edge.
       const fromX = Math.min(
         Math.max(from.left + from.width / 2, startHalfWidth),
-        window.innerWidth - startHalfWidth,
+        window.innerWidth * zoom - startHalfWidth,
       );
       const fromY = from.top + from.height / 2;
       const toX = to.left + to.width / 2;
@@ -74,8 +79,8 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
       const dx = toX - fromX;
       const dy = toY - fromY;
 
-      node.style.left = `${fromX - natural.width / 2}px`;
-      node.style.top = `${fromY - natural.height / 2}px`;
+      node.style.left = `${(fromX - natural.width / 2) / zoom}px`;
+      node.style.top = `${(fromY - natural.height / 2) / zoom}px`;
       node.style.transform = `scale(${startScale})`;
       node.style.opacity = '1';
 
@@ -84,12 +89,12 @@ export function CardFlight({ request, onComplete }: CardFlightProps) {
         [
           { transform: `translate(0px, 0px) scale(${startScale}) rotate(0deg)`, opacity: 1 },
           {
-            transform: `translate(${dx * 0.55}px, ${dy * 0.55 - 22}px) scale(${(startScale + endScale) / 2}) rotate(${tilt})`,
+            transform: `translate(${(dx * 0.55) / zoom}px, ${(dy * 0.55 - 22) / zoom}px) scale(${(startScale + endScale) / 2}) rotate(${tilt})`,
             opacity: 1,
             offset: 0.55,
           },
           {
-            transform: `translate(${dx}px, ${dy}px) scale(${endScale}) rotate(0deg)`,
+            transform: `translate(${dx / zoom}px, ${dy / zoom}px) scale(${endScale}) rotate(0deg)`,
             opacity: request.direction === 'toPile' ? 0.15 : 0.35,
           },
         ],
