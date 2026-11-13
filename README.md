@@ -7,7 +7,8 @@ Play locally in hot-seat mode or online in shared rooms with friends, spectators
 ## Screenshots
 
 ![Setup screen](docs/screenshots/setup.png)
-![Game board](docs/screenshots/game-board.png)
+![Game board on desktop](docs/screenshots/game-board-desktop.png)
+![Game board on mobile](docs/screenshots/game-board-mobile.png)
 ![Online server browser](docs/screenshots/online-browser.png)
 
 ## Features
